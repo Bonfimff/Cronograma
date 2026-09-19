@@ -1,0 +1,5 @@
+[
+  { "id": "basic-questions", "title": "Perguntas básicas", "description": "Palavras de pergunta (how, what, where) com be e do.", "objective": "Fazer e responder perguntas simples de apresentação.", "refs": ["word:how", "word:what", "word:where", "word:are", "word:you", "expression:how-are-you", "pattern:how-be-subject", "pattern:wh-be-subject", "grammar:question-order"] },
+  { "id": "how-quantity", "title": "How much / How many", "description": "Perguntas de quantidade e preço.", "objective": "Diferenciar how much e how many.", "refs": ["word:how", "expression:how-much", "expression:how-many"] },
+  { "id": "introductions", "title": "Apresentações", "description": "Nome, origem e moradia.", "objective": "Apresentar-se e perguntar sobre a outra pessoa.", "refs": ["word:what", "word:where", "word:from", "word:do", "expression:what-is-your-name", "expression:where-are-you-from", "pattern:wh-do-subject-verb"] }
+]

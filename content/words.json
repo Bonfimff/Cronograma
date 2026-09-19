@@ -1,0 +1,108 @@
+[
+  {
+    "id": "how", "word": "how", "type": "question word",
+    "translations": [
+      { "text": "como", "context": "estado ou maneira" },
+      { "text": "quanto / quão", "context": "com much, many, old, long..." }
+    ],
+    "core_meaning": "Pergunta sobre o modo, o estado ou a medida de algo.",
+    "uses": [
+      { "id": "state", "label": "estado", "meaning": "como (está)", "explanation": "Pergunta como alguém ou algo está. Normalmente vem com o verbo be (am/is/are).", "examples": ["ex-how-are-you", "ex-how-is-she", "ex-how-are-they"] },
+      { "id": "manner", "label": "maneira", "meaning": "como (de que jeito)", "explanation": "Pergunta a forma de fazer algo. Normalmente vem com do/does + verbo.", "examples": ["ex-how-do-you-say", "ex-how-do-you-go"] },
+      { "id": "quantity", "label": "quantidade / medida", "meaning": "quanto, quão", "explanation": "Junto de outra palavra, how mede algo: how much, how many, how old.", "examples": ["ex-how-much-is-it", "ex-how-many-books", "ex-how-old"] }
+    ],
+    "variations": [
+      { "form": "how much", "meaning": "quanto / quanta", "note": "coisas incontáveis e preço", "ref": "expression:how-much" },
+      { "form": "how many", "meaning": "quantos / quantas", "note": "coisas contáveis", "ref": "expression:how-many" },
+      { "form": "how old", "meaning": "quantos anos", "note": "idade" }
+    ],
+    "related_words": ["what", "where", "are", "you"],
+    "examples": ["ex-how-are-you", "ex-how-do-you-say", "ex-how-much-is-it"],
+    "pronunciation": { "ipa": "/haʊ/", "respelling": "rráu" },
+    "copy": { "lines": ["How = como", "Usamos how para perguntar sobre estado, situação ou maneira.", "How are you? — Como você está?"] }
+  },
+  {
+    "id": "what", "word": "what", "type": "question word",
+    "translations": [ { "text": "o que", "context": "coisas, ações" }, { "text": "qual", "context": "com nome, cor, horário..." } ],
+    "core_meaning": "Pergunta sobre coisas, informações ou ações.",
+    "uses": [
+      { "id": "thing", "label": "coisa", "meaning": "o que", "explanation": "Pergunta o que algo é.", "examples": ["ex-what-is-this"] },
+      { "id": "info", "label": "informação", "meaning": "qual", "explanation": "Em português dizemos 'qual', mas em inglês usamos what para pedir uma informação.", "examples": ["ex-what-is-your-name"] },
+      { "id": "action", "label": "ação", "meaning": "o que (faz)", "explanation": "Com do/does, pergunta sobre ações ou profissão.", "examples": ["ex-what-do-you-do"] }
+    ],
+    "variations": [ { "form": "what time", "meaning": "que horas" }, { "form": "what kind of", "meaning": "que tipo de" } ],
+    "related_words": ["how", "where", "is"],
+    "examples": ["ex-what-is-your-name", "ex-what-is-this"],
+    "pronunciation": { "ipa": "/wɒt/", "respelling": "uót" },
+    "copy": { "lines": ["What = o que / qual", "What is your name? — Qual é o seu nome?"] }
+  },
+  {
+    "id": "where", "word": "where", "type": "question word",
+    "translations": [ { "text": "onde" }, { "text": "de onde", "context": "where ... from" } ],
+    "core_meaning": "Pergunta sobre lugar.",
+    "uses": [
+      { "id": "place", "label": "lugar", "meaning": "onde", "explanation": "Pergunta a localização de algo ou alguém.", "examples": ["ex-where-is-it", "ex-where-do-you-live"] },
+      { "id": "origin", "label": "origem", "meaning": "de onde", "explanation": "Com from no final, pergunta a origem.", "examples": ["ex-where-are-you-from"] }
+    ],
+    "variations": [ { "form": "where ... from", "meaning": "de onde", "ref": "expression:where-are-you-from" } ],
+    "related_words": ["how", "what", "from"],
+    "examples": ["ex-where-are-you-from", "ex-where-is-it"],
+    "pronunciation": { "ipa": "/weər/", "respelling": "uér" },
+    "copy": { "lines": ["Where = onde", "Where are you from? — De onde você é?"] }
+  },
+  {
+    "id": "are", "word": "are", "type": "verb (be)",
+    "translations": [ { "text": "são / estão", "context": "you, we, they" } ],
+    "core_meaning": "Forma do verbo be (ser/estar) para you, we e they.",
+    "uses": [ { "id": "be", "label": "ser / estar", "meaning": "é, está, são, estão", "explanation": "Em inglês ser e estar são o mesmo verbo: be.", "examples": ["ex-how-are-you", "ex-they-are-fine"] } ],
+    "variations": [ { "form": "am", "meaning": "sou / estou (I)" }, { "form": "is", "meaning": "é / está (he, she, it)" } ],
+    "related_words": ["is", "you"],
+    "examples": ["ex-how-are-you", "ex-they-are-fine"],
+    "pronunciation": { "ipa": "/ɑːr/", "respelling": "ár" },
+    "copy": { "lines": ["I am · you are · he/she/it is · we/they are", "be = ser e estar"] }
+  },
+  {
+    "id": "is", "word": "is", "type": "verb (be)",
+    "translations": [ { "text": "é / está", "context": "he, she, it" } ],
+    "core_meaning": "Forma do verbo be para he, she e it.",
+    "uses": [ { "id": "be", "label": "ser / estar", "meaning": "é, está", "explanation": "Usado com uma pessoa ou coisa (he, she, it, this, my name...).", "examples": ["ex-how-is-she", "ex-what-is-this"] } ],
+    "variations": [ { "form": "what's", "meaning": "what is (contração)" } ],
+    "related_words": ["are"],
+    "examples": ["ex-how-is-she", "ex-where-is-it"],
+    "pronunciation": { "ipa": "/ɪz/", "respelling": "íz" }
+  },
+  {
+    "id": "you", "word": "you", "type": "pronoun",
+    "translations": [ { "text": "você" }, { "text": "vocês" }, { "text": "te / lhe", "context": "objeto" } ],
+    "core_meaning": "A pessoa (ou pessoas) com quem falamos.",
+    "uses": [ { "id": "subject", "label": "sujeito", "meaning": "você(s)", "explanation": "Singular e plural têm a mesma forma.", "examples": ["ex-how-are-you", "ex-where-do-you-live"] } ],
+    "variations": [ { "form": "your", "meaning": "seu / sua" } ],
+    "related_words": ["are"],
+    "examples": ["ex-how-are-you"],
+    "pronunciation": { "ipa": "/juː/", "respelling": "iú" }
+  },
+  {
+    "id": "do", "word": "do", "type": "auxiliary / verb",
+    "translations": [ { "text": "(auxiliar de pergunta)", "context": "não se traduz" }, { "text": "fazer", "context": "verbo principal" } ],
+    "core_meaning": "Auxiliar que monta perguntas com verbos que não são be; também significa fazer.",
+    "uses": [
+      { "id": "aux", "label": "auxiliar", "meaning": "(sem tradução)", "explanation": "Colocado antes do sujeito para formar perguntas: Do you...? / Where do you...?", "examples": ["ex-do-you-like-coffee", "ex-where-do-you-live"] },
+      { "id": "main", "label": "fazer", "meaning": "fazer", "explanation": "Como verbo principal significa fazer.", "examples": ["ex-what-do-you-do"] }
+    ],
+    "variations": [ { "form": "does", "meaning": "auxiliar para he, she, it" } ],
+    "related_words": ["how", "what", "where"],
+    "examples": ["ex-do-you-like-coffee", "ex-what-do-you-do"],
+    "pronunciation": { "ipa": "/duː/", "respelling": "dú" },
+    "copy": { "lines": ["do = auxiliar de pergunta (não se traduz)", "Where do you live? — Onde você mora?"] }
+  },
+  {
+    "id": "from", "word": "from", "type": "preposition",
+    "translations": [ { "text": "de", "context": "origem" } ],
+    "core_meaning": "Indica origem ou ponto de partida.",
+    "uses": [ { "id": "origin", "label": "origem", "meaning": "de", "explanation": "I am from Brazil. Na pergunta, from vai para o final.", "examples": ["ex-i-am-from-brazil", "ex-where-are-you-from"] } ],
+    "variations": [],
+    "related_words": ["where"],
+    "examples": ["ex-i-am-from-brazil"],
+    "pronunciation": { "ipa": "/frɒm/", "respelling": "fróm" }
+  }
+]
