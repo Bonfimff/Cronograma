@@ -546,7 +546,7 @@ h3 { font-size: .95rem; }
 .newsman .lid {
   position: absolute; top: 24.8%; width: 8.6%; aspect-ratio: 1;
   translate: -50% -50%; border-radius: 50%; background: #fbfaf7; opacity: 0;
-  animation: blink 6.5s infinite;
+  animation: blink 7s infinite;
 }
 .newsman .lid::after {
   content: ''; position: absolute; left: 10%; right: 10%; top: 46%;
@@ -566,14 +566,16 @@ h3 { font-size: .95rem; }
   position: absolute; top: 50%; left: 78%; translate: -50% -50%;
   width: 31%; height: 50%; min-width: 1px; min-height: 1px;
   border-radius: 50%; background: #15140f;
-  animation: look 6.5s infinite;
+  animation: look 7s infinite;
 }
 
-/* olha pra direita, desvia pra esquerda, e volta junto com a piscada */
+/* olha de um lado pro outro, com uma pausa em cada, e volta na piscada */
 @keyframes look {
-  0%, 43% { left: 78%; }
-  46%, 88% { left: 22%; }
-  91%, 100% { left: 78%; }
+  0%, 20% { left: 78%; }
+  24%, 44% { left: 22%; }
+  48%, 66% { left: 78%; }
+  70%, 86% { left: 22%; }
+  90%, 100% { left: 78%; }
 }
 
 /* pisca duas vezes seguidas e descansa */
