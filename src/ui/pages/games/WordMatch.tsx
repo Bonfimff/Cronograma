@@ -329,12 +329,6 @@ export function WordMatch() {
             {round.pairs[i].pt}
           </button>
         ))}
-        {round.left.map((_, row) => (
-          <svg key={`w${row}`} viewBox="0 0 40 24" className="mt-mid" style={{ gridRow: row + 1, gridColumn: 2 }} aria-hidden>
-            <path d="M6 4c7 2 11 6 13 12 1 4 5 5 8 2s7-4 9-2" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            <path d="M3 2l5 3" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-          </svg>
-        ))}
         {round.right.map((i, row) => (
           <button
             key={`r${i}`}
