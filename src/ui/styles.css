@@ -703,3 +703,38 @@ h3 { font-size: .95rem; }
 .fc-go { position: absolute; right: -8px; bottom: -12px; z-index: 3; font-size: 1rem; transform: rotate(-8deg); }
 .fc-count { text-align: center; color: var(--ink-3); margin: 0; }
 @media (prefers-reduced-motion: reduce) { .fc-card { animation: none; } }
+
+/* ---------- carimbo dos flashcards ---------- */
+.fc-card { touch-action: pan-y; transition: transform .2s ease; }
+.fc-card.stamped { animation: fc-thud .32s ease; }
+@keyframes fc-thud {
+  0% { transform: rotate(-.7deg) scale(1); }
+  35% { transform: rotate(-.7deg) scale(.96) translateY(3px); }
+  100% { transform: rotate(-.7deg) scale(1); }
+}
+.fc-stamp {
+  --r: -14deg;
+  position: absolute; left: 50%; top: 46%; z-index: 4;
+  padding: 6px 18px 8px; border: 5px solid currentColor; border-radius: 12px;
+  font-family: var(--sans); font-weight: 800; font-size: 2.3rem; letter-spacing: .1em;
+  text-transform: uppercase; line-height: 1; white-space: nowrap;
+  opacity: .85; mix-blend-mode: multiply; filter: url(#torn-soft);
+  transform: translate(-50%, -50%) rotate(var(--r));
+  animation: fc-stamp .34s cubic-bezier(.2, .9, .3, 1.25) both;
+  pointer-events: none;
+}
+.fc-stamp.ok { color: #1e7a4a; }
+.fc-stamp.bad { color: #b3261e; --r: 12deg; }
+/* desce grande e bate na folha */
+@keyframes fc-stamp {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--r)) scale(2.6); }
+  60% { opacity: .95; transform: translate(-50%, -50%) rotate(var(--r)) scale(.9); }
+  100% { opacity: .85; transform: translate(-50%, -50%) rotate(var(--r)) scale(1); }
+}
+.fc-judge { display: flex; gap: 10px; justify-content: center; margin: 4px 0 10px; }
+.fc-judge button { flex: 1; max-width: 160px; }
+.fc-bad { color: #ef8a80; }
+.fc-okc { color: var(--accent); }
+.fc-badc { color: #ef8a80; }
+.fc-tip { text-align: center; color: var(--ink-3); font-size: .8rem; margin: 4px 0 0; }
+@media (prefers-reduced-motion: reduce) { .fc-stamp, .fc-card.stamped { animation: none; } }
