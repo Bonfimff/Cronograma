@@ -49,8 +49,10 @@ function Detail({ r }: { r: ContentRef }) {
     <>
       <section className="hero">
         <a href="#/conteudo" className="back">‹ Biblioteca</a>
-        <p className="eyebrow">{KIND_LABEL[kind]}{st && <> · {STATE_LABEL[st.state]}</>}</p>
-        <h1 className="en">{refLabel(r)} {kind !== 'grammar' && <button className="say" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))}>▶</button>}</h1>
+        <div className="paper-card tape">
+          <p className="eyebrow">{KIND_LABEL[kind]}{st && <> · {STATE_LABEL[st.state]}</>}</p>
+          <h1 className="en">{refLabel(r)} {kind !== 'grammar' && <button className="say" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))}>▶</button>}</h1>
+        </div>
       </section>
 
       {kind === 'word' && <WordTree w={it as Word} />}

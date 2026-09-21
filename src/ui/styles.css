@@ -102,19 +102,19 @@ section { margin: 0 0 24px; }
 /* ---------- recortes de papel, fitas e rabiscos ---------- */
 .card { background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px; }
 
-/* papelzinho rasgado (o recorte vem do filtro SVG aplicado só no fundo, o texto fica nítido) */
-.note {
-  position: relative; display: block; padding: 16px 20px 18px; margin: 18px 4px 22px;
-  color: #221f19; font-family: var(--hand); font-size: 1.5rem; line-height: 1.15;
-  transform: rotate(-1.2deg);
+/* recorte de papel rasgado (a borda vem do filtro SVG aplicado só no fundo, o texto fica nítido) */
+.paper-card {
+  position: relative; padding: 14px 20px 16px; margin: 10px 2px 20px;
+  color: #221f19; transform: rotate(-.7deg);
 }
-.note::before {
+.paper-card::before {
   content: ''; position: absolute; inset: -5px; z-index: -1;
   background: #f2e8d2; filter: url(#torn); box-shadow: 0 8px 22px rgba(0, 0, 0, .5);
 }
-.note > * { position: relative; }
-.note .note-sub { display: block; font-family: var(--sans); font-size: .72rem; font-weight: 600; color: #6c6455; margin-top: 4px; letter-spacing: .02em; }
-.note.right { transform: rotate(1.4deg); }
+.paper-card > * { position: relative; }
+.paper-card .eyebrow { color: #6c6455; }
+.paper-card h1 { background-image: none; color: #221f19; }
+.paper-card .say { border-color: #bdb096; background: transparent; color: #1f5c55; }
 
 /* fita crepe */
 .tape::after {
@@ -124,19 +124,6 @@ section { margin: 0 0 24px; }
   -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 5px, rgba(0,0,0,.72) 5px 10px);
   mask-image: repeating-linear-gradient(90deg, #000 0 5px, rgba(0,0,0,.72) 5px 10px);
 }
-.tape.tape-right::after { left: auto; right: 22px; transform: rotate(6deg); }
-
-/* tira de papel rasgado usada como divisória */
-.tear { position: relative; height: 14px; margin: 26px 0; }
-.tear::before {
-  content: ''; position: absolute; inset: 0 -8px; background: #e9dcc0; filter: url(#torn-soft); opacity: .9;
-}
-
-.quote {
-  font-family: var(--hand); font-size: 1.45rem; line-height: 1.25; color: var(--ink);
-  border-left: 3px solid var(--marker); padding: 2px 0 2px 14px; margin: 14px 0 18px;
-}
-.quote .quote-pt { display: block; font-family: var(--sans); font-size: .78rem; color: var(--ink-3); margin-top: 2px; }
 .sticker {
   display: inline-block; font-family: var(--hand); font-size: 1.15rem; font-weight: 700;
   color: #221f19; background: var(--marker); padding: 2px 12px 3px; border-radius: 3px;
@@ -151,6 +138,25 @@ section { margin: 0 0 24px; }
 .head-row { display: flex; align-items: center; gap: 12px; }
 .head-row .doodle { flex: none; }
 
+/* frases escritas à mão direto no fundo, como giz na lousa */
+.chalk { font-family: var(--hand); font-size: 1.6rem; line-height: 1.12; color: var(--ink); margin: 16px 0 4px; }
+.chalk .chalk-sub { display: block; font-family: var(--sans); font-size: .74rem; color: var(--ink-3); margin-top: 5px; }
+.chalk.mark { color: var(--marker); }
+.chalk-swash { display: block; width: 170px; max-width: 72%; height: 10px; color: var(--marker); opacity: .85; margin-bottom: 16px; }
+.chalk-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 14px 0 18px; }
+.chalk-row .chalk { margin: 0; flex: 1 1 150px; }
+.chalk-row .doodle { flex: none; }
+
+/* selo de elogio com risquinhos de brilho */
+.praise { display: inline-flex; align-items: center; gap: 4px; color: var(--marker); }
+.praise b { font-family: var(--hand); font-size: 1.5rem; font-weight: 700; line-height: 1; display: inline-block; transform: rotate(-3deg); }
+.praise-burst { width: 13px; height: 30px; flex: none; }
+.praise .flip { display: inline-flex; transform: scaleX(-1); }
+
+.praise-line { margin: 12px 0 0; }
+.game-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.game-card-head b { margin: 0; }
+.hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .doodle-row { display: flex; align-items: flex-end; gap: 16px; margin: 10px 0 2px; opacity: .85; }
 .week-doodle { margin-left: auto; }
 .page-foot { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 32px 0 8px; opacity: .8; }
@@ -161,6 +167,7 @@ section { margin: 0 0 24px; }
   display: inline; background-image: linear-gradient(transparent 58%, rgba(244, 185, 66, .28) 58%, rgba(244, 185, 66, .28) 92%, transparent 92%);
   padding: 0 2px;
 }
+.hero .paper-card h1 { background-image: none; padding: 0; }
 .progress { height: 6px; border-radius: 99px; background: var(--rule); overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
 

@@ -4,7 +4,7 @@ import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/d
 import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
-import { Bolt, Cat, Plane, Sparkle } from '../components/Doodles';
+import { Bolt, Cat, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -38,13 +38,19 @@ export function Today() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">{weekdayName(d)} · {fmtShort(d)}</p>
-        <h1>{plan?.theme || 'Hoje'}</h1>
+        <div className="hero-row">
+          <div>
+            <p className="eyebrow">{weekdayName(d)} · {fmtShort(d)}</p>
+            <h1>{plan?.theme || 'Hoje'}</h1>
+          </div>
+          <Cat className="doodle" width="54" />
+        </div>
         {plan?.objective && <p className="lead">{plan.objective}</p>}
-        <blockquote className="note tape">
+        <blockquote className="chalk">
           “{en}”
-          <span className="note-sub">{pt}</span>
+          <span className="chalk-sub">{pt}</span>
         </blockquote>
+        <Swash className="chalk-swash" />
         <div className="actions left">
           <a className="primary" href="#/scan">Escanear folha</a>
           <a className="ghost" href={`#/semana/${weekStartOf(d)}`}>Planejar semana</a>
@@ -62,6 +68,12 @@ export function Today() {
           </div>
         )}
         {list.length ? list.map((s) => <SessionRow key={s.id} s={s} />) : <Empty>Nada planejado para hoje.</Empty>}
+        {list.length > 0 && doneCount === list.length && (
+          <p className="praise-line"><Praise>tudo feito hoje!</Praise></p>
+        )}
+        {list.length > 0 && doneCount < list.length && (
+          <p className="praise-line"><Praise>keep going</Praise></p>
+        )}
       </section>
 
       {due.length > 0 && (
@@ -90,9 +102,8 @@ export function Today() {
       </section>
 
       <footer className="page-foot">
-        <Cat className="doodle" width="52" />
         <span className="foot-line">Inglês no seu ritmo.</span>
-        <Plane className="doodle mint" width="40" />
+        <Plane className="doodle mark" width="40" />
       </footer>
     </>
   );

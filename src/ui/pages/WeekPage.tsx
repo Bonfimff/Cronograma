@@ -6,7 +6,7 @@ import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from
 import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
 import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
-import { CalendarDoodle } from '../components/Doodles';
+import { CalendarDoodle, Swash } from '../components/Doodles';
 
 export function WeekPage({ start }: { start?: string }) {
   const data = useData();
@@ -43,10 +43,13 @@ export function WeekPage({ start }: { start?: string }) {
           <a className="ghost small" href={`#/montar?semana=${ws}`}>Montar semana (JSON)</a>
           <a className="ghost small" href={`#/imprimir?modo=week&semana=${ws}`}>Imprimir plano semanal</a>
         </div>
-        <blockquote className="note right tape tape-right">
-          “Disciplina também é liberdade.”
-          <span className="note-sub">Planeje a semana, depois é só seguir.</span>
-        </blockquote>
+        <div className="chalk-row">
+          <blockquote className="chalk mark">
+            “Disciplina<br />também é liberdade.”
+            <Swash className="chalk-swash" />
+          </blockquote>
+          <CalendarDoodle className="doodle" width="40" />
+        </div>
       </section>
 
       <nav className="daystrip">

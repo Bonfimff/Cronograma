@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
+
 /**
- * Rabiscos e recortes desenhados em SVG (nada de imagem externa).
- * Todos herdam a cor via `currentColor` e o traço tem leve irregularidade pra parecer feito à mão.
+ * Rabiscos e recortes desenhados em SVG (nada de imagem externa), no traço de giz da referência:
+ * silhueta escura com contorno claro, cantos arredondados e leve irregularidade.
  */
 
 type P = { className?: string; width?: number | string };
@@ -31,39 +33,49 @@ export function DoodleDefs() {
   );
 }
 
-/** Gatinho sentado, de olhos fechados — silhueta cheia com os detalhes vazados. */
+/** Rosto de gato fofo, de olhos fechados — escuro por dentro, contorno claro. */
 export function Cat({ className, width }: P) {
   return (
-    <svg viewBox="0 0 48 48" className={className} width={width} aria-hidden>
-      <path d="M13 18 10 3l13 8zM35 18 38 3 25 11z" fill="currentColor" />
-      <circle cx="24" cy="20" r="11" fill="currentColor" />
-      <path d="M14 28c-3 6-4 12-2 16h24c2-4 1-10-2-16z" fill="currentColor" />
-      <path d="M36 42c7 2 11-3 9-9" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" fill="none" />
-      <path d="M18 19c1.4 1.6 3 1.6 4.4 0M25.6 19c1.4 1.6 3 1.6 4.4 0" stroke="var(--paper)" strokeWidth={1.7} strokeLinecap="round" fill="none" />
-      <path d="M22.2 24c1 1 2.6 1 3.6 0" stroke="var(--paper)" strokeWidth={1.5} strokeLinecap="round" fill="none" />
+    <svg viewBox="0 0 60 56" className={className} width={width} aria-hidden>
+      <g fill="var(--paper)" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round">
+        <path d="M14 22 9 5l17 7zM46 22l5-17-17 7z" />
+        <path d="M14 22c-3 7-3 15 1 20 4 6 9 8 15 8s11-2 15-8c4-5 4-13 1-20L34 12c-2-1-6-1-8 0z" />
+      </g>
+      <path d="M16 20l-2-8 7 3M44 20l2-8-7 3" fill="currentColor" opacity=".45" stroke="none" />
+      <g {...stroke} strokeWidth={1.9}>
+        <path d="M20 31c2 2.4 5 2.4 7 0M33 31c2 2.4 5 2.4 7 0" />
+        <path d="m28 37 2 2 2-2M30 39v2" strokeWidth={1.7} />
+        <path d="M30 41c-1.4 1.8-3.8 1.8-5 .3M30 41c1.4 1.8 3.8 1.8 5 .3" strokeWidth={1.5} />
+        <path d="M4 32h11M4 39l11-3M56 32H45M56 39l-11-3" strokeWidth={1.5} opacity=".85" />
+      </g>
     </svg>
   );
 }
 
+/** Fantasminha arredondado com a barra de baixo ondulada. */
 export function Ghost({ className, width }: P) {
   return (
-    <svg viewBox="0 0 40 46" className={className} width={width} aria-hidden>
-      <path d="M6 42V20a14 14 0 0 1 28 0v22l-5-4-4 4-5-4-5 4-4-4z" {...stroke} />
-      <circle cx="15" cy="20" r="1.8" fill="currentColor" />
-      <circle cx="26" cy="20" r="1.8" fill="currentColor" />
-      <path d="M17 27c2 2 4 2 6 0" {...stroke} strokeWidth={1.6} />
+    <svg viewBox="0 0 44 52" className={className} width={width} aria-hidden>
+      <path d="M8 47V23a14 14 0 0 1 28 0v24l-5-4-4 4-5-4-5 4z" {...stroke} fill="var(--paper)" />
+      <ellipse cx="17" cy="23" rx="2.1" ry="3" fill="currentColor" />
+      <ellipse cx="29" cy="23" rx="2.1" ry="3" fill="currentColor" />
+      <path d="M20 31c1.4 1.6 3.2 1.6 4.6 0" {...stroke} strokeWidth={1.6} />
     </svg>
   );
 }
 
-/** Pilha de três livros, cada um levemente torto. */
+/** Pilha de livros tortos, com marcas de páginas. */
 export function Books({ className, width }: P) {
   return (
-    <svg viewBox="0 0 48 44" className={className} width={width} aria-hidden>
-      <rect x="5" y="31" width="38" height="9" rx="2" {...stroke} />
-      <rect x="8" y="20" width="32" height="9" rx="2" {...stroke} transform="rotate(-2 24 24)" />
-      <rect x="11" y="9" width="26" height="9" rx="2" {...stroke} transform="rotate(2 24 13)" />
-      <path d="M11 31v9M14 20v9M17 9v9" {...stroke} strokeWidth={1.5} />
+    <svg viewBox="0 0 60 50" className={className} width={width} aria-hidden>
+      <g {...stroke} fill="var(--paper)">
+        <rect x="5" y="34" width="46" height="10" rx="2" />
+        <rect x="9" y="23" width="38" height="10" rx="2" transform="rotate(-2.5 28 28)" />
+        <rect x="13" y="12" width="30" height="10" rx="2" transform="rotate(2.5 28 17)" />
+      </g>
+      <g {...stroke} strokeWidth={1.4} opacity=".8">
+        <path d="M12 34v10M16 34v10M16 23v10M20 23v10M20 12v10M23 12v10" />
+      </g>
     </svg>
   );
 }
@@ -114,9 +126,47 @@ export function Bolt({ className, width }: P) {
 export function CalendarDoodle({ className, width }: P) {
   return (
     <svg viewBox="0 0 44 40" className={className} width={width} aria-hidden>
-      <rect x="4" y="8" width="36" height="28" rx="3" {...stroke} />
+      <rect x="4" y="8" width="36" height="28" rx="3" {...stroke} fill="var(--paper)" />
       <path d="M4 17h36M13 4v8M31 4v8" {...stroke} />
       <path d="M13 24h3M21 24h3M29 24h3M13 30h3M21 30h3" {...stroke} strokeWidth={2.4} />
     </svg>
+  );
+}
+
+/** Videogamezinho de mão. */
+export function Device({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 34 44" className={className} width={width} aria-hidden>
+      <rect x="4" y="3" width="26" height="38" rx="5" {...stroke} fill="var(--paper)" />
+      <rect x="8" y="7" width="18" height="14" rx="2" {...stroke} strokeWidth={1.6} />
+      <path d="M10 30h6M13 27v6" {...stroke} strokeWidth={1.8} />
+      <circle cx="23" cy="28" r="1.8" fill="currentColor" />
+      <circle cx="26" cy="33" r="1.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Traço curvo à mão, usado pra sublinhar frases. */
+export function Swash({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 160 12" className={className} width={width} aria-hidden preserveAspectRatio="none">
+      <path d="M4 8C38 2 92 1 128 5c11 1 21 3 28 4" {...stroke} strokeWidth={3} />
+    </svg>
+  );
+}
+
+/** Selo escrito à mão com risquinhos de brilho dos dois lados ("good job", "level up"…). */
+export function Praise({ children, className }: { children: ReactNode; className?: string }) {
+  const rays = (
+    <svg viewBox="0 0 16 36" className="praise-burst" aria-hidden>
+      <path d="M3 18h9M5 6l7 6M5 30l7-6" {...stroke} strokeWidth={2.4} />
+    </svg>
+  );
+  return (
+    <span className={`praise ${className ?? ''}`}>
+      {rays}
+      <b>{children}</b>
+      <span className="flip">{rays}</span>
+    </span>
   );
 }

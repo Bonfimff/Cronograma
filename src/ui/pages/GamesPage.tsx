@@ -1,4 +1,4 @@
-import { Bolt, Sparkle } from '../components/Doodles';
+import { Cat, Device, Praise } from '../components/Doodles';
 
 export function GamesPage() {
   return (
@@ -7,21 +7,24 @@ export function GamesPage() {
         <p className="eyebrow">Jogos</p>
         <h1>Pratique jogando</h1>
         <p className="lead">Jogos curtos que usam o mesmo vocabulário do seu conteúdo.</p>
-        <blockquote className="note tape">
-          “Mesmo objetivo. Mais leve. Do seu jeito.”
-          <span className="note-sub">Pequenos passos, grandes resultados.</span>
-        </blockquote>
-        <div className="doodle-row">
-          <Bolt className="doodle mark" width="18" />
-          <Sparkle className="doodle mint" width="20" />
+        <div className="chalk-row">
+          <blockquote className="chalk">
+            “Mesmo objetivo.<br />Mais leve. Do seu jeito.”
+            <span className="chalk-sub">Pequenos passos, grandes resultados.</span>
+          </blockquote>
+          <Cat className="doodle" width="46" />
         </div>
       </section>
       <section className="game-cards">
         <a className="game-card" href="#/jogos/tetris">
-          <b>Tetris de vocabulário</b>
+          <span className="game-card-head">
+            <b>Tetris de vocabulário</b>
+            <Device className="doodle mark" width="26" />
+          </span>
           <span>Traduza a palavra em português antes que a peça caia. Acertar encaixa a peça; errar deixa a pilha bagunçada.</span>
         </a>
       </section>
+      <p className="praise-line"><Praise>tá bom demais!</Praise></p>
     </>
   );
 }

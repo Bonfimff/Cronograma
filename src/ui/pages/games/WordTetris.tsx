@@ -5,6 +5,7 @@ import {
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
+import { Praise } from '../../components/Doodles';
 
 const BEST_KEY = 'word-tetris-best';
 const STATS_KEY = 'word-tetris-word-stats';
@@ -240,7 +241,7 @@ export function WordTetris() {
         )}
       </section>
 
-      {levelUp && <p className="wt-levelup">level up!</p>}
+      {levelUp && <p className="wt-levelup"><Praise>level up!</Praise></p>}
       {paused && !over && <p className="wt-paused">pausado</p>}
       {toast && <p className={toast.ok ? 'ok-line' : 'warn'}>{toast.text}</p>}
 
