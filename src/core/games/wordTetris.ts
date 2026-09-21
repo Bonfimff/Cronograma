@@ -48,10 +48,6 @@ export const SHAPES: Shape[] = [
   shape([[0, 1], [0, 2], [1, 0], [1, 1]], 3),
 ];
 
-function pickShape(maxTier: number): Shape {
-  const allowed = SHAPES.filter((s) => s.tier <= maxTier);
-  return allowed[Math.floor(Math.random() * allowed.length)];
-}
 
 /** Linha (offset superior) onde a peça repousa, dado o topo da pilha em cada coluna que ela ocupa. */
 export function landingRow(board: Board, colStart: number, s: Shape): number {
@@ -63,35 +59,108 @@ export function landingRow(board: Board, colStart: number, s: Shape): number {
   return top;
 }
 
-/** Buracos que a peça deixaria embaixo dela ao pousar em colStart. */
-export function gapsFor(board: Board, colStart: number, s: Shape): number {
+/**
+ * Nota de uma pousada (menor = melhor), olhando o tabuleiro que sobra depois dela.
+ * Pesos da heurística clássica de Tetris (altura somada, linhas, buracos e
+ * irregularidade da superfície): pesar só buraco fazia o encaixe preferir erguer
+ * uma torre no meio a deixar um único buraco na borda.
+ */
+function placementScore(board: Board, colStart: number, s: Shape): number {
   const top = landingRow(board, colStart, s);
   if (top < 0) return Infinity;
-  let gaps = 0;
-  for (let c = 0; c < s.width; c++) {
-    const bottomAbs = top + s.maxRowInCol[c];
-    gaps += colTopRow(board, colStart + c) - 1 - bottomAbs;
+  const next = board.map((r) => r.slice());
+  s.cells.forEach(([dr, dc]) => { next[top + dr][colStart + dc] = '#'; });
+  const { board: after, cleared } = clearFullRows(next);
+  const heights = Array.from({ length: COLS }, (_, c) => ROWS - colTopRow(after, c));
+  let holes = 0;
+  for (let c = 0; c < COLS; c++) {
+    for (let r = colTopRow(after, c) + 1; r < ROWS; r++) if (!after[r][c]) holes++;
   }
-  return gaps;
+  let bumpiness = 0;
+  for (let c = 0; c < COLS - 1; c++) bumpiness += Math.abs(heights[c] - heights[c + 1]);
+  const aggregate = heights.reduce((a, b) => a + b, 0);
+  return 0.51 * aggregate - 0.76 * cleared + 0.36 * holes + 0.18 * bumpiness;
+}
+
+/** Coluna de melhor encaixe — usada quando o jogador acerta a palavra. */
+export function bestColumn(board: Board, s: Shape): number {
+  let best = -1;
+  let bestScore = Infinity;
+  for (let c = 0; c <= COLS - s.width; c++) {
+    const score = placementScore(board, c, s);
+    if (score < bestScore) { bestScore = score; best = c; }
+  }
+  return Math.max(0, best);
+}
+
+function fittingColumns(board: Board, s: Shape): number[] {
+  const cols: number[] = [];
+  for (let c = 0; c <= COLS - s.width; c++) if (landingRow(board, c, s) >= 0) cols.push(c);
+  return cols;
+}
+
+/** A peça cabe em alguma coluna? O fim de jogo depende disso, não da coluna sorteada. */
+export function fitsAnywhere(board: Board, s: Shape): boolean {
+  return fittingColumns(board, s).length > 0;
+}
+
+/** Coluna onde a peça nasce: sorteada, mas só entre as que ela cabe. */
+export function spawnColumn(board: Board, s: Shape): number {
+  const cols = fittingColumns(board, s);
+  return cols.length ? cols[Math.floor(Math.random() * cols.length)] : 0;
 }
 
 /**
- * Coluna que minimiza buracos — usada quando o jogador acerta a palavra.
- * Em empate, prefere a pousada mais baixa (evita empilhar torre alta num canto
- * quando ainda há espaço livre e igualmente bom do lado).
+ * Onde cai a peça de uma resposta errada. Normalmente, na coluna em que nasceu
+ * (cai torta). Mas se o jogador vem acertando quase tudo e a pilha está perto do
+ * topo, cai na pousada mais baixa: o erro ainda custa pontos e a sequência, só
+ * não encerra a partida sozinho.
  */
-export function bestColumn(board: Board, s: Shape): number {
-  let best = 0;
-  let bestScore = Infinity;
-  for (let c = 0; c <= COLS - s.width; c++) {
+export function wrongColumn(board: Board, s: Shape, spawnCol: number, lenient: boolean): number {
+  if (!lenient) return spawnCol;
+  let best = spawnCol;
+  let lowest = -1;
+  for (const c of fittingColumns(board, s)) {
     const top = landingRow(board, c, s);
-    if (top < 0) continue;
-    const gaps = gapsFor(board, c, s);
-    const heightUsed = ROWS - top;
-    const score = gaps * 1000 + heightUsed;
-    if (score < bestScore) { bestScore = score; best = c; }
+    if (top > lowest) { lowest = top; best = c; }
   }
   return best;
+}
+
+/** Altura da pilha, em linhas. */
+export function stackHeight(board: Board): number {
+  for (let r = 0; r < ROWS; r++) if (board[r].some(Boolean)) return ROWS - r;
+  return 0;
+}
+
+/** A partir daqui a escolha da forma começa a ajudar; a partir de DANGER_AT, ajuda ao máximo. */
+export const WATCH_AT = 4;
+export const DANGER_AT = 6;
+
+function bestScoreFor(board: Board, s: Shape): number {
+  let best = Infinity;
+  for (let c = 0; c <= COLS - s.width; c++) best = Math.min(best, placementScore(board, c, s));
+  return best;
+}
+
+/**
+ * Escolhe a forma. Sem ajuda (ou com a pilha baixa), sorteia entre as formas do
+ * nível. Com ajuda — o jogador vem acertando quase tudo —, olha o tabuleiro:
+ * - pilha no meio: sorteia entre as 3 que melhor encaixam;
+ * - pilha perto do topo: dá a que melhor encaixa, liberando até as peças pequenas
+ *   dos níveis iniciais — quem vem acertando não perde por azar de forma.
+ */
+export function pickShapeFor(board: Board, level: number, helpful: boolean): Shape {
+  const height = stackHeight(board);
+  const tierOk = SHAPES.filter((s) => s.tier <= shapeTierFor(level));
+  const random = () => tierOk[Math.floor(Math.random() * tierOk.length)];
+  // sem ajuda, a forma não olha se cabe: é isso que deixa a partida poder acabar
+  if (!helpful || height < WATCH_AT) return random();
+  const pool = (height >= DANGER_AT ? SHAPES : tierOk).filter((s) => fitsAnywhere(board, s));
+  if (!pool.length) return random();
+  const ranked = shuffle(pool).sort((a, b) => bestScoreFor(board, a) - bestScoreFor(board, b));
+  const top = height >= DANGER_AT ? 1 : 3;
+  return ranked[Math.floor(Math.random() * Math.min(top, ranked.length))];
 }
 
 export function placePiece(board: Board, colStart: number, s: Shape, color: string): { board: Board; row: number } | null {
@@ -107,10 +176,6 @@ export function clearFullRows(board: Board): { board: Board; cleared: number } {
   const cleared = ROWS - kept.length;
   const filler = Array.from({ length: cleared }, () => Array<Cell>(COLS).fill(null));
   return { board: [...filler, ...kept], cleared };
-}
-
-export function randomStartCol(width: number): number {
-  return Math.floor(Math.random() * (COLS - width + 1));
 }
 
 // ---------- Cores ----------
@@ -227,7 +292,7 @@ function shuffle<T>(arr: T[]): T[] {
  * Em níveis baixos, prioriza palavras que o jogador já acerta mais (começo mais fácil); em níveis
  * altos, sorteia do vocabulário inteiro, misturando as que ele ainda erra mais.
  */
-export function pickPiece(pool: VocabItem[], level: number, stats: WordStats, avoidEn?: string): Piece {
+export function pickPiece(pool: VocabItem[], level: number, stats: WordStats, shape: Shape, avoidEn?: string): Piece {
   let choices = pool.length > 1 ? pool.filter((v) => v.en !== avoidEn) : pool;
   if (level <= 3) {
     const minFamiliarity = level <= 2 ? 0.4 : 0.25;
@@ -242,5 +307,5 @@ export function pickPiece(pool: VocabItem[], level: number, stats: WordStats, av
     .slice(0, 3)
     .map((v) => v.en);
   const options = shuffle([item.en, ...distractors]);
-  return { en: item.en, pt: item.pt, options, shape: pickShape(shapeTierFor(level)) };
+  return { en: item.en, pt: item.pt, options, shape };
 }

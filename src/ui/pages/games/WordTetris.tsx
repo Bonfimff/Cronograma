@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  COLS, NEUTRAL_TONE, ROWS, bestColumn, buildVocabPool, clearFullRows, contrastText, emptyBoard, landingRow,
-  levelFor, pickPiece, placePiece, randomStartCol, randomTone, timeLimitFor, type Board, type Piece, type WordStats,
+  COLS, DANGER_AT, NEUTRAL_TONE, ROWS, bestColumn, buildVocabPool, clearFullRows, contrastText, emptyBoard,
+  fitsAnywhere, levelFor, pickPiece, pickShapeFor, placePiece, randomTone, spawnColumn, stackHeight,
+  timeLimitFor, wrongColumn, type Board, type Piece, type WordStats,
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
@@ -11,6 +12,10 @@ import { Goat } from '../../components/Cutouts';
 const BEST_KEY = 'word-tetris-best';
 const STATS_KEY = 'word-tetris-word-stats';
 const DROP_MS = 320;
+/** Quantas respostas recentes contam pra decidir se o jogador "vem acertando". */
+const RECENT = 8;
+/** Acima desse aproveitamento recente, um erro perto do topo não encerra a partida. */
+const LENIENT_ACCURACY = 0.7;
 
 type Falling = { piece: Piece; col: number; row: number; color: string; dropping: boolean };
 type Current = { piece: Piece; col: number; board: Board; limit: number; start: number };
@@ -40,6 +45,13 @@ export function WordTetris() {
   const currentRef = useRef<Current | null>(null);
   const scoreRef = useRef(0);
   const streakRef = useRef(0);
+  const recentRef = useRef<boolean[]>([]);
+
+  /** O jogador vem acertando quase tudo? (com poucas respostas ainda, assume que sim) */
+  const doingWell = () => {
+    const recent = recentRef.current;
+    return recent.length < 4 || recent.filter(Boolean).length / recent.length >= LENIENT_ACCURACY;
+  };
   const statsRef = useRef<WordStats | null>(null);
   if (statsRef.current === null) statsRef.current = loadStats();
 
@@ -63,7 +75,12 @@ export function WordTetris() {
   const finish = (piece: Piece, spawnCol: number, boardAtSpawn: Board, correct: boolean) => {
     clearTimers();
     currentRef.current = null;
-    const targetCol = correct ? bestColumn(boardAtSpawn, piece.shape) : spawnCol;
+    // o aproveitamento é medido antes de contar esta resposta
+    const lenient = stackHeight(boardAtSpawn) >= DANGER_AT && doingWell();
+    recentRef.current = [...recentRef.current, correct].slice(-RECENT);
+    const targetCol = correct
+      ? bestColumn(boardAtSpawn, piece.shape)
+      : wrongColumn(boardAtSpawn, piece.shape, spawnCol, lenient);
     const color = randomTone(correct);
     const placed = placePiece(boardAtSpawn, targetCol, piece.shape, color);
     if (!placed) { setOver(true); return; }
@@ -106,10 +123,12 @@ export function WordTetris() {
   const spawnPiece = (currentBoard: Board, currentScore: number) => {
     if (pool.length < 4) return;
     const level = levelFor(currentScore);
-    const piece = pickPiece(pool, level, statsRef.current!, lastEnRef.current);
+    const shape = pickShapeFor(currentBoard, level, doingWell());
+    const piece = pickPiece(pool, level, statsRef.current!, shape, lastEnRef.current);
     lastEnRef.current = piece.en;
-    const col = randomStartCol(piece.shape.width);
-    if (landingRow(currentBoard, col, piece.shape) < 0) { setOver(true); return; }
+    // só acaba se a peça não couber em lugar nenhum — não pela coluna sorteada
+    if (!fitsAnywhere(currentBoard, piece.shape)) { setOver(true); return; }
+    const col = spawnColumn(currentBoard, piece.shape);
     setFalling({ piece, col, row: 0, color: NEUTRAL_TONE, dropping: false });
     setTimeLeft(1);
     const c: Current = { piece, col, board: currentBoard, limit: timeLimitFor(level), start: Date.now() };
@@ -149,6 +168,7 @@ export function WordTetris() {
     clearTimers();
     scoreRef.current = 0;
     streakRef.current = 0;
+    recentRef.current = [];
     lastEnRef.current = undefined;
     setScore(0);
     setLines(0);
