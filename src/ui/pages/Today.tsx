@@ -4,6 +4,7 @@ import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/d
 import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
+import { Bolt, Cat, Plane, Sparkle } from '../components/Doodles';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -40,9 +41,9 @@ export function Today() {
         <p className="eyebrow">{weekdayName(d)} · {fmtShort(d)}</p>
         <h1>{plan?.theme || 'Hoje'}</h1>
         {plan?.objective && <p className="lead">{plan.objective}</p>}
-        <blockquote className="quote">
+        <blockquote className="note tape">
           “{en}”
-          <span className="quote-pt">{pt}</span>
+          <span className="note-sub">{pt}</span>
         </blockquote>
         <div className="actions left">
           <a className="primary" href="#/scan">Escanear folha</a>
@@ -51,7 +52,10 @@ export function Today() {
       </section>
 
       <section>
-        <h2>Sessões de hoje {list.length > 0 && <small>{doneCount}/{list.length}</small>}</h2>
+        <h2 className="head-row">
+          <Bolt className="doodle mark" width="12" />
+          Sessões de hoje {list.length > 0 && <small>{doneCount}/{list.length}</small>}
+        </h2>
         {list.length > 0 && (
           <div className="progress" style={{ marginBottom: 12 }}>
             <span style={{ width: `${(doneCount / list.length) * 100}%` }} />
@@ -62,7 +66,10 @@ export function Today() {
 
       {due.length > 0 && (
         <section>
-          <h2>Para revisar <a className="more" href="#/revisao">ver tudo</a></h2>
+          <h2 className="head-row">
+            <Sparkle className="doodle mark" width="14" />
+            Para revisar <a className="more" href="#/revisao">ver tudo</a>
+          </h2>
           <p className="chips">
             {due.slice(0, 12).map((i) => (
               <a key={i.ref} href={`#/conteudo/${i.ref}`} className={`chip s-${i.state}`}>{refLabel(i.ref)}</a>
@@ -81,6 +88,12 @@ export function Today() {
         <a className="ghost small" href="#/dados">Backup dos dados</a>
         <a className="ghost small" href="#/jogos">Jogar</a>
       </section>
+
+      <footer className="page-foot">
+        <Cat className="doodle" width="52" />
+        <span className="foot-line">Inglês no seu ritmo.</span>
+        <Plane className="doodle mint" width="40" />
+      </footer>
     </>
   );
 }

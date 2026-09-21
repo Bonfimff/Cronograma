@@ -11,6 +11,7 @@ import { DataPage } from './pages/DataPage';
 import { BuilderPage } from './pages/BuilderPage';
 import { GamesPage } from './pages/GamesPage';
 import { WordTetris } from './pages/games/WordTetris';
+import { DoodleDefs } from './components/Doodles';
 
 const NAV = [
   { to: '', label: 'Hoje', icon: '◐' },
@@ -61,6 +62,7 @@ export function App() {
 
   return (
     <div className={`app ${bare ? 'bare' : ''}`}>
+      <DoodleDefs />
       <header className="topbar no-print">
         <nav className="nav">
           {NAV.map((n) => (

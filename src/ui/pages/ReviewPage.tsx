@@ -9,6 +9,7 @@ import { createSession } from '../../core/sessions/sessions';
 import { addDays, fmtShort, today } from '../../core/dates';
 import { KIND_LABEL } from '../../core/planning/weeks';
 import { Empty } from '../components/common';
+import { Books, Ghost } from '../components/Doodles';
 
 const ORDER: ReviewState[] = ['reinforce', 'review', 'not_reviewed', 'scheduled', 'consolidated'];
 
@@ -43,6 +44,14 @@ export function ReviewPage() {
         <p className="eyebrow">Revisão</p>
         <h1>Revisar, reforçar, consolidar</h1>
         <p className="lead">Selecione conteúdos para montar uma sessão de revisão com os exemplos e exercícios deles.</p>
+        <blockquote className="note tape">
+          “Repetição é progresso.”
+          <span className="note-sub">Rever é o que transforma contato em memória.</span>
+        </blockquote>
+        <div className="doodle-row">
+          <Books className="doodle" width="46" />
+          <Ghost className="doodle mark" width="30" />
+        </div>
       </section>
 
       {!total && <Empty>O histórico começa quando você finaliza a primeira sessão.</Empty>}

@@ -6,6 +6,7 @@ import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from
 import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
 import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
+import { CalendarDoodle } from '../components/Doodles';
 
 export function WeekPage({ start }: { start?: string }) {
   const data = useData();
@@ -23,6 +24,7 @@ export function WeekPage({ start }: { start?: string }) {
           <a href={`#/semana/${addDays(ws, -7)}`}>‹</a>
           <h1>{fmtShort(ws)} – {fmtShort(addDays(ws, 6))}</h1>
           <a href={`#/semana/${addDays(ws, 7)}`}>›</a>
+          <CalendarDoodle className="doodle mark week-doodle" width="26" />
         </div>
         <p className="flow">
           {counts.map(([k, n], i) => (
@@ -41,6 +43,10 @@ export function WeekPage({ start }: { start?: string }) {
           <a className="ghost small" href={`#/montar?semana=${ws}`}>Montar semana (JSON)</a>
           <a className="ghost small" href={`#/imprimir?modo=week&semana=${ws}`}>Imprimir plano semanal</a>
         </div>
+        <blockquote className="note right tape tape-right">
+          “Disciplina também é liberdade.”
+          <span className="note-sub">Planeje a semana, depois é só seguir.</span>
+        </blockquote>
       </section>
 
       <nav className="daystrip">

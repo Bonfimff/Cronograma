@@ -30,10 +30,13 @@ html, body {
   margin: 0; color: var(--ink); font: 16px/1.5 var(--sans); -webkit-text-size-adjust: 100%;
   background: var(--paper);
   background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"),
     radial-gradient(1200px 600px at 50% -10%, rgba(78, 205, 196, .06), transparent 70%),
     radial-gradient(800px 500px at 100% 100%, rgba(244, 185, 66, .04), transparent 70%);
   background-attachment: fixed;
+  background-blend-mode: soft-light, normal, normal;
 }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 a { color: inherit; }
 h1, h2, h3 { line-height: 1.15; margin: 0 0 .5rem; font-weight: 700; letter-spacing: -.015em; }
 h1 { font-size: 1.9rem; }
@@ -96,8 +99,39 @@ section { margin: 0 0 24px; }
 .inset { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; margin: 12px 0; }
 .danger { border-top: 1px solid var(--rule); padding-top: 16px; }
 
-/* ---------- cartões e adesivos ---------- */
+/* ---------- recortes de papel, fitas e rabiscos ---------- */
 .card { background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px; }
+
+/* papelzinho rasgado (o recorte vem do filtro SVG aplicado só no fundo, o texto fica nítido) */
+.note {
+  position: relative; display: block; padding: 16px 20px 18px; margin: 18px 4px 22px;
+  color: #221f19; font-family: var(--hand); font-size: 1.5rem; line-height: 1.15;
+  transform: rotate(-1.2deg);
+}
+.note::before {
+  content: ''; position: absolute; inset: -5px; z-index: -1;
+  background: #f2e8d2; filter: url(#torn); box-shadow: 0 8px 22px rgba(0, 0, 0, .5);
+}
+.note > * { position: relative; }
+.note .note-sub { display: block; font-family: var(--sans); font-size: .72rem; font-weight: 600; color: #6c6455; margin-top: 4px; letter-spacing: .02em; }
+.note.right { transform: rotate(1.4deg); }
+
+/* fita crepe */
+.tape::after {
+  content: ''; position: absolute; top: -14px; left: 22px; width: 76px; height: 24px; z-index: 1;
+  background: rgba(211, 193, 156, .82); transform: rotate(-7deg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 5px, rgba(0,0,0,.72) 5px 10px);
+  mask-image: repeating-linear-gradient(90deg, #000 0 5px, rgba(0,0,0,.72) 5px 10px);
+}
+.tape.tape-right::after { left: auto; right: 22px; transform: rotate(6deg); }
+
+/* tira de papel rasgado usada como divisória */
+.tear { position: relative; height: 14px; margin: 26px 0; }
+.tear::before {
+  content: ''; position: absolute; inset: 0 -8px; background: #e9dcc0; filter: url(#torn-soft); opacity: .9;
+}
+
 .quote {
   font-family: var(--hand); font-size: 1.45rem; line-height: 1.25; color: var(--ink);
   border-left: 3px solid var(--marker); padding: 2px 0 2px 14px; margin: 14px 0 18px;
@@ -105,8 +139,27 @@ section { margin: 0 0 24px; }
 .quote .quote-pt { display: block; font-family: var(--sans); font-size: .78rem; color: var(--ink-3); margin-top: 2px; }
 .sticker {
   display: inline-block; font-family: var(--hand); font-size: 1.15rem; font-weight: 700;
-  color: var(--paper); background: var(--marker); padding: 2px 12px 3px; border-radius: 4px;
-  transform: rotate(-3deg); line-height: 1.2;
+  color: #221f19; background: var(--marker); padding: 2px 12px 3px; border-radius: 3px;
+  transform: rotate(-3deg); line-height: 1.2; box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+/* rabiscos */
+.doodle { display: block; color: var(--ink-2); opacity: .75; pointer-events: none; }
+.doodle.mark { color: var(--marker); opacity: .95; }
+.doodle.mint { color: var(--accent); opacity: .9; }
+.doodle-float { position: absolute; z-index: 2; }
+.head-row { display: flex; align-items: center; gap: 12px; }
+.head-row .doodle { flex: none; }
+
+.doodle-row { display: flex; align-items: flex-end; gap: 16px; margin: 10px 0 2px; opacity: .85; }
+.week-doodle { margin-left: auto; }
+.page-foot { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 32px 0 8px; opacity: .8; }
+.foot-line { font-family: var(--hand); font-size: 1.35rem; color: var(--ink-2); }
+
+/* marca-texto amarelo atrás dos títulos */
+.hero h1 {
+  display: inline; background-image: linear-gradient(transparent 58%, rgba(244, 185, 66, .28) 58%, rgba(244, 185, 66, .28) 92%, transparent 92%);
+  padding: 0 2px;
 }
 .progress { height: 6px; border-radius: 99px; background: var(--rule); overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s ease; }
