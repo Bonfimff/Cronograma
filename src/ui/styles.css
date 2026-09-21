@@ -629,21 +629,36 @@ h3 { font-size: .95rem; }
   color: var(--ink); margin: 4px auto 10px; max-width: 30ch; text-wrap: balance;
 }
 .wt-quip i { font-style: normal; color: var(--ink-3); font-size: .9em; }
-.wt-quip .bleat {
-  display: inline-block; color: var(--marker); font-size: 1.15em;
-  animation: bleat-text 2.6s ease-in-out infinite;
+/* balão do berro, saindo da boca — aparece só enquanto a boca está aberta */
+.goat-stage { position: relative; width: 124px; margin: 0 auto; }
+.goat-balloon {
+  position: absolute; left: 74%; top: 50%; z-index: 2;
+  padding: 4px 12px 6px; white-space: nowrap;
+  font-family: var(--hand); font-weight: 700; font-size: 1.45rem; line-height: 1;
+  color: #221f19; background: #fbfaf7; border: 2px solid #221f19; border-radius: 18px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .5);
+  transform-origin: 0% 60%;
+  animation: balloon 2.6s ease-out infinite;
 }
-@keyframes bleat-text {
-  0%, 22%, 72%, 100% { transform: scale(1); }
-  30% { transform: scale(1.14, .92); }
-  40% { transform: scale(1.08, 1.02); }
-  50% { transform: scale(1.14, .94); }
-  60% { transform: scale(1.1, 1); }
+/* rabicho na lateral, apontando pra boca */
+.goat-balloon::before, .goat-balloon::after {
+  content: ''; position: absolute; top: 58%; translate: 0 -50%;
+  border-style: solid; border-color: transparent;
+}
+.goat-balloon::before { left: -17px; border-width: 8px 17px 8px 0; border-right-color: #221f19; }
+.goat-balloon::after  { left: -12px; border-width: 6px 13px 6px 0; border-right-color: #fbfaf7; }
+@keyframes balloon {
+  0%, 24%  { opacity: 0; transform: scale(.4) rotate(-6deg); }
+  29%      { opacity: 1; transform: scale(1.08) rotate(-3deg); }
+  33%, 45% { opacity: 1; transform: scale(1) rotate(-4deg); }
+  50%      { opacity: 1; transform: scale(1.05) rotate(-2deg); }
+  55%, 63% { opacity: 1; transform: scale(1) rotate(-4deg); }
+  68%, 100% { opacity: 0; transform: scale(.7) rotate(-6deg); }
 }
 
 .wt-gameover .big-line { font-size: .92rem; color: var(--ink-3); margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .goat-talk, .wt-quip .bleat { animation: none; }
+  .goat-talk, .goat-balloon { animation: none; }
   .goat-talk { background-position: 0% 0; }
 }
