@@ -71,8 +71,20 @@ export function SignpostLive({ className, width }: C) {
     </span>
   );
 }
-/** Bode de olhos arregalados, gritando. */
-export const Goat = (p: C) => <Cut file="goat" {...p} />;
+/**
+ * Cabra berrando, quadro a quadro. Os 4 quadros (boca aberta → fechando →
+ * quase fechada → fechada) ficam lado a lado numa imagem só, já alinhados entre
+ * si; o CSS troca o quadro visível no compasso do berro.
+ */
+export function GoatTalking({ className, width }: C) {
+  return (
+    <span
+      className={`goat-talk ${className ?? ''}`}
+      style={{ width, backgroundImage: `url(${BASE}cut/goat-talk.webp)` }}
+      aria-hidden
+    />
+  );
+}
 /** Dinossauro subindo preso a balões. */
 export const Trex = (p: C) => <Cut file="trex" {...p} />;
 /** Guaxinim com café e espada. */

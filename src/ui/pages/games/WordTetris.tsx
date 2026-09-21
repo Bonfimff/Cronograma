@@ -7,7 +7,7 @@ import {
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
 import { StarBadge } from '../../components/Doodles';
-import { Goat } from '../../components/Cutouts';
+import { GoatTalking } from '../../components/Cutouts';
 
 const BEST_KEY = 'word-tetris-best';
 const STATS_KEY = 'word-tetris-word-stats';
@@ -279,7 +279,7 @@ export function WordTetris() {
       {over && (
         <section className="actions left">
           <div className="wt-gameover">
-            <Goat className="cut-gameover" width="104" />
+            <GoatTalking width={124} />
             <p className="wt-quip">
               “Toda vez que eu me deparo com essa situação aqui, me dá vontade de berrar{' '}
               <b className="bleat">Beeeeeeeé</b> <i>(igual a uma cabra)</i>, é isso…”

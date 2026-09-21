@@ -514,7 +514,6 @@ h3 { font-size: .95rem; }
 /* gato do megafone, espiando por cima do recorte de papel */
 .cut-shout { position: absolute; right: -4px; top: -40px; z-index: 3; transform: rotate(-4deg); }
 /* bode do fim de jogo */
-.cut-gameover { margin: 0 auto 6px; transform: rotate(-3deg); }
 @media (max-width: 380px) {
   .cut-float-right { width: 64px; }
   .cut-shout { width: 74px; top: -32px; }
@@ -593,17 +592,36 @@ h3 { font-size: .95rem; }
 
 /* ---------- fim de jogo: a cabra berrando ---------- */
 .wt-gameover { text-align: center; }
-.cut-gameover {
-  transform-origin: 50% 86%;
-  animation: bleat 1.15s ease-in-out infinite;
+/*
+ * Quadros no sprite: 0 aberta, 1 fechando, 2 quase fechada, 3 fechada.
+ * steps(1) segura cada quadro até o próximo ponto — nada de transição borrada.
+ * Fechada → vai abrindo → BERRA (~1s) → vai fechando → descansa.
+ */
+.goat-talk {
+  display: block; margin: 0 auto 8px; aspect-ratio: 274 / 300; max-width: 100%;
+  background-repeat: no-repeat; background-size: 400% 100%; background-position: 100% 0;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, .65));
+  transform: rotate(-3deg);
+  animation: goat-frames 2.6s steps(1, end) infinite, goat-shake 2.6s linear infinite;
 }
-/* esticar e achatar em volta do queixo dá a impressão de berro */
-@keyframes bleat {
-  0%, 100% { transform: rotate(-3deg) scale(1, 1); }
-  18%      { transform: rotate(-4.5deg) scale(.96, 1.06); }
-  42%      { transform: rotate(-1.5deg) scale(1.04, .95); }
-  66%      { transform: rotate(-4deg) scale(.97, 1.04); }
-  84%      { transform: rotate(-2.5deg) scale(1.02, .98); }
+@keyframes goat-frames {
+  0%   { background-position: 100% 0; }
+  14%  { background-position: 66.667% 0; }
+  20%  { background-position: 33.333% 0; }
+  26%  { background-position: 0% 0; }
+  66%  { background-position: 33.333% 0; }
+  72%  { background-position: 66.667% 0; }
+  78%  { background-position: 100% 0; }
+}
+/* tremidinha só enquanto a boca está aberta */
+@keyframes goat-shake {
+  0%, 25%, 67%, 100% { transform: rotate(-3deg) translate(0, 0); }
+  30% { transform: rotate(-4.5deg) translate(-1px, 0); }
+  36% { transform: rotate(-1.5deg) translate(1px, -1px); }
+  42% { transform: rotate(-4deg) translate(-1px, 1px); }
+  48% { transform: rotate(-2deg) translate(1px, 0); }
+  54% { transform: rotate(-4deg) translate(0, -1px); }
+  60% { transform: rotate(-2.5deg) translate(-1px, 0); }
 }
 
 .wt-quip {
@@ -613,17 +631,19 @@ h3 { font-size: .95rem; }
 .wt-quip i { font-style: normal; color: var(--ink-3); font-size: .9em; }
 .wt-quip .bleat {
   display: inline-block; color: var(--marker); font-size: 1.15em;
-  animation: bleat-text 1.15s ease-in-out infinite;
+  animation: bleat-text 2.6s ease-in-out infinite;
 }
 @keyframes bleat-text {
-  0%, 100% { transform: scale(1, 1); }
-  18%      { transform: scale(1.06, .94); }
-  42%      { transform: scale(.96, 1.05); }
-  66%      { transform: scale(1.05, .96); }
+  0%, 22%, 72%, 100% { transform: scale(1); }
+  30% { transform: scale(1.14, .92); }
+  40% { transform: scale(1.08, 1.02); }
+  50% { transform: scale(1.14, .94); }
+  60% { transform: scale(1.1, 1); }
 }
 
 .wt-gameover .big-line { font-size: .92rem; color: var(--ink-3); margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .cut-gameover, .wt-quip .bleat { animation: none; }
+  .goat-talk, .wt-quip .bleat { animation: none; }
+  .goat-talk { background-position: 0% 0; }
 }
