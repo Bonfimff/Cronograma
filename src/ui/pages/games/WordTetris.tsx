@@ -5,7 +5,7 @@ import {
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
-import { Praise } from '../../components/Doodles';
+import { Cat, StarBadge } from '../../components/Doodles';
 
 const BEST_KEY = 'word-tetris-best';
 const STATS_KEY = 'word-tetris-word-stats';
@@ -196,7 +196,10 @@ export function WordTetris() {
       </section>
 
       <section>
-        <div className="wt-board">
+        <div className="wt-stage">
+          {levelUp && <StarBadge className="wt-levelup">level<br />up!</StarBadge>}
+          <Cat className="doodle wt-cat" width="44" />
+          <div className="wt-board">
           {board.map((row, r) => row.map((cell, c) => cell && (
             <div
               key={`${r}-${c}`}
@@ -227,6 +230,7 @@ export function WordTetris() {
               {falling.piece.pt}
             </div>
           )}
+          </div>
         </div>
         {falling && !falling.dropping && (
           <div className={`wt-timer ${timeLeft < .3 ? 'hurry' : ''}`}>
@@ -241,7 +245,6 @@ export function WordTetris() {
         )}
       </section>
 
-      {levelUp && <p className="wt-levelup"><Praise>level up!</Praise></p>}
       {paused && !over && <p className="wt-paused">pausado</p>}
       {toast && <p className={toast.ok ? 'ok-line' : 'warn'}>{toast.text}</p>}
 

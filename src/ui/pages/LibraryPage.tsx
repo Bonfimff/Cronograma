@@ -52,6 +52,7 @@ function Detail({ r }: { r: ContentRef }) {
         <div className="paper-card tape">
           <p className="eyebrow">{KIND_LABEL[kind]}{st && <> · {STATE_LABEL[st.state]}</>}</p>
           <h1 className="en">{refLabel(r)} {kind !== 'grammar' && <button className="say" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))}>▶</button>}</h1>
+          <span className="sticker sticker-go">let's go</span>
         </div>
       </section>
 

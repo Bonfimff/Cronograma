@@ -11,14 +11,14 @@ import { DataPage } from './pages/DataPage';
 import { BuilderPage } from './pages/BuilderPage';
 import { GamesPage } from './pages/GamesPage';
 import { WordTetris } from './pages/games/WordTetris';
-import { DoodleDefs } from './components/Doodles';
+import { Camera, DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
 
 const NAV = [
-  { to: '', label: 'Hoje', icon: '◐' },
-  { to: 'semana', label: 'Semana', icon: '▦' },
-  { to: 'revisao', label: 'Revisão', icon: '↻' },
-  { to: 'conteudo', label: 'Conteúdo', icon: '≡' },
-  { to: 'jogos', label: 'Jogos', icon: '▤' },
+  { to: '', label: 'Hoje', Icon: IconHome },
+  { to: 'semana', label: 'Semana', Icon: IconWeek },
+  { to: 'revisao', label: 'Revisão', Icon: IconReview },
+  { to: 'conteudo', label: 'Conteúdo', Icon: IconContent },
+  { to: 'jogos', label: 'Jogos', Icon: IconGames },
 ];
 
 export function App() {
@@ -67,7 +67,7 @@ export function App() {
         <nav className="nav">
           {NAV.map((n) => (
             <a key={n.to} href={`#/${n.to}`} className={section === n.to ? 'on' : ''}>
-              <i aria-hidden>{n.icon}</i>
+              <n.Icon className="nav-icon" width="22" />
               <span>{n.label}</span>
             </a>
           ))}
@@ -77,7 +77,7 @@ export function App() {
       {!bare && section !== 'jogos' && (
         <div className="fab-stack no-print">
           <a className="fab fab-primary" href="#/scan?cam=1" aria-label="Escanear com a câmera">
-            <i aria-hidden>⌗</i>
+            <Camera className="fab-icon" width="24" />
           </a>
           <a className="fab fab-secondary" href="#/scan?manual=1" aria-label="Digitar código">
             <i aria-hidden>⌨</i>

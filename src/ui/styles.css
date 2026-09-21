@@ -66,9 +66,9 @@ code, .mono { font-family: var(--mono); font-size: .85em; }
   padding: 10px 0 8px; font-size: .68rem; text-decoration: none; color: var(--ink-3);
   transition: color .15s ease;
 }
-.nav a i { font-style: normal; font-size: 1.15rem; line-height: 1.1; }
+.nav-icon { width: 22px; height: 22px; color: currentColor; opacity: .85; }
 .nav a.on { color: var(--accent); font-weight: 600; }
-.nav a.on i { filter: drop-shadow(0 0 8px rgba(78, 205, 196, .5)); }
+.nav a.on .nav-icon { opacity: 1; filter: drop-shadow(0 0 8px rgba(78, 205, 196, .5)); }
 @media (min-width: 760px) {
   .app { padding-bottom: 0; }
   .nav { position: static; border: 0; gap: 4px; background: none; backdrop-filter: none; padding: 12px 16px 0; max-width: 760px; margin: 0 auto; justify-content: flex-end; }
@@ -446,9 +446,52 @@ h3 { font-size: .95rem; }
 .wt-gameover { width: 100%; }
 .wt-controls { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
 .wt-controls button { width: 40px; height: 40px; padding: 0; border-radius: 50%; min-height: 0; font-size: .9rem; }
-.wt-levelup {
-  font-family: var(--hand); font-size: 1.4rem; font-weight: 700; color: var(--marker);
-  text-align: center; margin: 10px 0 0; animation: pop .5s ease;
+/* selo em estrela, como na referência */
+.starbadge { position: relative; display: inline-flex; align-items: center; justify-content: center; color: var(--marker); }
+.starbadge svg { width: 100%; height: 100%; display: block; }
+.starbadge b {
+  position: absolute; font-family: var(--hand); font-weight: 700; line-height: .9;
+  font-size: .8rem; text-align: center; color: var(--marker); text-transform: uppercase;
+  letter-spacing: .02em; transform: rotate(-6deg);
 }
+.wt-stage { position: relative; width: 100%; max-width: 300px; margin: 0 auto; }
+.wt-levelup {
+  position: absolute; top: 34%; right: -28px; z-index: 3; width: 74px; height: 74px;
+  transform: rotate(8deg); animation: pop .5s ease; pointer-events: none;
+}
+.wt-cat {
+  position: absolute; right: -26px; bottom: -14px; z-index: 3; opacity: .6;
+  transform: rotate(-8deg);
+}
+@media (max-width: 400px) { .wt-cat { right: -10px; width: 34px; } }
 @keyframes pop { from { transform: scale(.7) rotate(-6deg); opacity: 0; } to { transform: scale(1) rotate(-2deg); opacity: 1; } }
 .wt-paused { text-align: center; color: var(--ink-2); font-family: var(--hand); font-size: 1.5rem; margin-top: 12px; }
+
+/* ---------- detalhes de recorte da referência ---------- */
+
+/* rabisco do tipo de sessão, num quadradinho na esquerda da linha */
+.row-icon {
+  flex: none; width: 34px; height: 34px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper-3); border: 1px solid var(--rule); color: var(--ink-2);
+}
+.row-icon svg { display: block; }
+.row-icon.k-new { color: var(--k-new); }
+.row-icon.k-practice { color: var(--k-practice); }
+.row-icon.k-review { color: var(--k-review); }
+.row-icon.k-reinforce { color: var(--k-reinforce); }
+.row-icon.k-consolidate { color: var(--k-consolidate); }
+.row:active .row-icon { border-color: var(--accent); }
+
+/* botões que carregam um rabisco junto do texto */
+.primary.with-icon svg, .ghost.with-icon svg { display: block; flex: none; }
+.fab-icon { width: 24px; height: 24px; }
+
+/* rabisco solto ao lado de um título de seção */
+.head-aside { margin-left: auto; opacity: .5; transform: rotate(6deg); }
+
+/* adesivo preso no canto do recorte de papel */
+.sticker-go {
+  position: absolute; right: -6px; bottom: -12px; z-index: 3;
+  font-size: 1rem; padding: 1px 10px 2px; transform: rotate(-8deg);
+}

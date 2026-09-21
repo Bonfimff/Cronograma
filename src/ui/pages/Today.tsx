@@ -4,7 +4,7 @@ import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/d
 import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
-import { Bolt, Cat, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
+import { Bolt, Camera, Cat, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -52,7 +52,7 @@ export function Today() {
         </blockquote>
         <Swash className="chalk-swash" />
         <div className="actions left">
-          <a className="primary" href="#/scan">Escanear folha</a>
+          <a className="primary with-icon" href="#/scan"><Camera width="19" />Escanear folha</a>
           <a className="ghost" href={`#/semana/${weekStartOf(d)}`}>Planejar semana</a>
         </div>
       </section>
@@ -61,6 +61,7 @@ export function Today() {
         <h2 className="head-row">
           <Bolt className="doodle mark" width="12" />
           Sessões de hoje {list.length > 0 && <small>{doneCount}/{list.length}</small>}
+          <Notebook className="doodle head-aside" width="30" />
         </h2>
         {list.length > 0 && (
           <div className="progress" style={{ marginBottom: 12 }}>

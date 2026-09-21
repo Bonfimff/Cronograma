@@ -1,6 +1,7 @@
 import type { Session, SessionKind, SessionStatus } from '../../core/types';
 import { KIND_LABEL } from '../../core/planning/weeks';
 import { fmtShort, weekdayShort } from '../../core/dates';
+import { KindIcon } from './Doodles';
 
 const STATUS_LABEL: Record<SessionStatus, string> = {
   planned: 'planejada', in_progress: 'em andamento', done: 'concluída',
@@ -20,6 +21,9 @@ export function SessionRow({ s, showDate }: { s: Session; showDate?: boolean }) 
   return (
     <a className="row" href={`#/sessao/${s.id}`}>
       {showDate && <span className="row-date">{weekdayShort(s.date)} {fmtShort(s.date)}</span>}
+      <span className={`row-icon k-${s.kind}`} aria-hidden>
+        <KindIcon kind={s.kind} width="17" />
+      </span>
       <span className="row-main">
         <span className="row-title">{s.title}</span>
         <span className="row-sub">
