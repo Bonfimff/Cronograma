@@ -6,6 +6,7 @@ import { reviewStatus, STATE_LABEL } from '../../core/reviews/reviews';
 import { speak } from '../../core/lessons/lesson';
 import { fmtShort } from '../../core/dates';
 import { Empty } from '../components/common';
+import { LaptopCut } from '../components/Cutouts';
 
 export function LibraryPage({ refId }: { refId?: string }) {
   const data = useData();
@@ -19,7 +20,7 @@ export function LibraryPage({ refId }: { refId?: string }) {
     <>
       <section className="hero">
         <p className="eyebrow">Conteúdo</p>
-        <h1>Biblioteca</h1>
+        <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
         <p className="lead">{content.words.length} palavras · {content.expressions.length} expressões · {content.patterns.length} padrões · {content.topics.length} temas. Edite os arquivos em <code>/content</code>.</p>
       </section>
       {groups.map((g) => (

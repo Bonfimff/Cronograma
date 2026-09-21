@@ -1,4 +1,5 @@
-import { Cat, Device, Praise } from '../components/Doodles';
+import { Device, Praise } from '../components/Doodles';
+import { CatTeacher } from '../components/Cutouts';
 
 export function GamesPage() {
   return (
@@ -12,7 +13,7 @@ export function GamesPage() {
             “Mesmo objetivo.<br />Mais leve. Do seu jeito.”
             <span className="chalk-sub">Pequenos passos, grandes resultados.</span>
           </blockquote>
-          <Cat className="doodle" width="46" />
+          <CatTeacher className="cut-aside" width="96" />
         </div>
       </section>
       <section className="game-cards">

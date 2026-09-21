@@ -4,7 +4,8 @@ import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/d
 import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
-import { Bolt, Camera, Cat, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
+import { Bolt, Camera, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
+import { Philosopher } from '../components/Cutouts';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -43,7 +44,7 @@ export function Today() {
             <p className="eyebrow">{weekdayName(d)} · {fmtShort(d)}</p>
             <h1>{plan?.theme || 'Hoje'}</h1>
           </div>
-          <Cat className="doodle" width="54" />
+          <Philosopher className="cut-hero" width="104" />
         </div>
         {plan?.objective && <p className="lead">{plan.objective}</p>}
         <blockquote className="chalk">

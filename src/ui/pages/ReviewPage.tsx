@@ -9,7 +9,8 @@ import { createSession } from '../../core/sessions/sessions';
 import { addDays, fmtShort, today } from '../../core/dates';
 import { KIND_LABEL } from '../../core/planning/weeks';
 import { Empty } from '../components/common';
-import { Books, Ghost, Praise } from '../components/Doodles';
+import { Praise } from '../components/Doodles';
+import { CrowBooks, GhostCut } from '../components/Cutouts';
 
 const ORDER: ReviewState[] = ['reinforce', 'review', 'not_reviewed', 'scheduled', 'consolidated'];
 
@@ -48,9 +49,9 @@ export function ReviewPage() {
           <blockquote className="chalk">
             “Repetição<br />é progresso.”
           </blockquote>
-          <Ghost className="doodle" width="34" />
+          <GhostCut className="cut-aside" width="72" />
         </div>
-        <Books className="doodle" width="58" />
+        <CrowBooks className="cut-corner" width="92" />
       </section>
 
       {!total && <Empty>O histórico começa quando você finaliza a primeira sessão.</Empty>}
