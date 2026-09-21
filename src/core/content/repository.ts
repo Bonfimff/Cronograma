@@ -1,6 +1,7 @@
 import type {
   ContentBundle, ContentKind, ContentRef, CopyBlock, Example, Exercise, Expression, Grammar, Pattern, Topic, Word,
 } from '../types';
+import { normalizeContent } from './normalize';
 import words from '../../../content/words.json';
 import expressions from '../../../content/expressions.json';
 import patterns from '../../../content/patterns.json';
@@ -40,7 +41,9 @@ function merge<T extends { id: string }>(base: T[], extra: T[] = []): T[] {
   return [...m.values()];
 }
 
-export function setUserContent(user: Partial<ContentBundle> = {}): void {
+export function setUserContent(raw: Partial<ContentBundle> = {}): void {
+  // conteúdo do usuário vem de pacote, backup ou dados antigos: completa os campos que as telas leem
+  const user = normalizeContent(raw);
   (Object.keys(baseContent) as (keyof ContentBundle)[]).forEach((k) => {
     (content as unknown as Record<string, unknown[]>)[k] = merge(baseContent[k] as { id: string }[], user[k] as { id: string }[]);
   });

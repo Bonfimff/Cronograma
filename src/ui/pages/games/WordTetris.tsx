@@ -5,13 +5,14 @@ import {
   timeLimitFor, wrongColumn, type Board, type Piece, type WordStats,
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
+import { GAME_KEYS } from '../../../core/storage/backup';
 import { Empty } from '../../components/common';
 import { StarBadge } from '../../components/Doodles';
 import { GoatTalking } from '../../components/Cutouts';
 import { GameTabs } from './GameTabs';
 
-const BEST_KEY = 'word-tetris-best';
-const STATS_KEY = 'word-tetris-word-stats';
+const BEST_KEY = GAME_KEYS.tetrisBest;
+const STATS_KEY = GAME_KEYS.tetrisWordStats;
 const DROP_MS = 320;
 /** Quantas respostas recentes contam pra decidir se o jogador "vem acertando". */
 const RECENT = 8;

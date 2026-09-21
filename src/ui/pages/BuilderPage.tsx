@@ -4,7 +4,7 @@ import { store } from '../../core/storage/store';
 import { addDays, fmtShort, today, weekdayName, weekStartOf } from '../../core/dates';
 import { KIND_LABEL } from '../../core/planning/weeks';
 import {
-  applyPackage, checkPackage, exportPackage, parsePackage, templatePackage, type WeekPackage,
+  applyPackage, checkPackage, exportPackage, parsePackage, templatePackage, type ApplyResult, type WeekPackage,
 } from '../../core/planning/weekPackage';
 
 function download(name: string, data: unknown) {
@@ -15,10 +15,13 @@ function download(name: string, data: unknown) {
   a.click();
 }
 
-const CONTENT_LABEL: Record<string, string> = {
-  words: 'palavras', expressions: 'expressões', patterns: 'padrões', grammar: 'gramática',
-  examples: 'exemplos', topics: 'temas', exercises: 'exercícios',
+/** Nome de cada tipo de conteúdo no singular e no plural. */
+const CONTENT_LABEL: Record<string, [string, string]> = {
+  words: ['palavra', 'palavras'], expressions: ['expressão', 'expressões'], patterns: ['padrão', 'padrões'],
+  grammar: ['tópico de gramática', 'tópicos de gramática'], examples: ['exemplo', 'exemplos'],
+  topics: ['tema', 'temas'], exercises: ['exercício', 'exercícios'],
 };
+const count = (n: number, [one, many]: [string, string]) => `${n} ${n === 1 ? one : many}`;
 
 /** Montar a semana a partir de um arquivo JSON (pacote semanal). */
 export function BuilderPage({ week: initialWeek }: { week?: string }) {
@@ -26,7 +29,7 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
   const [week, setWeek] = useState(weekStartOf(initialWeek ?? today()));
   const [text, setText] = useState('');
   const [replace, setReplace] = useState(true);
-  const [done, setDone] = useState<string[] | null>(null);
+  const [done, setDone] = useState<(ApplyResult & { week: string }) | null>(null);
 
   const parsed = useMemo(() => (text.trim() ? parsePackage(text) : null), [text]);
   const pkg = parsed && typeof parsed !== 'string' ? (parsed as WeekPackage) : null;
@@ -34,9 +37,9 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
 
   const apply = () => {
     if (!pkg || !check?.ok) return;
-    let created: string[] = [];
-    store.update((d) => { created = applyPackage(d, pkg, { replacePlanned: replace }); });
-    setDone(created);
+    let result: ApplyResult | null = null;
+    store.update((d) => { result = applyPackage(d, pkg, { replacePlanned: replace }); });
+    if (result) setDone({ ...(result as ApplyResult), week: weekStartOf(pkg.week) });
     setText('');
   };
 
@@ -66,10 +69,20 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
 
       {done && (
         <section className="brief">
-          <p><strong>Semana importada.</strong> {done.length} sessões criadas: <span className="mono">{done.join(', ')}</span></p>
+          <p>
+            <strong>Semana importada.</strong>{' '}
+            {[
+              done.created.length && `${done.created.length} criadas (${done.created.join(', ')})`,
+              done.updated.length && `${done.updated.length} atualizadas com o mesmo código`,
+              done.kept.length && `${done.kept.length} já iniciadas/feitas mantidas`,
+              done.removed.length && `${done.removed.length} removidas`,
+            ].filter(Boolean).join(' · ') || 'Nenhuma sessão alterada.'}
+          </p>
           <div className="actions left">
-            <button className="primary small" onClick={() => go(`/semana/${pkg?.week ? weekStartOf(pkg.week) : week}`)}>Abrir semana</button>
-            <a className="ghost small" href={`#/imprimir?ids=${done.join(',')}`}>Imprimir folhas</a>
+            <button className="primary small" onClick={() => go(`/semana/${done.week}`)}>Abrir semana</button>
+            {done.created.length + done.updated.length > 0 && (
+              <a className="ghost small" href={`#/imprimir?ids=${[...done.created, ...done.updated].join(',')}`}>Imprimir folhas</a>
+            )}
           </div>
         </section>
       )}
@@ -103,8 +116,17 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
               <div>
                 <h3>Pré-visualização · semana {fmtShort(check.summary.week)}</h3>
                 <p className="muted">
-                  {check.summary.sessions} sessões em {check.summary.days} dias
-                  {Object.keys(check.summary.content).length > 0 && <> · conteúdo novo: {Object.entries(check.summary.content).map(([k, n]) => `${n} ${CONTENT_LABEL[k] ?? k}`).join(', ')}</>}
+                  {count(check.summary.sessions, ['sessão', 'sessões'])} em {count(check.summary.days, ['dia', 'dias'])}
+                  {Object.keys(check.summary.content).length > 0 && <> · conteúdo novo: {Object.entries(check.summary.content).map(([k, n]) => count(n, CONTENT_LABEL[k] ?? [k, k])).join(', ')}</>}
+                  {check.summary.sheets > 0 && <> · {count(check.summary.sheets, ['folha', 'folhas'])} da Biblioteca</>}
+                </p>
+                <p className="muted small-text">
+                  {[
+                    check.summary.plan.create && `cria ${check.summary.plan.create}`,
+                    check.summary.plan.update.length && `atualiza ${check.summary.plan.update.length} com o mesmo código`,
+                    check.summary.plan.keep.length && `mantém ${check.summary.plan.keep.length} já iniciadas/feitas`,
+                    check.summary.plan.remove.length && `remove ${check.summary.plan.remove.length}`,
+                  ].filter(Boolean).join(' · ')}
                 </p>
                 <ul className="plain">
                   {pkg.days?.map((d) => (
@@ -113,6 +135,7 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
                       {d.sessions?.map((s, i) => (
                         <div key={i} className="pkg-session">
                           <span className={`kind k-${s.kind}`}>{KIND_LABEL[s.kind] ?? s.kind}</span> {s.title}
+                          {s.id && <span className="mono muted"> · {s.id}</span>}
                           {s.expected?.result && <div className="muted">→ {s.expected.result}</div>}
                           <div className="muted small-text">
                             {s.refs?.length ?? 0} conteúdos
@@ -133,8 +156,8 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
             <label className="check">
               <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
               <span>
-                Substituir as sessões ainda não iniciadas desta semana
-                {check.summary.replacesIds.length > 0 && <> ({check.summary.replacesIds.length}: {check.summary.replacesIds.join(', ')})</>}
+                Tirar da semana as sessões não iniciadas que não estão no arquivo
+                {check.summary.plan.remove.length > 0 && <> ({check.summary.plan.remove.length}: {check.summary.plan.remove.join(', ')})</>}
               </span>
             </label>
             <div className="actions">

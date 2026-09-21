@@ -34,8 +34,14 @@ src/core/                lógica pura, sem React (reaproveitável no Android)
 src/ui/                  interface React (telas e componentes)
 ```
 
-Os dados do usuário (sessões, semanas, folhas, histórico) ficam no navegador,
-com um único formato (`UserData`). Faça o backup em **Hoje → Backup dos dados**.
+Os dados do usuário (sessões, semanas, folhas impressas, folhas da Biblioteca, histórico) ficam no
+navegador, com um único formato (`UserData`). Faça o backup em **Hoje → Backup dos dados** — ele leva
+também os recordes dos jogos.
+
+## Arquivos JSON
+
+Dois arquivos entram no app: o **pacote semanal** (Semana → Montar semana) e o **backup**.
+Formato, campos obrigatórios e o que acontece ao reimportar: [docs/formato-semana.md](docs/formato-semana.md).
 
 ## Folhas
 

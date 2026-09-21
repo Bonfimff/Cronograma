@@ -3,13 +3,14 @@ import { buildVocabPool } from '../../../core/games/wordTetris';
 import { newRound, pointsFor, type MatchRound } from '../../../core/games/wordMatch';
 import { sheetsOf } from '../../../core/library/sheets';
 import { speak } from '../../../core/lessons/lesson';
+import { GAME_KEYS } from '../../../core/storage/backup';
 import { playCrack, primeAudio } from '../../sfx';
 import { useData } from '../../hooks';
 import { Crown, Praise } from '../../components/Doodles';
 import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
 
-const BEST_KEY = 'word-match-best-streak';
+const BEST_KEY = GAME_KEYS.matchBestStreak;
 /** Duração da chicotada inteira: toma impulso, golpeia, estala, recolhe. */
 const WHIP_MS = 1150;
 /** Fases, em fração da chicotada: fim do impulso, estalo, fim do tranco. */
