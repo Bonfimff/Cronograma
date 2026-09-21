@@ -451,11 +451,6 @@ h3 { font-size: .95rem; }
   position: absolute; top: 34%; right: -28px; z-index: 3; width: 74px; height: 74px;
   transform: rotate(8deg); animation: pop .5s ease; pointer-events: none;
 }
-.wt-cat {
-  position: absolute; right: -26px; bottom: -14px; z-index: 3; opacity: .6;
-  transform: rotate(-8deg);
-}
-@media (max-width: 400px) { .wt-cat { right: -10px; width: 34px; } }
 @keyframes pop { from { transform: scale(.7) rotate(-6deg); opacity: 0; } to { transform: scale(1) rotate(-2deg); opacity: 1; } }
 .wt-paused { text-align: center; color: var(--ink-2); font-family: var(--hand); font-size: 1.5rem; margin-top: 12px; }
 
@@ -560,6 +555,27 @@ h3 { font-size: .95rem; }
 .lid-l { left: 34.7%; }
 .lid-r { left: 46.8%; }
 
+/* olho: elipse do papel apagando a bolinha original + pupila que anda */
+.newsman .eyeball {
+  position: absolute; top: 24.78%; width: 5.38%; height: 1.9%;
+  translate: -50% -50%; border-radius: 50%; background: #fbfaf7;
+}
+.eyeball-l { left: 34.9%; }
+.eyeball-r { left: 47.2%; }
+.newsman .pupil {
+  position: absolute; top: 50%; left: 78%; translate: -50% -50%;
+  width: 31%; height: 50%; min-width: 1px; min-height: 1px;
+  border-radius: 50%; background: #15140f;
+  animation: look 6.5s infinite;
+}
+
+/* olha pra direita, desvia pra esquerda, e volta junto com a piscada */
+@keyframes look {
+  0%, 43% { left: 78%; }
+  46%, 88% { left: 22%; }
+  91%, 100% { left: 78%; }
+}
+
 /* pisca duas vezes seguidas e descansa */
 @keyframes blink {
   0%, 89.4% { opacity: 0; }
@@ -569,4 +585,6 @@ h3 { font-size: .95rem; }
   96.6%, 100% { opacity: 0; }
 }
 
-@media (prefers-reduced-motion: reduce) { .newsman .lid { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .newsman .lid, .newsman .pupil { animation: none; }
+}

@@ -37,13 +37,17 @@ export const LaptopCut = (p: C) => <Cut file="laptop" {...p} />;
 export const NewspaperMan = (p: C) => <Cut file="newspaper-man" {...p} />;
 
 /**
- * O mesmo sujeito, piscando: as pálpebras são dois discos da cor do papel
- * sobrepostos aos olhos, que aparecem por um instante (duas vezes seguidas).
+ * O mesmo sujeito, piscando e olhando de lado. A bolinha do olho é fixa na
+ * imagem, então cada olho recebe uma elipse da cor do papel por cima (que
+ * apaga a bolinha original) e uma pupila nova que anda de um lado pro outro.
+ * As pálpebras vêm depois, para passarem por cima de tudo.
  */
 export function NewspaperManLive({ className, width }: C) {
   return (
     <span className={`cut-live newsman ${className ?? ''}`} style={{ width }}>
       <Cut file="newspaper-man" />
+      <i className="eyeball eyeball-l"><i className="pupil" /></i>
+      <i className="eyeball eyeball-r"><i className="pupil" /></i>
       <i className="lid lid-l" />
       <i className="lid lid-r" />
     </span>

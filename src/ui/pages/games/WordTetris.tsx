@@ -5,7 +5,7 @@ import {
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
-import { Cat, StarBadge } from '../../components/Doodles';
+import { StarBadge } from '../../components/Doodles';
 import { Goat } from '../../components/Cutouts';
 
 const BEST_KEY = 'word-tetris-best';
@@ -199,7 +199,6 @@ export function WordTetris() {
       <section>
         <div className="wt-stage">
           {levelUp && <StarBadge className="wt-levelup">level<br />up!</StarBadge>}
-          <Cat className="doodle wt-cat" width="44" />
           <div className="wt-board">
           {board.map((row, r) => row.map((cell, c) => cell && (
             <div
