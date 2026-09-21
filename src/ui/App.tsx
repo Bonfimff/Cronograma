@@ -11,7 +11,7 @@ import { DataPage } from './pages/DataPage';
 import { BuilderPage } from './pages/BuilderPage';
 import { GamesPage } from './pages/GamesPage';
 import { WordTetris } from './pages/games/WordTetris';
-import { Camera, DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
+import { DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
 
 const NAV = [
   { to: '', label: 'Hoje', Icon: IconHome },
@@ -74,16 +74,6 @@ export function App() {
         </nav>
       </header>
       <main className="main">{page}</main>
-      {!bare && section !== 'jogos' && (
-        <div className="fab-stack no-print">
-          <a className="fab fab-primary" href="#/scan?cam=1" aria-label="Escanear com a câmera">
-            <Camera className="fab-icon" width="24" />
-          </a>
-          <a className="fab fab-secondary" href="#/scan?manual=1" aria-label="Digitar código">
-            <i aria-hidden>⌨</i>
-          </a>
-        </div>
-      )}
     </div>
   );
 }

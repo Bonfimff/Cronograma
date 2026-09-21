@@ -53,7 +53,7 @@ export function Today() {
         </blockquote>
         <Swash className="chalk-swash" />
         <div className="actions left">
-          <a className="primary with-icon" href="#/scan"><Camera width="19" />Escanear folha</a>
+          <a className="primary with-icon" href="#/scan?cam=1"><Camera width="19" />Escanear folha</a>
           <a className="ghost" href={`#/semana/${weekStartOf(d)}`}>Planejar semana</a>
         </div>
       </section>

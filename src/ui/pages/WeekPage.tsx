@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
-import { getWeek, KIND_LABEL, KIND_ORDER, saveDayPlan, saveWeekGoals, sessionsOn } from '../../core/planning/weeks';
+import { getWeek, KIND_LABEL, KIND_ORDER, saveDayPlan, sessionsOn } from '../../core/planning/weeks';
 import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from '../../core/dates';
 import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
 import { SessionForm } from '../components/SessionForm';
@@ -32,14 +32,6 @@ export function WeekPage({ start }: { start?: string }) {
             <span key={k}>{i > 0 && <b>→</b>}<span className={`kind k-${k}`}>{KIND_LABEL[k]}</span> <em>{n}</em></span>
           ))}
         </p>
-        <textarea
-          className="goals"
-          rows={2}
-          placeholder="Objetivos da semana…"
-          defaultValue={week.goals}
-          key={ws}
-          onBlur={(e) => store.update((d) => saveWeekGoals(d, ws, e.target.value))}
-        />
         <div className="actions left">
           <a className="ghost small" href={`#/montar?semana=${ws}`}>Montar semana (JSON)</a>
           <a className="ghost small" href={`#/imprimir?modo=week&semana=${ws}`}>Imprimir plano semanal</a>

@@ -79,14 +79,7 @@ code, .mono { font-family: var(--mono); font-size: .85em; }
 }
 .app.bare .topbar { display: none; }
 .app.bare { padding-bottom: 0; }
-.fab-stack { position: fixed; left: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 12; display: flex; flex-direction: column; gap: 10px; }
-.fab { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
-.fab i { font-style: normal; font-size: 1.3rem; line-height: 1; }
-.fab-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 22px rgba(78, 205, 196, .3); }
-.fab-secondary { width: 42px; height: 42px; background: var(--paper-2); color: var(--ink-2); border: 1px solid var(--rule); }
-.fab-secondary i { font-size: 1.05rem; }
 @media (min-width: 760px) {
-  .fab-stack { bottom: 24px; }
 }
 .app.bare .main:has(.print-page) { max-width: 1280px; padding: 0; }
 
@@ -255,7 +248,6 @@ legend { font-size: .85rem; color: var(--ink-2); font-weight: 600; margin-bottom
 .flow em { font-style: normal; color: var(--ink-2); }
 .week-nav { display: flex; align-items: center; gap: 12px; }
 .week-nav a { text-decoration: none; font-size: 1.5rem; color: var(--ink-3); padding: 0 6px; }
-.goals { margin-top: 10px; }
 
 /* faixa de dias da semana */
 .daystrip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
@@ -485,7 +477,6 @@ h3 { font-size: .95rem; }
 
 /* botões que carregam um rabisco junto do texto */
 .primary.with-icon svg, .ghost.with-icon svg { display: block; flex: none; }
-.fab-icon { width: 24px; height: 24px; }
 
 /* rabisco solto ao lado de um título de seção */
 .head-aside { margin-left: auto; opacity: .5; transform: rotate(6deg); }
