@@ -514,3 +514,22 @@ h3 { font-size: .95rem; }
   .cut-title { width: 66px; vertical-align: -14px; }
 }
 @media print { .cutout { display: none; } }
+
+/* posições novas dos recortes */
+.praise-line { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+/* recorte pequeno junto de um selo escrito à mão */
+.cut-inline { transform: rotate(3deg); margin-bottom: -4px; }
+/* recorte solto no rodapé da página */
+.cut-foot { margin-left: auto; transform: rotate(-4deg); }
+/* recorte encostado na quina de cima da seção */
+.cut-float-right { position: absolute; top: -6px; right: 0; z-index: 1; transform: rotate(4deg); }
+.hero { position: relative; }
+.hero .week-nav, .hero .eyebrow { position: relative; z-index: 2; }
+/* gato do megafone, espiando por cima do recorte de papel */
+.cut-shout { position: absolute; right: -4px; top: -40px; z-index: 3; transform: rotate(-4deg); }
+/* bode do fim de jogo */
+.cut-gameover { margin: 0 auto 6px; transform: rotate(-3deg); }
+@media (max-width: 380px) {
+  .cut-float-right { width: 64px; }
+  .cut-shout { width: 74px; top: -32px; }
+}

@@ -5,7 +5,7 @@ import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
 import { Bolt, Camera, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
-import { Philosopher } from '../components/Cutouts';
+import { Capybara, CrowRaincoat, Philosopher } from '../components/Cutouts';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -74,7 +74,10 @@ export function Today() {
           <p className="praise-line"><Praise>tudo feito hoje!</Praise></p>
         )}
         {list.length > 0 && doneCount < list.length && (
-          <p className="praise-line"><Praise>keep going</Praise></p>
+          <p className="praise-line">
+            <Praise>keep going</Praise>
+            <Capybara className="cut-inline" width="64" />
+          </p>
         )}
       </section>
 
@@ -106,6 +109,7 @@ export function Today() {
       <footer className="page-foot">
         <span className="foot-line">Inglês no seu ritmo.</span>
         <Plane className="doodle mark" width="40" />
+        <CrowRaincoat className="cut-foot" width="76" />
       </footer>
     </>
   );

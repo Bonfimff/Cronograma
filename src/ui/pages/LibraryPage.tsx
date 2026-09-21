@@ -6,7 +6,7 @@ import { reviewStatus, STATE_LABEL } from '../../core/reviews/reviews';
 import { speak } from '../../core/lessons/lesson';
 import { fmtShort } from '../../core/dates';
 import { Empty } from '../components/common';
-import { LaptopCut } from '../components/Cutouts';
+import { CatMegaphone, LaptopCut, NewspaperMan } from '../components/Cutouts';
 
 export function LibraryPage({ refId }: { refId?: string }) {
   const data = useData();
@@ -22,6 +22,7 @@ export function LibraryPage({ refId }: { refId?: string }) {
         <p className="eyebrow">Conteúdo</p>
         <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
         <p className="lead">{content.words.length} palavras · {content.expressions.length} expressões · {content.patterns.length} padrões · {content.topics.length} temas. Edite os arquivos em <code>/content</code>.</p>
+        <NewspaperMan className="cut-corner" width="78" />
       </section>
       {groups.map((g) => (
         <section key={g.k}>
@@ -54,6 +55,7 @@ function Detail({ r }: { r: ContentRef }) {
           <p className="eyebrow">{KIND_LABEL[kind]}{st && <> · {STATE_LABEL[st.state]}</>}</p>
           <h1 className="en">{refLabel(r)} {kind !== 'grammar' && <button className="say" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))}>▶</button>}</h1>
           <span className="sticker sticker-go">let's go</span>
+          <CatMegaphone className="cut-shout" width="92" />
         </div>
       </section>
 

@@ -10,7 +10,7 @@ import { addDays, fmtShort, today } from '../../core/dates';
 import { KIND_LABEL } from '../../core/planning/weeks';
 import { Empty } from '../components/common';
 import { Praise } from '../components/Doodles';
-import { CrowBooks, GhostCut } from '../components/Cutouts';
+import { CrowBooks, GhostCut, Trex } from '../components/Cutouts';
 
 const ORDER: ReviewState[] = ['reinforce', 'review', 'not_reviewed', 'scheduled', 'consolidated'];
 
@@ -80,7 +80,7 @@ export function ReviewPage() {
 
       {sel.length > 0 && (
         <div className="actions sticky">
-          <span className="praise-line"><Praise>good job</Praise></span>
+          <span className="praise-line"><Praise>good job</Praise><Trex className="cut-inline" width="54" /></span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <button className="primary" onClick={create}>Criar sessão ({sel.length})</button>
         </div>

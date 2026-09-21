@@ -6,6 +6,7 @@ import {
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
 import { Cat, StarBadge } from '../../components/Doodles';
+import { Goat } from '../../components/Cutouts';
 
 const BEST_KEY = 'word-tetris-best';
 const STATS_KEY = 'word-tetris-word-stats';
@@ -259,6 +260,7 @@ export function WordTetris() {
       {over && (
         <section className="actions left">
           <div className="wt-gameover">
+            <Goat className="cut-gameover" width="92" />
             <p className="big-line">Fim de jogo — {score} pontos{score >= best && score > 0 ? ' (novo recorde!)' : ''}</p>
           </div>
           <button className="primary" onClick={restart}>Jogar de novo</button>

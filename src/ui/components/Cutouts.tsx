@@ -33,3 +33,19 @@ export const CrowBooks = (p: C) => <Cut file="crow-books" {...p} />;
 export const GhostCut = (p: C) => <Cut file="ghost" {...p} />;
 /** Mãos digitando num laptop, em meio-tom. */
 export const LaptopCut = (p: C) => <Cut file="laptop" {...p} />;
+/** Sujeito escondido atrás do jornal. */
+export const NewspaperMan = (p: C) => <Cut file="newspaper-man" {...p} />;
+/** Poste de placas de rua, bem alto. */
+export const Signpost = (p: C) => <Cut file="signpost" {...p} />;
+/** Bode de olhos arregalados, gritando. */
+export const Goat = (p: C) => <Cut file="goat" {...p} />;
+/** Dinossauro subindo preso a balões. */
+export const Trex = (p: C) => <Cut file="trex" {...p} />;
+/** Guaxinim com café e espada. */
+export const Raccoon = (p: C) => <Cut file="raccoon" {...p} />;
+/** Capivara de luvas de boxe. */
+export const Capybara = (p: C) => <Cut file="capybara" {...p} />;
+/** Corvo de capa e botas amarelas. */
+export const CrowRaincoat = (p: C) => <Cut file="crow-raincoat" {...p} />;
+/** Gato de óculos escuros gritando no megafone. */
+export const CatMegaphone = (p: C) => <Cut file="cat-megaphone" {...p} />;

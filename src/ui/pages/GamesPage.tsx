@@ -1,5 +1,5 @@
 import { Device, Praise } from '../components/Doodles';
-import { CatTeacher } from '../components/Cutouts';
+import { CatTeacher, Raccoon } from '../components/Cutouts';
 
 export function GamesPage() {
   return (
@@ -25,7 +25,10 @@ export function GamesPage() {
           <span>Traduza a palavra em português antes que a peça caia. Acertar encaixa a peça; errar deixa a pilha bagunçada.</span>
         </a>
       </section>
-      <p className="praise-line"><Praise>tá bom demais!</Praise></p>
+      <p className="praise-line">
+        <Praise>tá bom demais!</Praise>
+        <Raccoon className="cut-inline" width="70" />
+      </p>
     </>
   );
 }
