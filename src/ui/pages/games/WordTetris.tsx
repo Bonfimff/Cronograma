@@ -281,11 +281,10 @@ export function WordTetris() {
           <div className="wt-gameover">
             <div className="goat-stage">
               <GoatTalking width={124} />
-              <span className="goat-balloon">Béééééééé!</span>
+              <span className="goat-balloon"><b>Béééééééé!</b></span>
             </div>
             <p className="wt-quip">
-              “Toda vez que eu me deparo com essa situação aqui, me dá vontade de berrar{' '}
-              <i>(igual a uma cabra)</i>, é isso…”
+              “Toda vez que eu me deparo com essa situação aqui, me dá vontade de berrar, é isso…”
             </p>
             <p className="big-line">Fim de jogo — {score} pontos{score >= best && score > 0 ? ' (novo recorde!)' : ''}</p>
           </div>
