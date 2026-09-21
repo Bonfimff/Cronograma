@@ -11,6 +11,7 @@ import { DataPage } from './pages/DataPage';
 import { BuilderPage } from './pages/BuilderPage';
 import { GamesPage } from './pages/GamesPage';
 import { WordTetris } from './pages/games/WordTetris';
+import { Flashcards } from './pages/games/Flashcards';
 import { DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
 
 const NAV = [
@@ -54,7 +55,7 @@ export function App() {
     case 'conteudo': page = <LibraryPage refId={rest[0]} />; break;
     case 'dados': page = <DataPage />; break;
     case 'montar': page = <BuilderPage week={route.query.get('semana') ?? undefined} />; break;
-    case 'jogos': page = rest[0] === 'tetris' ? <WordTetris /> : <GamesPage />; break;
+    case 'jogos': page = rest[0] === 'tetris' ? <WordTetris /> : rest[0] === 'flashcards' ? <Flashcards /> : <GamesPage />; break;
     default: page = <Today />;
   }
 

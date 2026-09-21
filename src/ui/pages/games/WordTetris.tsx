@@ -8,6 +8,7 @@ import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
 import { StarBadge } from '../../components/Doodles';
 import { GoatTalking } from '../../components/Cutouts';
+import { GameTabs } from './GameTabs';
 
 const BEST_KEY = 'word-tetris-best';
 const STATS_KEY = 'word-tetris-word-stats';
@@ -202,11 +203,7 @@ export function WordTetris() {
         <h1>Traduza antes que a peça caia</h1>
       </section>
 
-      <div className="wt-tabs">
-        <button className="on">Tetris</button>
-        <span title="Em breve">Palavras</span>
-        <span title="Em breve">Flashcards</span>
-      </div>
+      <GameTabs on="tetris" />
 
       <section className="wt-stats">
         <span><b>{score}</b> pontos</span>

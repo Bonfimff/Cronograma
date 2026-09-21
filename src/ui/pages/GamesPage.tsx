@@ -24,6 +24,12 @@ export function GamesPage() {
           </span>
           <span>Traduza a palavra em português antes que a peça caia. Acertar encaixa a peça; errar deixa a pilha bagunçada.</span>
         </a>
+        <a className="game-card" href="#/jogos/flashcards">
+          <span className="game-card-head">
+            <b>Flashcards</b>
+          </span>
+          <span>Veja a palavra, tente lembrar o significado e toque no cartão para conferir tradução e exemplos.</span>
+        </a>
       </section>
       <p className="praise-line">
         <Praise>tá bom demais!</Praise>

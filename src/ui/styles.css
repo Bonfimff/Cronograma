@@ -670,3 +670,36 @@ h3 { font-size: .95rem; }
   .goat-talk, .goat-balloon, .goat-balloon b { animation: none; }
   .goat-talk { background-position: 0% 0; }
 }
+
+/* abas dos jogos viraram links */
+.wt-tabs a { flex: 1; text-align: center; text-decoration: none; }
+
+/* ---------- flashcards (recorte de papel) ---------- */
+.fc-stage { display: flex; align-items: center; gap: 4px; }
+.fc-arrow {
+  flex: none; width: 34px; height: 60px; border: 0; background: none;
+  color: var(--ink-2); font-size: 2rem; line-height: 1; padding: 0;
+}
+.fc-card {
+  flex: 1; min-width: 0; min-height: 300px; margin: 18px 0 22px; padding: 20px 20px 34px;
+  cursor: pointer; user-select: none;
+  animation: fc-flip .35s ease;
+}
+@keyframes fc-flip { from { transform: rotate(-.7deg) scaleX(.2); } to { transform: rotate(-.7deg) scaleX(1); } }
+.fc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.fc-word { font-size: 1.9rem; margin: 0; color: #221f19; line-height: 1.1; }
+.fc-ipa { margin: 2px 0 0; color: #6c6455; font-size: .95rem; }
+.fc-say { border: 0; background: none; color: #221f19; padding: 4px; }
+.fc-chip {
+  display: inline-block; margin-top: 12px; padding: 3px 12px; border-radius: 999px;
+  background: #bfe7df; color: #1f5c55; font-size: .85rem; font-weight: 600;
+}
+.fc-hint { margin-top: 42px; text-align: center; font-family: var(--hand); font-size: 1.3rem; color: #8a8170; }
+.fc-back { margin-top: 14px; color: #221f19; font-size: .95rem; }
+.fc-back p { margin: 8px 0 2px; }
+.fc-back ul { margin: 0; padding-left: 20px; }
+.fc-back li span { color: #6c6455; }
+.fc-label { font-weight: 700; }
+.fc-go { position: absolute; right: -8px; bottom: -12px; z-index: 3; font-size: 1rem; transform: rotate(-8deg); }
+.fc-count { text-align: center; color: var(--ink-3); margin: 0; }
+@media (prefers-reduced-motion: reduce) { .fc-card { animation: none; } }
