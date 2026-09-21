@@ -1,0 +1,7 @@
+[
+  { "id": "x-qa-how-are-you", "type": "qa", "prompt": "Responda: How are you?", "answer": ["I am fine", "I'm fine", "I am fine, thank you", "I'm fine, thanks", "I am good", "I'm good"], "refs": ["expression:how-are-you"] },
+  { "id": "x-choice-much-many", "type": "choice", "prompt": "How ___ books do you have?", "options": ["much", "many", "old"], "answer": "many", "refs": ["expression:how-many", "expression:how-much"] },
+  { "id": "x-choice-much-water", "type": "choice", "prompt": "How ___ water do you drink?", "options": ["many", "much", "is"], "answer": "much", "refs": ["expression:how-much"] },
+  { "id": "x-match-qwords", "type": "match", "prompt": "Associe as palavras", "pairs": [["how", "como"], ["what", "o que / qual"], ["where", "onde"]], "refs": ["word:how", "word:what", "word:where"] },
+  { "id": "x-produce-intro", "type": "produce", "prompt": "Escreva 3 perguntas para conhecer alguém usando how, what e where.", "refs": ["word:how", "word:what", "word:where"] }
+]

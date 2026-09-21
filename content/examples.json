@@ -1,0 +1,22 @@
+[
+  { "id": "ex-how-are-you", "en": "How are you?", "pt": "Como você está?", "context": "cumprimento" },
+  { "id": "ex-how-are-they", "en": "How are they?", "pt": "Como eles estão?", "context": "estado de outras pessoas" },
+  { "id": "ex-how-is-she", "en": "How is she?", "pt": "Como ela está?", "context": "estado" },
+  { "id": "ex-how-do-you-say", "en": "How do you say this in English?", "pt": "Como se diz isso em inglês?", "context": "maneira" },
+  { "id": "ex-how-do-you-go", "en": "How do you go to work?", "pt": "Como você vai para o trabalho?", "context": "maneira" },
+  { "id": "ex-how-much-is-it", "en": "How much is it?", "pt": "Quanto custa?", "context": "preço" },
+  { "id": "ex-how-much-water", "en": "How much water do you drink?", "pt": "Quanta água você bebe?", "context": "quantidade incontável" },
+  { "id": "ex-how-many-books", "en": "How many books do you have?", "pt": "Quantos livros você tem?", "context": "quantidade contável" },
+  { "id": "ex-how-old", "en": "How old are you?", "pt": "Quantos anos você tem?", "context": "idade" },
+  { "id": "ex-what-is-your-name", "en": "What is your name?", "pt": "Qual é o seu nome?", "context": "apresentação" },
+  { "id": "ex-what-is-this", "en": "What is this?", "pt": "O que é isto?", "context": "identificar coisas" },
+  { "id": "ex-what-do-you-do", "en": "What do you do?", "pt": "O que você faz? (profissão)", "context": "trabalho" },
+  { "id": "ex-where-are-you-from", "en": "Where are you from?", "pt": "De onde você é?", "context": "origem" },
+  { "id": "ex-where-is-it", "en": "Where is it?", "pt": "Onde está?", "context": "localização" },
+  { "id": "ex-where-do-you-live", "en": "Where do you live?", "pt": "Onde você mora?", "context": "moradia" },
+  { "id": "ex-i-am-fine", "en": "I am fine, thank you.", "pt": "Estou bem, obrigado.", "context": "resposta" },
+  { "id": "ex-i-am-from-brazil", "en": "I am from Brazil.", "pt": "Eu sou do Brasil.", "context": "resposta" },
+  { "id": "ex-my-name-is", "en": "My name is Felipe.", "pt": "Meu nome é Felipe.", "context": "resposta" },
+  { "id": "ex-they-are-fine", "en": "They are fine.", "pt": "Eles estão bem.", "context": "resposta" },
+  { "id": "ex-do-you-like-coffee", "en": "Do you like coffee?", "pt": "Você gosta de café?", "context": "pergunta sim/não" }
+]

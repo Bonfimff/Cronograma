@@ -1,0 +1,3 @@
+[
+  { "id": "question-order", "title": "Ordem das perguntas", "explanation": "Em inglês a pergunta muda a ordem da frase: o verbo be (ou o auxiliar do) vem antes do sujeito.", "points": ["Afirmação: You are fine.", "Pergunta: Are you fine?", "Com palavra de pergunta: How are you?", "Outros verbos pedem do: Where do you live?"], "examples": ["ex-how-are-you", "ex-where-do-you-live", "ex-do-you-like-coffee"], "copy": { "lines": ["Pergunta = (Wh-) + be/do + sujeito (+ verbo)?", "You are fine. → How are you?"] } }
+]
