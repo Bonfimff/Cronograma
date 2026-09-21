@@ -24,6 +24,12 @@ export function GamesPage() {
           </span>
           <span>Traduza a palavra em português antes que a peça caia. Acertar encaixa a peça; errar deixa a pilha bagunçada.</span>
         </a>
+        <a className="game-card" href="#/jogos/palavras">
+          <span className="game-card-head">
+            <b>Ligar palavras</b>
+          </span>
+          <span>Ligue cada palavra em português à tradução em inglês. Acertou, estala o chicote e a linha fica marcada.</span>
+        </a>
         <a className="game-card" href="#/jogos/flashcards">
           <span className="game-card-head">
             <b>Flashcards</b>
