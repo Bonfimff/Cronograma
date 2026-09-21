@@ -865,15 +865,51 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .mt-pill:disabled { opacity: 1; }
 .mt-pill.bad { animation: mt-shake .45s ease; }
 .mt-pill.bad::before { box-shadow: 0 0 0 3px #e0574b; }
-.mt-pill.hit { animation: mt-jolt .38s ease; }
+.mt-pill.hit { animation: mt-hurt .7s cubic-bezier(.2, .8, .3, 1); }
+.mt-pill.hit::before { animation: mt-redflash .7s ease; }
+/* depois da chicotada a palavra fica torta e marcada com o vergão */
+.mt-en.hurt { transform: rotate(var(--hurt)) scale(.97); }
+.mt-en.hurt::after {
+  /* z-index -1: fica em cima do papel (::before) mas embaixo das letras — a palavra continua legível */
+  content: ''; position: absolute; left: 4%; right: 4%; top: 50%; height: 11px; z-index: -1; pointer-events: none;
+  transform: translateY(-50%) rotate(var(--welt)); transform-origin: 0 50%;
+  background:
+    linear-gradient(90deg, transparent, rgba(190, 30, 30, .9) 10%, rgba(235, 70, 60, .95) 50%, rgba(190, 30, 30, .9) 90%, transparent) top / 100% 4px no-repeat,
+    linear-gradient(90deg, transparent 8%, rgba(190, 30, 30, .75) 20%, rgba(220, 60, 50, .8) 60%, transparent 95%) bottom / 100% 3px no-repeat;
+  filter: blur(.35px) drop-shadow(0 0 3px rgba(220, 50, 40, .55));
+  border-radius: 3px;
+  animation: mt-welt .45s ease-out both;
+}
+/* o vergão aparece riscando e incha */
+@keyframes mt-welt {
+  0% { clip-path: inset(0 100% 0 0); }
+  40% { clip-path: inset(0 0 0 0); }
+  70% { transform: translateY(-50%) rotate(var(--welt)) scaleY(1.5); }
+  100% { transform: translateY(-50%) rotate(var(--welt)) scaleY(1); }
+}
 @keyframes mt-shake {
   0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); }
   40% { transform: translateX(5px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); }
 }
-/* a palavra leva a chicotada: pula e treme */
-@keyframes mt-jolt {
-  0% { transform: none; } 25% { transform: translateX(7px) rotate(2.5deg) scale(1.06); }
-  55% { transform: translateX(-3px) rotate(-1.5deg); } 100% { transform: none; }
+/* a palavra leva a chicotada: é arremessada, treme de dor e fica torta */
+@keyframes mt-hurt {
+  0% { transform: none; }
+  12% { transform: translateX(14px) rotate(8deg) scale(1.12, .86); }
+  24% { transform: translateX(-6px) rotate(-5deg) scale(.95, 1.06); }
+  36% { transform: translateX(4px) rotate(4deg); }
+  48% { transform: translateX(-3px) rotate(-2deg); }
+  60% { transform: translateX(2px) rotate(3deg); }
+  100% { transform: rotate(var(--hurt)) scale(.97); }
+}
+@keyframes mt-redflash {
+  0%, 100% { box-shadow: none; }
+  10% { box-shadow: 0 0 0 4px rgba(230, 60, 50, .9), 0 0 24px rgba(230, 60, 50, .8); }
+}
+/* o quadro inteiro sente o golpe */
+.mt-board.shake { animation: mt-board-shake .3s ease; }
+@keyframes mt-board-shake {
+  0%, 100% { transform: none; } 20% { transform: translate(4px, -2px); }
+  40% { transform: translate(-3px, 2px); } 60% { transform: translate(2px, -1px); } 80% { transform: translate(-1px, 1px); }
 }
 
 /* camada por cima: linhas das ligações e o chicote */
@@ -884,30 +920,50 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   filter: drop-shadow(0 0 3px rgba(78, 205, 196, .5));
 }
 @keyframes mt-draw { to { stroke-dashoffset: 0; } }
-.mt-lash { fill: none; stroke: #c9975b; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .6)); }
+/* chicote de couro preto trançado */
+.mt-lash path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mt-lash-edge { stroke: rgba(239, 233, 220, .22); }
+.mt-lash-body { stroke: #1b1a19; }
+.mt-lash-braid { stroke: #8d8477; stroke-dasharray: 1.6 2.2; opacity: .75; }
+.mt-lash-fall { stroke: #b9b0a0; }
+.mt-lash-cracker { stroke: #e9e2d4; stroke-width: 1; opacity: .9; }
 /* a mão puxa pra trás e dá o golpe */
-.mt-hand { animation: mt-swing .56s ease-in-out forwards; }
-@keyframes mt-swing {
-  0% { transform: rotate(-28deg) translateX(-4px); opacity: 0; }
-  12% { opacity: 1; }
-  30% { transform: rotate(14deg) translateX(4px); }
-  60% { transform: rotate(4deg); opacity: 1; }
-  100% { transform: rotate(-6deg); opacity: 0; }
-}
+/* o balanço da mão é calculado no JS junto com o chicote (o cabo não pode soltar do fio) */
 .mt-fist { fill: #f1e2c8; stroke: #221f19; stroke-width: 1.6; }
 .mt-knuckles { fill: none; stroke: #221f19; stroke-width: 1; opacity: .55; }
-.mt-handle { fill: #8a5a2f; stroke: #221f19; stroke-width: 1; }
-.mt-sleeve { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linecap: round; }
+.mt-handle { fill: #1b1a19; stroke: rgba(239, 233, 220, .35); stroke-width: .9; }
+.mt-braid { fill: none; stroke: #6f675c; stroke-width: 1; stroke-linecap: round; }
+.mt-collar { stroke: #8d8477; stroke-width: 1.6; stroke-linecap: round; }
+.mt-knot { fill: #1b1a19; stroke: rgba(239, 233, 220, .45); stroke-width: 1; }
+.mt-loop { fill: none; stroke: #1b1a19; stroke-width: 2.4; stroke-linecap: round; filter: drop-shadow(0 0 1px rgba(239, 233, 220, .5)); }
 /* o estalo na palavra */
-.mt-crack { opacity: 0; animation: mt-crack .34s ease-out both; }
-.mt-crack path { stroke: var(--marker); stroke-width: 2.4; stroke-linecap: round; }
+/* o estalo: clarão, estouro de raios e o TCHÁ! (todos começam no momento do estalo) */
+/* fill forwards (não both): durante a espera fica o estado base, invisível */
+.mt-flash, .mt-crack, .mt-bang { opacity: 0; animation-delay: var(--crack); animation-fill-mode: forwards; }
+.mt-flash { fill: #fff; animation-name: mt-flash; animation-duration: .32s; animation-timing-function: ease-out; }
+@keyframes mt-flash { 0% { opacity: .95; transform: scale(.2); } 100% { opacity: 0; transform: scale(2.4); } }
+.mt-crack { animation-name: mt-crack; animation-duration: .45s; animation-timing-function: cubic-bezier(.1, .9, .3, 1); }
+.mt-crack path { stroke: var(--marker); stroke-width: 3.2; stroke-linecap: round; }
+.mt-crack path:nth-child(even) { stroke: #fff; stroke-width: 2.2; }
 @keyframes mt-crack {
-  0% { opacity: 0; transform: scale(.3); } 25% { opacity: 1; }
-  100% { opacity: 0; transform: scale(1.5); }
+  0% { opacity: 1; transform: scale(.2); } 30% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+.mt-bang {
+  font-family: var(--hand); font-weight: 700; font-size: 24px; fill: var(--marker);
+  stroke: #221f19; stroke-width: 4px; paint-order: stroke; transform-box: fill-box; transform-origin: center;
+  animation-name: mt-bang; animation-duration: .6s; animation-timing-function: cubic-bezier(.2, 1.4, .4, 1);
+}
+@keyframes mt-bang {
+  0% { opacity: 0; transform: scale(.2) rotate(-20deg); }
+  25% { opacity: 1; transform: scale(1.25) rotate(-10deg); }
+  60% { opacity: 1; transform: scale(1) rotate(-12deg); }
+  100% { opacity: 0; transform: scale(1.05) translateY(-6px) rotate(-12deg); }
 }
 .mt-done { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 14px; }
 @media (prefers-reduced-motion: reduce) {
-  .mt-hand, .mt-lash, .mt-crack { display: none; }
+  .mt-hand, .mt-lash, .mt-crack, .mt-flash, .mt-bang { display: none; }
+  .mt-board.shake, .mt-en.hurt::after { animation: none; }
   .mt-line { animation: none; stroke-dashoffset: 0; }
   .mt-pill.bad, .mt-pill.hit { animation: none; }
 }
