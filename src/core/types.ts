@@ -227,4 +227,16 @@ export interface UserData {
   history: HistoryEntry[];
   /** Conteúdo criado/importado pelo usuário (soma-se ao de /content; mesmo id substitui). */
   content?: Partial<ContentBundle>;
+  /** Folhas criadas pelo usuário na Biblioteca: listas livres de inglês → português. */
+  sheets?: LibrarySheet[];
+}
+
+export interface SheetItem {
+  en: string;
+  pt: string;
+}
+export interface LibrarySheet {
+  id: string;
+  title: string;
+  items: SheetItem[];
 }

@@ -1,42 +1,16 @@
 import { useData } from '../hooks';
 import type { ContentRef, Expression, Grammar, Pattern, Word } from '../../core/types';
-import { allRefs, content, examplesFor, getExamples, KIND_LABEL, parseRef, refLabel, resolve } from '../../core/content/repository';
+import { examplesFor, getExamples, KIND_LABEL, parseRef, refLabel, resolve } from '../../core/content/repository';
 import { entriesFor, EVENT_LABEL } from '../../core/history/history';
 import { reviewStatus, STATE_LABEL } from '../../core/reviews/reviews';
 import { speak } from '../../core/lessons/lesson';
 import { fmtShort } from '../../core/dates';
 import { Empty } from '../components/common';
-import { CatMegaphone, LaptopCut, NewspaperManLive } from '../components/Cutouts';
+import { CatMegaphone } from '../components/Cutouts';
+import { LibraryIndex } from './LibraryIndex';
 
 export function LibraryPage({ refId }: { refId?: string }) {
-  const data = useData();
-  if (refId) return <Detail r={refId as ContentRef} />;
-
-  const groups = (['word', 'expression', 'pattern', 'grammar'] as const).map((k) => ({
-    k, refs: allRefs().filter((r) => parseRef(r).kind === k),
-  }));
-
-  return (
-    <>
-      <section className="hero">
-        <p className="eyebrow">Conteúdo</p>
-        <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
-        <p className="lead">{content.words.length} palavras · {content.expressions.length} expressões · {content.patterns.length} padrões · {content.topics.length} temas. Edite os arquivos em <code>/content</code>.</p>
-        <NewspaperManLive className="cut-corner" width={84} />
-      </section>
-      {groups.map((g) => (
-        <section key={g.k}>
-          <h2>{KIND_LABEL[g.k]}s</h2>
-          <p className="chips">
-            {g.refs.map((r) => {
-              const st = reviewStatus(data, r);
-              return <a key={r} href={`#/conteudo/${r}`} className={`chip ${st ? `s-${st.state}` : ''}`}>{refLabel(r)}</a>;
-            })}
-          </p>
-        </section>
-      ))}
-    </>
-  );
+  return refId ? <Detail r={refId as ContentRef} /> : <LibraryIndex />;
 }
 
 function Detail({ r }: { r: ContentRef }) {

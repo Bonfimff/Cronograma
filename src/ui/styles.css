@@ -739,3 +739,79 @@ h3 { font-size: .95rem; }
 .fc-tip { text-align: center; color: var(--ink-3); font-size: .8rem; margin: 4px 0 0; }
 @media (prefers-reduced-motion: reduce) { .fc-stamp, .fc-card.stamped { animation: none; } }
 .fc-stamp.preview { animation: none; transition: opacity .05s linear; }
+
+/* ---------- Biblioteca: caderno com folhas ---------- */
+/* abas de divisória de caderno, roláveis de lado no celular */
+.lib-tabs {
+  display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  margin: 8px -16px 0; padding: 0 16px; position: relative; z-index: 3;
+}
+.lib-tabs::-webkit-scrollbar { display: none; }
+.lib-tabs button {
+  flex: none; font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer;
+  padding: 9px 14px 11px; margin-bottom: -4px;
+  background: #3a362f; color: #cfc6b3; border: 0; border-radius: 12px 12px 0 0;
+  transition: background .15s ease, transform .15s ease;
+}
+.lib-tabs button small { margin-left: 6px; opacity: .6; font-weight: 500; }
+.lib-tabs button.on { background: #f3ecdc; color: #221f19; transform: translateY(-3px); }
+.lib-tabs button:last-child { background: transparent; border: 1px dashed #5a5448; color: var(--accent); }
+.lib-tabs button:last-child.on { background: #f3ecdc; color: #1f5c55; border-color: transparent; }
+
+.lib-book { position: relative; perspective: 1600px; margin-bottom: 24px; }
+/* folha de caderno: pautada, com margem vermelha à esquerda */
+.lib-sheet {
+  position: relative; min-height: 320px; padding: 18px 16px 22px 46px;
+  color: #221f19; border-radius: 0 6px 8px 6px;
+  background-color: #f3ecdc;
+  background-image:
+    linear-gradient(90deg, transparent 32px, rgba(200, 80, 70, .45) 32px, rgba(200, 80, 70, .45) 34px, transparent 34px),
+    repeating-linear-gradient(180deg, transparent 0 35px, rgba(60, 110, 150, .18) 35px 36px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .45);
+}
+.lib-title { font-family: var(--hand); font-size: 1.8rem; margin: 0 0 6px; color: #221f19; line-height: 1.2; }
+.lib-list { list-style: none; margin: 0; padding: 0; }
+.lib-row {
+  display: flex; align-items: baseline; gap: 10px; min-height: 36px; padding: 6px 0;
+  text-decoration: none; color: inherit;
+}
+a.lib-row:hover .lib-main b { text-decoration: underline; }
+.lib-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.lib-main b { font-weight: 700; }
+.lib-main em { font-style: normal; font-size: .78rem; color: #8a8170; }
+.lib-main .dot { width: 8px; height: 8px; flex: none; align-self: center; }
+.lib-side { color: #5c5546; font-size: .92rem; text-align: right; }
+.lib-note { color: #6c6455; font-size: .92rem; }
+.lib-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.lib-form input {
+  flex: 1 1 120px; min-width: 0; font: inherit; padding: 9px 12px; border-radius: 10px;
+  border: 1.5px solid #cbbf9f; background: #fbf7ec; color: #221f19;
+}
+.lib-form .primary { flex: none; min-height: 42px; }
+.lib-del {
+  flex: none; border: 0; background: none; color: #a7937a; cursor: pointer;
+  font-size: .9rem; padding: 2px 4px;
+}
+.lib-del:hover { color: #b3261e; }
+.lib-remove { display: block; margin: 18px 0 0 auto; color: #a14b42; font-size: .85rem; }
+
+/* virada: a folha antiga fica por cima e gira pela borda até sumir */
+.lib-sheet.turning {
+  position: absolute; inset: 0 0 auto 0; z-index: 2; pointer-events: none;
+  backface-visibility: hidden; animation: lib-turn .65s cubic-bezier(.45, .05, .35, 1) forwards;
+}
+.lib-sheet.turning.fwd { transform-origin: 0% 50%; --turn: -104deg; }
+.lib-sheet.turning.back { transform-origin: 100% 50%; --turn: 104deg; }
+/* sombra que escurece a folha conforme ela vira */
+.lib-sheet.turning::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .35), rgba(0, 0, 0, 0) 70%);
+  opacity: 0; animation: lib-shade .65s ease forwards;
+}
+.lib-sheet.turning.back::after { background: linear-gradient(270deg, rgba(0, 0, 0, .35), rgba(0, 0, 0, 0) 70%); }
+@keyframes lib-turn {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(var(--turn)); }
+}
+@keyframes lib-shade { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lib-sheet.turning { display: none; } }
