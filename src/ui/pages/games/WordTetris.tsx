@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   COLS, NEUTRAL_TONE, ROWS, bestColumn, buildVocabPool, clearFullRows, contrastText, emptyBoard, landingRow,
-  pickPiece, placePiece, randomStartCol, randomTone, type Board, type Piece,
+  levelFor, pickPiece, placePiece, randomStartCol, randomTone, timeLimitFor, type Board, type Piece, type WordStats,
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
 
-const TIME_LIMIT = 8000;
 const BEST_KEY = 'word-tetris-best';
+const STATS_KEY = 'word-tetris-word-stats';
 const DROP_MS = 320;
 
 type Falling = { piece: Piece; col: number; row: number; color: string; dropping: boolean };
 
 const pct = (n: number, total: number) => `${(n / total) * 100}%`;
+
+function loadStats(): WordStats {
+  try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
+}
 
 export function WordTetris() {
   const [pool] = useState(buildVocabPool);
@@ -28,6 +32,14 @@ export function WordTetris() {
   const timeoutRef = useRef<number | undefined>(undefined);
   const intervalRef = useRef<number | undefined>(undefined);
   const lastEnRef = useRef<string | undefined>(undefined);
+  const statsRef = useRef<WordStats | null>(null);
+  if (statsRef.current === null) statsRef.current = loadStats();
+
+  const recordStat = (en: string, correct: boolean) => {
+    const cur = statsRef.current![en] ?? { c: 0, w: 0 };
+    statsRef.current = { ...statsRef.current, [en]: correct ? { c: cur.c + 1, w: cur.w } : { c: cur.c, w: cur.w + 1 } };
+    try { localStorage.setItem(STATS_KEY, JSON.stringify(statsRef.current)); } catch { /* sem storage disponível */ }
+  };
 
   /**
    * Resolve a peça atual. Recebe peça/coluna/tabuleiro explicitamente em vez de ler o state:
@@ -42,6 +54,7 @@ export function WordTetris() {
     const placed = placePiece(boardAtSpawn, targetCol, piece.shape, color);
     if (!placed) { setOver(true); return; }
     if (correct) speak(piece.en);
+    recordStat(piece.en, correct);
     setToast({
       ok: correct,
       text: correct ? `✓ ${piece.pt} = ${piece.en}` : `${piece.pt} = ${piece.en} — a peça caiu torta.`,
@@ -49,34 +62,37 @@ export function WordTetris() {
     setFalling({ piece, col: targetCol, row: placed.row, color, dropping: true });
     window.setTimeout(() => {
       const { board: cleared, cleared: n } = clearFullRows(placed.board);
+      const newScore = score + (correct ? 100 + streak * 20 : 0) + n * 150;
       setBoard(cleared);
       setLines((l) => l + n);
-      setScore((s) => s + (correct ? 100 + streak * 20 : 0) + n * 150);
+      setScore(newScore);
       setStreak((s) => (correct ? s + 1 : 0));
       setToast(null);
       setFalling(null);
-      spawnPiece(cleared);
+      spawnPiece(cleared, newScore);
     }, DROP_MS);
   };
 
-  /** Dispara a peça seguinte; recebe o tabuleiro atual explicitamente (o state ainda pode não ter comitado). */
-  const spawnPiece = (currentBoard: Board) => {
+  /** Dispara a peça seguinte; recebe o tabuleiro e a pontuação atuais explicitamente (o state ainda pode não ter comitado). */
+  const spawnPiece = (currentBoard: Board, currentScore: number) => {
     if (pool.length < 4) return;
-    const piece = pickPiece(pool, lastEnRef.current);
+    const level = levelFor(currentScore);
+    const piece = pickPiece(pool, level, statsRef.current!, lastEnRef.current);
     lastEnRef.current = piece.en;
     const col = randomStartCol(piece.shape.width);
     if (landingRow(currentBoard, col, piece.shape) < 0) { setOver(true); return; }
     setFalling({ piece, col, row: 0, color: NEUTRAL_TONE, dropping: false });
     setTimeLeft(1);
+    const limit = timeLimitFor(level);
     const start = Date.now();
     intervalRef.current = window.setInterval(() => {
-      setTimeLeft(Math.max(0, 1 - (Date.now() - start) / TIME_LIMIT));
+      setTimeLeft(Math.max(0, 1 - (Date.now() - start) / limit));
     }, 100);
-    timeoutRef.current = window.setTimeout(() => finish(piece, col, currentBoard, false), TIME_LIMIT);
+    timeoutRef.current = window.setTimeout(() => finish(piece, col, currentBoard, false), limit);
   };
 
   useEffect(() => {
-    spawnPiece(emptyBoard());
+    spawnPiece(emptyBoard(), 0);
     return () => { window.clearTimeout(timeoutRef.current); window.clearInterval(intervalRef.current); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -95,7 +111,7 @@ export function WordTetris() {
     setOver(false);
     lastEnRef.current = undefined;
     setBoard(emptyBoard());
-    spawnPiece(emptyBoard());
+    spawnPiece(emptyBoard(), 0);
   };
 
   if (pool.length < 4) {
@@ -120,6 +136,7 @@ export function WordTetris() {
 
       <section className="wt-stats">
         <span><b>{score}</b> pontos</span>
+        <span><b>{levelFor(score)}</b> nível</span>
         <span><b>{streak}</b> sequência</span>
         <span><b>{lines}</b> linhas</span>
         <span><b>{best}</b> recorde</span>

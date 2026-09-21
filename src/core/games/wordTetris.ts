@@ -22,33 +22,35 @@ export interface Shape {
   width: number;
   height: number;
   maxRowInCol: number[]; // por coluna da peça: maior linha ocupada (pra pouso e cálculo de buracos)
+  tier: number; // 1 = simples (início), mais alto = mais complexa (libera com o nível)
 }
 
-function shape(cells: [number, number][]): Shape {
+function shape(cells: [number, number][], tier: number): Shape {
   const width = Math.max(...cells.map((c) => c[1])) + 1;
   const height = Math.max(...cells.map((c) => c[0])) + 1;
   const maxRowInCol = Array.from({ length: width }, (_, c) =>
     Math.max(...cells.filter((cell) => cell[1] === c).map((cell) => cell[0])));
-  return { cells, width, height, maxRowInCol };
+  return { cells, width, height, maxRowInCol, tier };
 }
 
 /** Formas variadas (tamanho e silhueta), sempre com todas as colunas da caixa ocupadas por ao menos uma célula. */
 export const SHAPES: Shape[] = [
-  shape([[0, 0]]),
-  shape([[0, 0], [0, 1]]),
-  shape([[0, 0], [1, 0]]),
-  shape([[0, 0], [0, 1], [0, 2]]),
-  shape([[0, 0], [1, 0], [2, 0]]),
-  shape([[0, 0], [0, 1], [1, 0], [1, 1]]),
-  shape([[0, 0], [1, 0], [1, 1]]),
-  shape([[0, 1], [1, 0], [1, 1]]),
-  shape([[0, 0], [0, 1], [0, 2], [1, 1]]),
-  shape([[0, 0], [0, 1], [1, 1], [1, 2]]),
-  shape([[0, 1], [0, 2], [1, 0], [1, 1]]),
+  shape([[0, 0]], 1),
+  shape([[0, 0], [0, 1]], 1),
+  shape([[0, 0], [1, 0]], 1),
+  shape([[0, 0], [0, 1], [0, 2]], 2),
+  shape([[0, 0], [1, 0], [2, 0]], 2),
+  shape([[0, 0], [0, 1], [1, 0], [1, 1]], 2),
+  shape([[0, 0], [1, 0], [1, 1]], 3),
+  shape([[0, 1], [1, 0], [1, 1]], 3),
+  shape([[0, 0], [0, 1], [0, 2], [1, 1]], 3),
+  shape([[0, 0], [0, 1], [1, 1], [1, 2]], 3),
+  shape([[0, 1], [0, 2], [1, 0], [1, 1]], 3),
 ];
 
-function pickShape(): Shape {
-  return SHAPES[Math.floor(Math.random() * SHAPES.length)];
+function pickShape(maxTier: number): Shape {
+  const allowed = SHAPES.filter((s) => s.tier <= maxTier);
+  return allowed[Math.floor(Math.random() * allowed.length)];
 }
 
 /** Linha (offset superior) onde a peça repousa, dado o topo da pilha em cada coluna que ela ocupa. */
@@ -73,13 +75,21 @@ export function gapsFor(board: Board, colStart: number, s: Shape): number {
   return gaps;
 }
 
-/** Coluna que minimiza buracos — usada quando o jogador acerta a palavra. */
+/**
+ * Coluna que minimiza buracos — usada quando o jogador acerta a palavra.
+ * Em empate, prefere a pousada mais baixa (evita empilhar torre alta num canto
+ * quando ainda há espaço livre e igualmente bom do lado).
+ */
 export function bestColumn(board: Board, s: Shape): number {
   let best = 0;
-  let bestGaps = Infinity;
+  let bestScore = Infinity;
   for (let c = 0; c <= COLS - s.width; c++) {
-    const g = gapsFor(board, c, s);
-    if (g < bestGaps) { bestGaps = g; best = c; }
+    const top = landingRow(board, c, s);
+    if (top < 0) continue;
+    const gaps = gapsFor(board, c, s);
+    const heightUsed = ROWS - top;
+    const score = gaps * 1000 + heightUsed;
+    if (score < bestScore) { bestScore = score; best = c; }
   }
   return best;
 }
@@ -135,6 +145,26 @@ export function randomTone(correct: boolean): string {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+// ---------- Nível / dificuldade progressiva ----------
+
+export const MAX_LEVEL = 6;
+const LEVEL_STEP = 300; // pontos por nível
+
+/** Nível atual a partir da pontuação — começa fácil e sobe conforme os pontos aumentam. */
+export function levelFor(score: number): number {
+  return Math.min(MAX_LEVEL, Math.floor(score / LEVEL_STEP) + 1);
+}
+
+/** Tempo pra responder: mais generoso no início, mais apertado nos níveis altos. */
+export function timeLimitFor(level: number): number {
+  return Math.max(4000, 9000 - (level - 1) * 900);
+}
+
+/** Complexidade das peças liberada por nível (formas simples primeiro). */
+export function shapeTierFor(level: number): number {
+  return level <= 2 ? 1 : level <= 4 ? 2 : 3;
+}
+
 // ---------- Vocabulário (peças) ----------
 
 export interface VocabItem {
@@ -175,6 +205,14 @@ export interface Piece {
   shape: Shape;
 }
 
+/** Histórico de acertos/erros por palavra (persistido pelo chamador), usado pra dosar a dificuldade. */
+export interface WordStats { [en: string]: { c: number; w: number } }
+
+function familiarity(stats: WordStats, en: string): number | null {
+  const s = stats[en];
+  return s ? s.c / (s.c + s.w + 1) : null; // null = palavra ainda não vista
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -184,13 +222,25 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/** A peça mostra a palavra em português; as opções são as traduções em inglês (uma certa + 3 erradas). */
-export function pickPiece(pool: VocabItem[], avoidEn?: string): Piece {
-  const choices = pool.length > 1 ? pool.filter((v) => v.en !== avoidEn) : pool;
+/**
+ * A peça mostra a palavra em português; as opções são as traduções em inglês (uma certa + 3 erradas).
+ * Em níveis baixos, prioriza palavras que o jogador já acerta mais (começo mais fácil); em níveis
+ * altos, sorteia do vocabulário inteiro, misturando as que ele ainda erra mais.
+ */
+export function pickPiece(pool: VocabItem[], level: number, stats: WordStats, avoidEn?: string): Piece {
+  let choices = pool.length > 1 ? pool.filter((v) => v.en !== avoidEn) : pool;
+  if (level <= 3) {
+    const minFamiliarity = level <= 2 ? 0.4 : 0.25;
+    const easier = choices.filter((v) => {
+      const f = familiarity(stats, v.en);
+      return f === null || f >= minFamiliarity;
+    });
+    if (easier.length >= Math.min(4, choices.length)) choices = easier;
+  }
   const item = choices[Math.floor(Math.random() * choices.length)];
   const distractors = shuffle(pool.filter((v) => v.en.toLowerCase() !== item.en.toLowerCase()))
     .slice(0, 3)
     .map((v) => v.en);
   const options = shuffle([item.en, ...distractors]);
-  return { en: item.en, pt: item.pt, options, shape: pickShape() };
+  return { en: item.en, pt: item.pt, options, shape: pickShape(shapeTierFor(level)) };
 }
