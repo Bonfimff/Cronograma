@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  COLS, ROWS, bestColumn, buildVocabPool, clearFullRows, emptyBoard, landingRow,
-  pickPiece, placePiece, randomStartCol, type Board, type Piece,
+  COLS, NEUTRAL_TONE, ROWS, bestColumn, buildVocabPool, clearFullRows, contrastText, emptyBoard, landingRow,
+  pickPiece, placePiece, randomStartCol, randomTone, type Board, type Piece,
 } from '../../../core/games/wordTetris';
+import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
 
 const TIME_LIMIT = 8000;
 const BEST_KEY = 'word-tetris-best';
 const DROP_MS = 320;
 
-type Falling = { piece: Piece; col: number; row: number; dropping: boolean };
+type Falling = { piece: Piece; col: number; row: number; color: string; dropping: boolean };
+
+const pct = (n: number, total: number) => `${(n / total) * 100}%`;
 
 export function WordTetris() {
   const [pool] = useState(buildVocabPool);
@@ -34,15 +37,16 @@ export function WordTetris() {
   const finish = (piece: Piece, spawnCol: number, boardAtSpawn: Board, correct: boolean) => {
     window.clearTimeout(timeoutRef.current);
     window.clearInterval(intervalRef.current);
-    const width = piece.width;
-    const targetCol = correct ? bestColumn(boardAtSpawn, width) : spawnCol;
-    const placed = placePiece(boardAtSpawn, targetCol, width);
+    const targetCol = correct ? bestColumn(boardAtSpawn, piece.shape) : spawnCol;
+    const color = randomTone(correct);
+    const placed = placePiece(boardAtSpawn, targetCol, piece.shape, color);
     if (!placed) { setOver(true); return; }
+    if (correct) speak(piece.en);
     setToast({
       ok: correct,
       text: correct ? `✓ ${piece.pt} = ${piece.en}` : `${piece.pt} = ${piece.en} — a peça caiu torta.`,
     });
-    setFalling({ piece, col: targetCol, row: placed.row, dropping: true });
+    setFalling({ piece, col: targetCol, row: placed.row, color, dropping: true });
     window.setTimeout(() => {
       const { board: cleared, cleared: n } = clearFullRows(placed.board);
       setBoard(cleared);
@@ -60,9 +64,9 @@ export function WordTetris() {
     if (pool.length < 4) return;
     const piece = pickPiece(pool, lastEnRef.current);
     lastEnRef.current = piece.en;
-    const col = randomStartCol(piece.width);
-    if (landingRow(currentBoard, col, piece.width) < 0) { setOver(true); return; }
-    setFalling({ piece, col, row: 0, dropping: false });
+    const col = randomStartCol(piece.shape.width);
+    if (landingRow(currentBoard, col, piece.shape) < 0) { setOver(true); return; }
+    setFalling({ piece, col, row: 0, color: NEUTRAL_TONE, dropping: false });
     setTimeLeft(1);
     const start = Date.now();
     intervalRef.current = window.setInterval(() => {
@@ -124,16 +128,30 @@ export function WordTetris() {
       <section>
         <div className="wt-board">
           {board.map((row, r) => row.map((cell, c) => cell && (
-            <div key={`${r}-${c}`} className="wt-cell" style={{ top: `${(r / ROWS) * 100}%`, left: `${(c / COLS) * 100}%`, width: `${100 / COLS}%`, height: `${100 / ROWS}%` }} />
+            <div
+              key={`${r}-${c}`}
+              className="wt-cell"
+              style={{ top: pct(r, ROWS), left: pct(c, COLS), width: pct(1, COLS), height: pct(1, ROWS), background: cell }}
+            />
           )))}
+          {falling && falling.piece.shape.cells.map(([dr, dc], i) => (
+            <div
+              key={i}
+              className={`wt-piece-cell ${falling.dropping ? 'dropping' : ''}`}
+              style={{
+                top: pct(falling.row + dr, ROWS), left: pct(falling.col + dc, COLS),
+                width: pct(1, COLS), height: pct(1, ROWS), background: falling.color,
+              }}
+            />
+          ))}
           {falling && (
             <div
-              className={`wt-piece ${falling.dropping ? 'dropping' : ''}`}
+              className={`wt-piece-label ${falling.dropping ? 'dropping' : ''}`}
               style={{
-                top: `${(falling.row / ROWS) * 100}%`,
-                left: `${(falling.col / COLS) * 100}%`,
-                width: `${(falling.piece.width / COLS) * 100}%`,
-                height: `${100 / ROWS}%`,
+                top: pct(falling.row, ROWS), left: pct(falling.col, COLS),
+                width: pct(falling.piece.shape.width, COLS), height: pct(falling.piece.shape.height, ROWS),
+                color: contrastText(falling.color),
+                textShadow: contrastText(falling.color) === '#ffffff' ? '0 1px 2px rgba(0,0,0,.4)' : 'none',
               }}
             >
               {falling.piece.pt}
