@@ -524,3 +524,49 @@ h3 { font-size: .95rem; }
   .cut-float-right { width: 64px; }
   .cut-shout { width: 74px; top: -32px; }
 }
+
+/* ---------- semáforo aceso no poste de placas ---------- */
+/* recortes com um pedacinho animado por cima: a imagem manda no tamanho */
+.cut-live { position: relative; display: block; flex: none; line-height: 0; }
+.cut-live .cutout { width: 100%; }
+.signpost .lamp {
+  position: absolute; left: 64.8%; width: 8.3%; aspect-ratio: 1;
+  translate: -50% -50%; border-radius: 50%; opacity: 0;
+}
+.lamp-red   { top: 17.0%; background: #ff5545; box-shadow: 0 0 7px 2px rgba(255, 85, 69, .75);  animation: tl-red 6s infinite; }
+.lamp-amber { top: 22.0%; background: #ffc247; box-shadow: 0 0 7px 2px rgba(255, 194, 71, .75); animation: tl-amber 6s infinite; }
+.lamp-green { top: 27.7%; background: #4fe0a0; box-shadow: 0 0 7px 2px rgba(79, 224, 160, .75); animation: tl-green 6s infinite; }
+
+/* verde longo, amarelo curto, vermelho longo — como um semáforo de verdade */
+@keyframes tl-green { 0%, 43% { opacity: 1; } 44%, 100% { opacity: 0; } }
+@keyframes tl-amber { 0%, 43% { opacity: 0; } 45%, 53% { opacity: 1; } 55%, 100% { opacity: 0; } }
+@keyframes tl-red   { 0%, 53% { opacity: 0; } 55%, 97% { opacity: 1; } 99%, 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .signpost .lamp { animation: none; }
+  .lamp-green { opacity: 1; }
+}
+
+/* ---------- o sujeito do jornal piscando ---------- */
+.newsman .lid {
+  position: absolute; top: 24.8%; width: 8.6%; aspect-ratio: 1;
+  translate: -50% -50%; border-radius: 50%; background: #fbfaf7; opacity: 0;
+  animation: blink 6.5s infinite;
+}
+.newsman .lid::after {
+  content: ''; position: absolute; left: 10%; right: 10%; top: 46%;
+  height: 14%; min-height: 1px; background: #15140f; border-radius: 1px;
+}
+.lid-l { left: 34.7%; }
+.lid-r { left: 46.8%; }
+
+/* pisca duas vezes seguidas e descansa */
+@keyframes blink {
+  0%, 89.4% { opacity: 0; }
+  89.8%, 91.2% { opacity: 1; }
+  91.6%, 94.4% { opacity: 0; }
+  94.8%, 96.2% { opacity: 1; }
+  96.6%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) { .newsman .lid { animation: none; } }

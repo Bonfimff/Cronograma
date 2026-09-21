@@ -35,8 +35,38 @@ export const GhostCut = (p: C) => <Cut file="ghost" {...p} />;
 export const LaptopCut = (p: C) => <Cut file="laptop" {...p} />;
 /** Sujeito escondido atrás do jornal. */
 export const NewspaperMan = (p: C) => <Cut file="newspaper-man" {...p} />;
+
+/**
+ * O mesmo sujeito, piscando: as pálpebras são dois discos da cor do papel
+ * sobrepostos aos olhos, que aparecem por um instante (duas vezes seguidas).
+ */
+export function NewspaperManLive({ className, width }: C) {
+  return (
+    <span className={`cut-live newsman ${className ?? ''}`} style={{ width }}>
+      <Cut file="newspaper-man" />
+      <i className="lid lid-l" />
+      <i className="lid lid-r" />
+    </span>
+  );
+}
 /** Poste de placas de rua, bem alto. */
 export const Signpost = (p: C) => <Cut file="signpost" {...p} />;
+
+/**
+ * O mesmo poste, com o semáforo aceso: o recorte é uma imagem chapada, então
+ * as três luzes são bolinhas por cima, posicionadas em porcentagem da imagem
+ * (assim acompanham qualquer largura). O ciclo é verde → amarelo → vermelho.
+ */
+export function SignpostLive({ className, width }: C) {
+  return (
+    <span className={`cut-live signpost ${className ?? ''}`} style={{ width }}>
+      <Cut file="signpost" />
+      <i className="lamp lamp-red" />
+      <i className="lamp lamp-amber" />
+      <i className="lamp lamp-green" />
+    </span>
+  );
+}
 /** Bode de olhos arregalados, gritando. */
 export const Goat = (p: C) => <Cut file="goat" {...p} />;
 /** Dinossauro subindo preso a balões. */

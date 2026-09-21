@@ -7,7 +7,7 @@ import { createSession, saveUserExercises, updateSession } from '../../core/sess
 import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
 import { CalendarDoodle, Swash } from '../components/Doodles';
-import { Signpost } from '../components/Cutouts';
+import { SignpostLive } from '../components/Cutouts';
 
 export function WeekPage({ start }: { start?: string }) {
   const data = useData();
@@ -41,7 +41,7 @@ export function WeekPage({ start }: { start?: string }) {
             “Disciplina<br />também é liberdade.”
             <Swash className="chalk-swash" />
           </blockquote>
-          <Signpost className="cut-aside" width="70" />
+          <SignpostLive className="cut-aside" width={78} />
         </div>
       </section>
 
