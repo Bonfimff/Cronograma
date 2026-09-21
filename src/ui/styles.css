@@ -738,3 +738,4 @@ h3 { font-size: .95rem; }
 .fc-badc { color: #ef8a80; }
 .fc-tip { text-align: center; color: var(--ink-3); font-size: .8rem; margin: 4px 0 0; }
 @media (prefers-reduced-motion: reduce) { .fc-stamp, .fc-card.stamped { animation: none; } }
+.fc-stamp.preview { animation: none; transition: opacity .05s linear; }

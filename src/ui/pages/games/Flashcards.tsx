@@ -6,7 +6,7 @@ import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
 
 /** Quanto precisa arrastar pro lado pra valer como resposta. */
-const SWIPE_PX = 70;
+const SWIPE_PX = 60;
 /** Tempo do carimbo na tela antes de passar pro próximo cartão. */
 const STAMP_MS = 900;
 
@@ -24,7 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
 /**
  * Flashcards no estilo do recorte de papel: a frente mostra a palavra, a
  * pronúncia e o tipo; tocar vira o cartão e mostra tradução, exemplos e
- * variações. Arrastar pra direita carimba CERTO, pra esquerda ERRADO (dos dois
+ * variações. Arrastar pra direita carimba ACERTEI, pra esquerda ERREI (dos dois
  * lados do cartão) e passa pro próximo. As setas só navegam.
  */
 export function Flashcards() {
@@ -90,7 +90,13 @@ export function Flashcards() {
             else if (dx < -SWIPE_PX) judge('bad');
             else setDrag(0);
           }}
-          onPointerCancel={() => { startX.current = null; setDrag(0); }}
+          onPointerCancel={() => {
+            // o navegador tomou o gesto (rolagem): se já tinha passado do limite, vale
+            startX.current = null;
+            if (drag > SWIPE_PX) judge('ok');
+            else if (drag < -SWIPE_PX) judge('bad');
+            else setDrag(0);
+          }}
           onClick={() => {
             if (moved.current) { moved.current = false; return; } // foi arrasto, não toque
             if (!stamp) setOpen((o) => !o);
@@ -135,8 +141,17 @@ export function Flashcards() {
             <p className="fc-hint">toque para ver a tradução</p>
           )}
 
-          {stamp && (
-            <span className={`fc-stamp ${stamp}`} role="status">{stamp === 'ok' ? 'Certo' : 'Errado'}</span>
+          {stamp ? (
+            <span className={`fc-stamp ${stamp}`} role="status">{stamp === 'ok' ? 'Acertei' : 'Errei'}</span>
+          ) : drag !== 0 && (
+            // prévia enquanto arrasta: vai aparecendo conforme chega no limite
+            <span
+              className={`fc-stamp preview ${drag > 0 ? 'ok' : 'bad'}`}
+              style={{ opacity: Math.min(1, Math.abs(drag) / SWIPE_PX) * 0.55 }}
+              aria-hidden
+            >
+              {drag > 0 ? 'Acertei' : 'Errei'}
+            </span>
           )}
 
           <span className="sticker fc-go">let's go</span>
@@ -152,7 +167,7 @@ export function Flashcards() {
       <p className="fc-count">
         {i + 1}/{deck.length} · <span className="fc-okc">✓ {tally.ok}</span> · <span className="fc-badc">✗ {tally.bad}</span>
       </p>
-      <p className="fc-tip">arraste o cartão: direita = certo, esquerda = errado</p>
+      <p className="fc-tip">arraste o cartão: direita = acertei, esquerda = errei</p>
     </>
   );
 }
