@@ -590,3 +590,40 @@ h3 { font-size: .95rem; }
 @media (prefers-reduced-motion: reduce) {
   .newsman .lid, .newsman .pupil { animation: none; }
 }
+
+/* ---------- fim de jogo: a cabra berrando ---------- */
+.wt-gameover { text-align: center; }
+.cut-gameover {
+  transform-origin: 50% 86%;
+  animation: bleat 1.15s ease-in-out infinite;
+}
+/* esticar e achatar em volta do queixo dá a impressão de berro */
+@keyframes bleat {
+  0%, 100% { transform: rotate(-3deg) scale(1, 1); }
+  18%      { transform: rotate(-4.5deg) scale(.96, 1.06); }
+  42%      { transform: rotate(-1.5deg) scale(1.04, .95); }
+  66%      { transform: rotate(-4deg) scale(.97, 1.04); }
+  84%      { transform: rotate(-2.5deg) scale(1.02, .98); }
+}
+
+.wt-quip {
+  font-family: var(--hand); font-size: 1.32rem; line-height: 1.3;
+  color: var(--ink); margin: 4px auto 10px; max-width: 30ch; text-wrap: balance;
+}
+.wt-quip i { font-style: normal; color: var(--ink-3); font-size: .9em; }
+.wt-quip .bleat {
+  display: inline-block; color: var(--marker); font-size: 1.15em;
+  animation: bleat-text 1.15s ease-in-out infinite;
+}
+@keyframes bleat-text {
+  0%, 100% { transform: scale(1, 1); }
+  18%      { transform: scale(1.06, .94); }
+  42%      { transform: scale(.96, 1.05); }
+  66%      { transform: scale(1.05, .96); }
+}
+
+.wt-gameover .big-line { font-size: .92rem; color: var(--ink-3); margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cut-gameover, .wt-quip .bleat { animation: none; }
+}

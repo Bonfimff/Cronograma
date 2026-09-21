@@ -259,7 +259,11 @@ export function WordTetris() {
       {over && (
         <section className="actions left">
           <div className="wt-gameover">
-            <Goat className="cut-gameover" width="92" />
+            <Goat className="cut-gameover" width="104" />
+            <p className="wt-quip">
+              “Toda vez que eu me deparo com essa situação aqui, me dá vontade de berrar{' '}
+              <b className="bleat">Beeeeeeeé</b> <i>(igual a uma cabra)</i>, é isso…”
+            </p>
             <p className="big-line">Fim de jogo — {score} pontos{score >= best && score > 0 ? ' (novo recorde!)' : ''}</p>
           </div>
           <button className="primary" onClick={restart}>Jogar de novo</button>
