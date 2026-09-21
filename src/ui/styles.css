@@ -795,23 +795,26 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .lib-del:hover { color: #b3261e; }
 .lib-remove { display: block; margin: 18px 0 0 auto; color: #a14b42; font-size: .85rem; }
 
-/* virada: a folha antiga fica por cima e gira pela borda até sumir */
-.lib-sheet.turning {
-  position: absolute; inset: 0 0 auto 0; z-index: 2; pointer-events: none;
-  backface-visibility: hidden; animation: lib-turn .65s cubic-bezier(.45, .05, .35, 1) forwards;
+/* virada: a folha dobra numa linha que corre da direita pra esquerda (JS) */
+.lib-book { overflow-x: clip; overflow-y: visible; }
+.fold { position: absolute; top: 0; left: 0; width: 100%; z-index: 2; pointer-events: none; overflow: hidden; }
+/* (a aba e a sombra ficam dentro da folha: não invadem as abas nem a página) */
+.fold-front { will-change: clip-path; }
+.fold > * { position: absolute; top: 0; left: 0; }
+.fold-front { position: relative; }
+/* verso do papel: um pouco mais escuro, com a pauta aparecendo */
+.fold-flap {
+  width: 100%; transform-origin: 0 0; will-change: transform, clip-path;
+  border-radius: 0 6px 8px 6px;
+  background-color: #e8dfca;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, .10), rgba(0, 0, 0, 0) 35%),
+    repeating-linear-gradient(180deg, transparent 0 35px, rgba(60, 110, 150, .12) 35px 36px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
 }
-.lib-sheet.turning.fwd { transform-origin: 0% 50%; --turn: -104deg; }
-.lib-sheet.turning.back { transform-origin: 100% 50%; --turn: 104deg; }
-/* sombra que escurece a folha conforme ela vira */
-.lib-sheet.turning::after {
-  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  background: linear-gradient(90deg, rgba(0, 0, 0, .35), rgba(0, 0, 0, 0) 70%);
-  opacity: 0; animation: lib-shade .65s ease forwards;
-}
-.lib-sheet.turning.back::after { background: linear-gradient(270deg, rgba(0, 0, 0, .35), rgba(0, 0, 0, 0) 70%); }
-@keyframes lib-turn {
-  0% { transform: rotateY(0deg); }
-  100% { transform: rotateY(var(--turn)); }
-}
-@keyframes lib-shade { to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .lib-sheet.turning { display: none; } }
+.fold-shine, .fold-shade { transform-origin: 0 0; will-change: transform, opacity; }
+/* a curva da dobra pega luz */
+.fold-shine { background: linear-gradient(270deg, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0)); }
+/* e a folha levantada faz sombra na de baixo */
+.fold-shade { background: linear-gradient(90deg, rgba(0, 0, 0, .38), rgba(0, 0, 0, 0)); }
+@media (prefers-reduced-motion: reduce) { .fold { display: none; } }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import type { ContentRef, UserData } from '../../core/types';
@@ -7,8 +7,8 @@ import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
 import { LaptopCut, NewspaperManLive } from '../components/Cutouts';
 
-/** Duração da virada de folha (igual à animação no CSS). */
-const TURN_MS = 650;
+/** Duração da virada de folha. */
+const TURN_MS = 900;
 const NEW_TAB = 'nova';
 
 type Tab = { key: string; label: string; count?: number };
@@ -72,29 +72,114 @@ export function LibraryIndex() {
         ))}
       </nav>
 
+      {/*
+        Pra frente: a folha nova fica embaixo e a antiga vira por cima, dobrando.
+        Pra trás: a antiga fica embaixo e a nova volta por cima, desdobrando
+        (a mesma animação ao contrário) — como num caderno de verdade.
+      */}
       <div className="lib-book">
-        <Sheet key={current} tabKey={current} data={data} onCreated={open} />
-        {turning && (
-          <Sheet
-            key={`virando-${turning.from}`}
-            tabKey={turning.from}
-            data={data}
-            onCreated={open}
-            className={`turning ${turning.dir > 0 ? 'fwd' : 'back'}`}
-          />
+        {turning && turning.dir < 0 ? (
+          <>
+            <Sheet key={turning.from} tabKey={turning.from} data={data} onCreated={open} />
+            <PageFold key={`volta-${current}`} tabKey={current} data={data} reverse />
+          </>
+        ) : (
+          <>
+            <Sheet key={current} tabKey={current} data={data} onCreated={open} />
+            {turning && <PageFold key={`vira-${turning.from}`} tabKey={turning.from} data={data} />}
+          </>
         )}
       </div>
     </>
   );
 }
 
-function Sheet({ tabKey, data, onCreated, className }: {
-  tabKey: string; data: UserData; onCreated: (key: string) => void; className?: string;
-}) {
+function Sheet({ tabKey, data, onCreated }: { tabKey: string; data: UserData; onCreated: (key: string) => void }) {
   return (
-    <article className={`lib-sheet ${className ?? ''}`} aria-hidden={className ? true : undefined}>
+    <article className="lib-sheet">
       <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} />
     </article>
+  );
+}
+
+const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+
+/**
+ * A folha virando, vista de cima. Uma linha de dobra atravessa a folha da
+ * direita pra esquerda, um pouco inclinada (o canto de baixo sai na frente, como
+ * quando se puxa a folha pela ponta). À esquerda da dobra fica a frente da
+ * folha; a parte que já passou da dobra vira a aba: o verso do papel, espelhado
+ * na linha da dobra. Um brilho marca a curva e uma sombra cai na folha de baixo.
+ *
+ * `reverse` roda a mesma dobra de trás pra frente — a folha volta desdobrando.
+ * A geometria é calculada a cada quadro (clip-path + matriz de reflexão).
+ */
+function PageFold({ tabKey, data, reverse }: { tabKey: string; data: UserData; reverse?: boolean }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const front = useRef<HTMLElement>(null);
+  const flap = useRef<HTMLDivElement>(null);
+  const shade = useRef<HTMLDivElement>(null);
+  const shine = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const W = wrap.current!.offsetWidth;
+    const H = front.current!.offsetHeight;
+    flap.current!.style.height = `${H}px`;
+
+    const apply = (t: number) => {
+      const xM = W * (1 - easeInOut(t)); // dobra, na altura do meio
+      const slant = Math.sin(Math.PI * t) * 0.24 * W; // inclinação: o canto de baixo lidera
+      const xT = xM + slant / 2;
+      const xB = xM - slant / 2;
+
+      front.current!.style.clipPath = `polygon(0 0, ${xT}px 0, ${xB}px ${H}px, 0 ${H}px)`;
+      flap.current!.style.clipPath = `polygon(${xT}px 0, ${W}px 0, ${W}px ${H}px, ${xB}px ${H}px)`;
+
+      // reflexão na reta da dobra, que passa por (xT, 0) com direção (dx, H)
+      const len = Math.hypot(xB - xT, H);
+      const ux = (xB - xT) / len;
+      const uy = H / len;
+      const a = 2 * ux * ux - 1;
+      const b = 2 * ux * uy;
+      const d = 2 * uy * uy - 1;
+      flap.current!.style.transform = `matrix(${a}, ${b}, ${b}, ${d}, ${xT - a * xT}, ${-b * xT})`;
+
+      // faixas de brilho (na aba, junto da dobra) e de sombra (na folha de baixo)
+      const angle = Math.atan2(-ux, uy);
+      const lift = Math.sin(Math.PI * t);
+      const flapW = W - xM;
+      const band = (el: HTMLDivElement, width: number, left: boolean, opacity: number) => {
+        el.style.width = `${width}px`;
+        el.style.height = `${len * 1.3}px`;
+        el.style.opacity = String(opacity);
+        el.style.transform =
+          `translate(${xT}px, 0) rotate(${angle}rad) translate(${left ? -width : 0}px, -12%)`;
+      };
+      band(shine.current!, Math.min(44, flapW * 0.8), true, lift);
+      band(shade.current!, Math.min(70, flapW + 24), false, lift * 0.9);
+    };
+
+    const t0 = performance.now();
+    let raf = 0;
+    const frame = (now: number) => {
+      const p = Math.min(1, (now - t0) / TURN_MS);
+      apply(reverse ? 1 - p : p);
+      if (p < 1) raf = requestAnimationFrame(frame);
+    };
+    apply(reverse ? 1 : 0);
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [reverse]);
+
+  return (
+    <div className="fold" ref={wrap} aria-hidden>
+      <div className="fold-shade" ref={shade} />
+      <article className="lib-sheet fold-front" ref={front}>
+        <SheetBody tabKey={tabKey} data={data} onCreated={() => {}} />
+      </article>
+      <div className="fold-flap" ref={flap} />
+      <div className="fold-shine" ref={shine} />
+    </div>
   );
 }
 
