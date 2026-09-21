@@ -72,7 +72,7 @@ export function App() {
         </nav>
       </header>
       <main className="main">{page}</main>
-      {!bare && (
+      {!bare && section !== 'jogos' && (
         <div className="fab-stack no-print">
           <a className="fab fab-primary" href="#/scan?cam=1" aria-label="Escanear com a câmera">
             <i aria-hidden>⌗</i>

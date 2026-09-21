@@ -23,10 +23,14 @@ export function SessionRow({ s, showDate }: { s: Session; showDate?: boolean }) 
       <span className="row-main">
         <span className="row-title">{s.title}</span>
         <span className="row-sub">
-          <Kind k={s.kind} /> <span className="mono">{s.id}</span>
+          <Kind k={s.kind} />
+          <span className="mono">{s.id}</span>
+          {s.status !== 'planned' && <span className={`status st-${s.status}`}>{STATUS_LABEL[s.status]}</span>}
         </span>
       </span>
-      <span className={`status st-${s.status}`}>{STATUS_LABEL[s.status]}</span>
+      <span className={`row-mark ${s.status}`} aria-label={STATUS_LABEL[s.status]}>
+        {s.status === 'done' ? '✓' : s.status === 'in_progress' ? '•' : ''}
+      </span>
     </a>
   );
 }

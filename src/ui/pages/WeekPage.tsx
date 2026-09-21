@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import { getWeek, KIND_LABEL, KIND_ORDER, saveDayPlan, saveWeekGoals, sessionsOn } from '../../core/planning/weeks';
-import { addDays, fmtShort, today, weekdayName, weekStartOf } from '../../core/dates';
+import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from '../../core/dates';
 import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
 import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
@@ -43,13 +43,28 @@ export function WeekPage({ start }: { start?: string }) {
         </div>
       </section>
 
+      <nav className="daystrip">
+        {week.days.map((day) => (
+          <a
+            key={day.date}
+            href={`#/semana/${ws}`}
+            className={day.date === today() ? 'on' : ''}
+            onClick={() => document.getElementById(`d-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          >
+            <small>{weekdayShort(day.date)}</small>
+            <b>{day.date.slice(-2)}</b>
+          </a>
+        ))}
+      </nav>
+
       {week.days.map((day) => {
         const list = sessionsOn(data, day.date);
         const isToday = day.date === today();
         return (
-          <section key={day.date} className={`day ${isToday ? 'is-today' : ''}`}>
+          <section key={day.date} id={`d-${day.date}`} className={`day ${isToday ? 'is-today' : ''}`}>
             <header className="day-head">
               <h2>{weekdayName(day.date)} <small>{fmtShort(day.date)}</small></h2>
+              {isToday && <span className="sticker">foco!</span>}
               <button className="ghost small" onClick={() => setAdding(adding === day.date ? null : day.date)}>+ sessão</button>
             </header>
             <div className="day-plan">
