@@ -24,20 +24,25 @@ async function fileToImage(file: File, max = 1800): Promise<{ img: Img; url: str
   return { img: ctx.getImageData(0, 0, w, h), url, w, h };
 }
 
-export function ScanPage({ code: initialCode }: { code?: string }) {
+export function ScanPage({ code: initialCode, autoCam, autoManual }: { code?: string; autoCam?: boolean; autoManual?: boolean }) {
   const data = useData();
   const [code, setCode] = useState<string | null>(initialCode ? normalizeCode(initialCode) : null);
   const [reading, setReading] = useState<SheetReading | null>(null);
   const [photo, setPhoto] = useState<{ url: string; w: number; h: number } | null>(null);
   const [error, setError] = useState('');
-  const [camera, setCamera] = useState(false);
+  const [camera, setCamera] = useState(!!autoCam && !initialCode);
   const [correcting, setCorrecting] = useState(false);
   const [manual, setManual] = useState('');
+  const manualRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setCode(initialCode ? normalizeCode(initialCode) : null);
     setReading(null); setPhoto(null); setCorrecting(false);
   }, [initialCode]);
+
+  useEffect(() => {
+    if (autoManual && !initialCode) manualRef.current?.focus();
+  }, [autoManual, initialCode]);
 
   const reset = () => { setCode(null); setReading(null); setPhoto(null); setError(''); setCorrecting(false); go('/scan'); };
 
@@ -91,7 +96,7 @@ export function ScanPage({ code: initialCode }: { code?: string }) {
           <button className="ghost" onClick={() => setCamera(!camera)}>{camera ? 'Fechar câmera' : 'Ler só o QR com a câmera'}</button>
           {camera && <LiveQR onCode={(c) => { setCamera(false); setCode(normalizeCode(c)); }} onError={(m) => { setCamera(false); setError(m); }} />}
           <form className="inline-answer" onSubmit={(e) => { e.preventDefault(); if (isCode(manual)) setCode(normalizeCode(manual)); else setError('Código inválido. Formato: ENG-2026-0001'); }}>
-            <input placeholder="ou digite: ENG-2026-0001" value={manual} onChange={(e) => setManual(e.target.value)} autoCapitalize="characters" />
+            <input ref={manualRef} placeholder="ou digite: ENG-2026-0001" value={manual} onChange={(e) => setManual(e.target.value)} autoCapitalize="characters" />
             <button className="ghost small">Abrir</button>
           </form>
           {error && <p className="error">{error}</p>}
