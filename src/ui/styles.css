@@ -776,6 +776,18 @@ h3 { font-size: .95rem; }
 .lib-tabs button.on { background: #f3ecdc; color: #221f19; transform: translateY(-3px); }
 .lib-tabs button:last-child { background: transparent; border: 1px dashed #5a5448; color: var(--accent); }
 .lib-tabs button:last-child.on { background: #f3ecdc; color: #1f5c55; border-color: transparent; }
+/* em telas estreitas as abas não cabem: ficam menores e a borda direita
+   esmaece, mostrando que a fila continua rolando para o lado */
+@media (max-width: 430px) {
+  .lib-tabs {
+    gap: 3px; padding-right: 22px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent);
+  }
+  .lib-tabs button { font-size: .8rem; padding: 8px 10px 10px; }
+  .lib-tabs button small { margin-left: 4px; font-size: .72em; }
+  .lib-tab-long { display: none; }
+}
 
 .lib-book { position: relative; perspective: 1600px; margin-bottom: 24px; }
 /* folha de caderno: pautada, com margem vermelha à esquerda */
@@ -845,6 +857,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 }
 .mt-stats div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .mt-stats div + div { border-left: 1px solid var(--rule); }
+.mt-of { font-style: normal; font-size: .7rem; font-weight: 400; color: var(--ink-3); }
 .mt-stats small {
   font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
   /* rótulos com a mesma altura (um deles quebra em duas linhas), números alinhados */

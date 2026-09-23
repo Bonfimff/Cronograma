@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   COLS, DANGER_AT, NEUTRAL_TONE, ROWS, bestColumn, buildVocabPool, clearFullRows, contrastText, emptyBoard,
-  fitsAnywhere, levelFor, pickPiece, pickShapeFor, placePiece, randomTone, spawnColumn, stackHeight,
+  fitsAnywhere, levelFor, pickPiece, pickShapeFor, placePiece, randomTone, spawnColumn, stackHeight, wordPoints,
   timeLimitFor, wrongColumn, type Board, type Piece, type WordStats,
 } from '../../../core/games/wordTetris';
 import { speak } from '../../../core/lessons/lesson';
@@ -96,7 +96,8 @@ export function WordTetris() {
     window.setTimeout(() => {
       const { board: cleared, cleared: n } = clearFullRows(placed.board);
       const before = scoreRef.current;
-      const newScore = before + (correct ? 100 + streakRef.current * 20 : 0) + n * 150;
+      // cada acerto vale uma fatia do nível: WORDS_PER_LEVEL acertos fecham os 100 pontos
+      const newScore = before + (correct ? wordPoints() : 0);
       scoreRef.current = newScore;
       streakRef.current = correct ? streakRef.current + 1 : 0;
       if (levelFor(newScore) > levelFor(before)) {

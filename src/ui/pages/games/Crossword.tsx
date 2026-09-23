@@ -7,6 +7,7 @@ import { useData } from '../../hooks';
 import { Empty } from '../../components/common';
 import { Praise } from '../../components/Doodles';
 import { NewspaperManLive } from '../../components/Cutouts';
+import { ROUND_POINTS, shares } from '../../../core/games/scoring';
 import { GameTabs } from './GameTabs';
 
 type Pos = { row: number; col: number };
@@ -18,12 +19,15 @@ function entryAt(board: Board, pos: Pos, dir: Dir): Entry | undefined {
   return board.entries.find((e) => e.dir === dir && cellsOf(e).some((c) => sameCell(c, pos)));
 }
 
-/** Pontos de uma palavra: cheios, menos o que cada dica custou. */
-const FULL = 100;
-const HINT_COST = 30;
-const MIN_POINTS = 20;
-/** Desconto por desistir da palavra ("não sei"). */
-const GIVE_UP_COST = 30;
+/**
+ * A cruzada inteira é uma rodada de 100 pontos, repartidos entre as suas
+ * palavras: acertar todas dá exatamente 100. A dica corta 30% do que a palavra
+ * vale (nunca abaixo de 20%) e o "não sei" ainda desconta 30% dela.
+ */
+const HINT_CUT = 0.3;
+const MIN_SHARE = 0.2;
+const GIVE_UP_CUT = 0.3;
+const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 const keyOf = (e: Entry) => `${e.num}${e.dir}`;
 
@@ -55,6 +59,13 @@ export function Crossword() {
   const spoken = useRef(new Set<string>()); // palavras já pronunciadas nesta cruzada
   const scored = useRef(new Set<string>()); // palavras que já deram (ou não) ponto
 
+  /** Quanto vale cada palavra desta cruzada (os 100 pontos da rodada divididos). */
+  const value = useMemo(() => {
+    const parts = shares(board.entries.length);
+    return new Map(board.entries.map((e, i) => [keyOf(e), parts[i]]));
+  }, [board]);
+  const valueOf = (e: Entry) => value.get(keyOf(e)) ?? 0;
+
   const active = entryAt(board, cur, dir) ?? entryAt(board, cur, dir === 'across' ? 'down' : 'across');
   const solved = board.entries.filter((e) => isSolved(e, letters));
   const done = board.entries.length > 0 && solved.length === board.entries.length;
@@ -69,7 +80,9 @@ export function Crossword() {
       const k = keyOf(ok);
       if (!scored.current.has(k)) {
         scored.current.add(k);
-        setScore((n) => n + Math.max(MIN_POINTS, FULL - HINT_COST * (hints[k] ?? 0)));
+        const full = value.get(k) ?? 0;
+        const won = full * Math.max(MIN_SHARE, 1 - HINT_CUT * (hints[k] ?? 0));
+        setScore((n) => n + Math.round(won));
       }
     }
     const bad = full.find((e) => !isSolved(e, letters));
@@ -79,7 +92,7 @@ export function Crossword() {
       return () => window.clearTimeout(t);
     }
     setWrong(null);
-  }, [letters, board, hints]);
+  }, [letters, board, hints, value]);
 
   if (crosswordWords(pool).length < 2) {
     return (
@@ -148,7 +161,7 @@ export function Crossword() {
     setGaveUp((g) => (g.includes(k) ? g : [...g, k]));
     scored.current.add(k); // aberta não dá ponto
     spoken.current.add(active.answer);
-    setScore((n) => n - GIVE_UP_COST);
+    setScore((n) => n - Math.round(valueOf(active) * GIVE_UP_CUT));
     setLetters((l) => {
       const next = { ...l };
       cellsOf(active).forEach((c, i) => { next[cellKey(c.row, c.col)] = active.answer[i]; });
@@ -183,7 +196,7 @@ export function Crossword() {
       <GameTabs on="cruzadas" />
 
       <section className="cw-stats">
-        <span><b>{score}</b> pontos</span>
+        <span><b>{score}</b>/{ROUND_POINTS} pontos</span>
         <span><b>{solved.length}/{board.entries.length}</b> palavras</span>
       </section>
 
@@ -238,10 +251,10 @@ export function Crossword() {
 
       <section className="cw-help">
         <button className="ghost small" onClick={hint} disabled={!active || isSolved(active, letters)}>
-          Dica <small>−{HINT_COST}</small>
+          Dica <small>−{pct(HINT_CUT)}</small>
         </button>
         <button className="ghost small" onClick={giveUp} disabled={!active || isSolved(active, letters)}>
-          Não sei <small>−{GIVE_UP_COST}</small>
+          Não sei <small>−{pct(GIVE_UP_CUT)}</small>
         </button>
       </section>
 

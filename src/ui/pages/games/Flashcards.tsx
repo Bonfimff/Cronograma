@@ -3,6 +3,7 @@ import type { ContentRef, Word } from '../../../core/types';
 import { content, examplesFor } from '../../../core/content/repository';
 import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
+import { ROUND_POINTS, shares } from '../../../core/games/scoring';
 import { GameTabs } from './GameTabs';
 
 /** Quanto precisa arrastar pro lado pra valer como resposta. */
@@ -34,6 +35,8 @@ export function Flashcards() {
   const [drag, setDrag] = useState(0);
   const [stamp, setStamp] = useState<Stamp | null>(null);
   const [tally, setTally] = useState({ ok: 0, bad: 0 });
+  const [score, setScore] = useState(0); // o baralho inteiro é uma rodada de 100 pontos
+  const scored = useRef(new Set<number>());
   const startX = useRef<number | null>(null);
   const moved = useRef(false);
 
@@ -54,6 +57,10 @@ export function Flashcards() {
     setDrag(0);
     setStamp(s);
     setTally((t) => ({ ...t, [s]: t[s] + 1 }));
+    if (s === 'ok' && !scored.current.has(i)) {
+      scored.current.add(i); // cada cartão pontua uma vez, mesmo revendo o baralho
+      setScore((n) => n + shares(deck.length)[i]);
+    }
     window.setTimeout(() => { setStamp(null); go(1); }, STAMP_MS);
   };
 
@@ -170,7 +177,7 @@ export function Flashcards() {
         <button className="primary" onClick={() => judge('ok')} disabled={!!stamp}>✓ Acertei</button>
       </div>
       <p className="fc-count">
-        {i + 1}/{deck.length} · <span className="fc-okc">✓ {tally.ok}</span> · <span className="fc-badc">✗ {tally.bad}</span>
+        {i + 1}/{deck.length} · <span className="fc-okc">✓ {tally.ok}</span> · <span className="fc-badc">✗ {tally.bad}</span> · <b>{score}</b>/{ROUND_POINTS} pontos
       </p>
       <p className="fc-tip">arraste o cartão: direita = acertei, esquerda = errei</p>
     </>

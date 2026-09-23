@@ -1,4 +1,5 @@
 import type { VocabItem } from './wordTetris';
+import { shares } from './scoring';
 
 /**
  * Jogo de ligar palavras: uma rodada tem N pares português ↔ inglês, com as
@@ -51,7 +52,7 @@ export function newRound(pool: VocabItem[], size = ROUND_SIZE, avoid: string[] =
   return { pairs, left: shuffle(idx), right: shuffle(idx) };
 }
 
-/** Pontos de um acerto: base mais bônus pela sequência (igual ao Tetris). */
-export function pointsFor(streak: number): number {
-  return 100 + streak * 20;
+/** Quanto vale cada par: os 100 pontos da rodada divididos entre eles. */
+export function pairPoints(size: number): number[] {
+  return shares(size);
 }

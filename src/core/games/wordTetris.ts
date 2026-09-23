@@ -1,3 +1,4 @@
+import { ROUND_POINTS } from './scoring';
 import { content } from '../content/repository';
 
 export const COLS = 6;
@@ -213,9 +214,16 @@ export function randomTone(correct: boolean): string {
 // ---------- Nível / dificuldade progressiva ----------
 
 export const MAX_LEVEL = 6;
-const LEVEL_STEP = 300; // pontos por nível
+/** Cada nível é uma rodada de 100 pontos, fechada com WORDS_PER_LEVEL acertos. */
+const LEVEL_STEP = ROUND_POINTS;
+export const WORDS_PER_LEVEL = 5;
 
-/** Nível atual a partir da pontuação — começa fácil e sobe conforme os pontos aumentam. */
+/** Quanto vale cada palavra traduzida a tempo. */
+export function wordPoints(): number {
+  return ROUND_POINTS / WORDS_PER_LEVEL;
+}
+
+/** Nível atual a partir da pontuação — cada 100 pontos (uma rodada) sobe um nível. */
 export function levelFor(score: number): number {
   return Math.min(MAX_LEVEL, Math.floor(score / LEVEL_STEP) + 1);
 }

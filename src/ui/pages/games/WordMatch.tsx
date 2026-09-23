@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { buildVocabPool } from '../../../core/games/wordTetris';
-import { newRound, pointsFor, type MatchRound } from '../../../core/games/wordMatch';
+import { newRound, pairPoints, type MatchRound } from '../../../core/games/wordMatch';
+import { ROUND_POINTS } from '../../../core/games/scoring';
 import { sheetsOf } from '../../../core/library/sheets';
 import { speak } from '../../../core/lessons/lesson';
 import { GAME_KEYS } from '../../../core/storage/backup';
@@ -155,6 +156,7 @@ export function WordMatch() {
   const [shake, setShake] = useState(false);
   const [whip, setWhip] = useState<{ i: number; key: number } | null>(null);
   const [score, setScore] = useState(0);
+  const [rounds, setRounds] = useState(0); // rodadas já completadas
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(BEST_KEY) || 0) || 0);
   const [geo, setGeo] = useState<Record<number, Geo>>({});
@@ -232,7 +234,8 @@ export function WordMatch() {
     setSelR(null);
     if (l === r) {
       setMatched((m) => [...m, l]);
-      setScore((s) => s + pointsFor(streak));
+      // cada par vale uma fatia dos 100 pontos da rodada
+      setScore((s) => s + pairPoints(round.pairs.length)[matched.length]);
       const next = streak + 1;
       setStreak(next);
       if (next > best) {
@@ -273,6 +276,7 @@ export function WordMatch() {
     setLinked([]);
     setSelL(null);
     setSelR(null);
+    setRounds((n) => n + 1);
     setRound((r) => newRound(pool, undefined, r.pairs.map((p) => p.en)));
   };
 
@@ -304,6 +308,7 @@ export function WordMatch() {
 
       <section className="mt-stats">
         <div><small>Pontuação</small><b>{score} <Crown className="mt-crown" width="22" /></b></div>
+        <div><small>Rodadas</small><b>{rounds} <em className="mt-of">× {ROUND_POINTS}</em></b></div>
         <div>
           <small>Sequência atual</small>
           <b>

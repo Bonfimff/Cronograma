@@ -11,7 +11,7 @@ import { LaptopCut } from '../components/Cutouts';
 const TURN_MS = 900;
 const NEW_TAB = 'nova';
 
-type Tab = { key: string; label: string; count?: number };
+type Tab = { key: string; label: ReactNode; count?: number };
 
 /**
  * Biblioteca como um caderno: cada sub-aba é uma folha (vocabulário,
@@ -28,7 +28,8 @@ export function LibraryIndex() {
     { key: 'pattern', label: 'Padrões', count: content.patterns.length },
     { key: 'grammar', label: 'Gramática', count: content.grammar.length },
     ...custom.map((s) => ({ key: s.id, label: s.title, count: s.items.length })),
-    { key: NEW_TAB, label: '+ nova folha' },
+    // em telas estreitas a aba encolhe para "+ folha" (a palavra some por CSS)
+    { key: NEW_TAB, label: <>+ <span className="lib-tab-long">nova </span>folha</> },
   ];
 
   const [tab, setTab] = useState('word');
