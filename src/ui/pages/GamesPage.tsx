@@ -30,6 +30,12 @@ export function GamesPage() {
           </span>
           <span>Ligue cada palavra em português à tradução em inglês. Acertou, estala o chicote e a linha fica marcada.</span>
         </a>
+        <a className="game-card" href="#/jogos/cruzadas">
+          <span className="game-card-head">
+            <b>Palavras cruzadas</b>
+          </span>
+          <span>As dicas são as traduções em português; as respostas, as palavras em inglês. Cada cruzada é montada na hora com o seu vocabulário.</span>
+        </a>
         <a className="game-card" href="#/jogos/flashcards">
           <span className="game-card-head">
             <b>Flashcards</b>

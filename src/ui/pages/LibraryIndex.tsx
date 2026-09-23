@@ -5,7 +5,7 @@ import type { ContentRef, UserData } from '../../core/types';
 import { content } from '../../core/content/repository';
 import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
-import { LaptopCut, NewspaperManLive } from '../components/Cutouts';
+import { LaptopCut } from '../components/Cutouts';
 
 /** Duração da virada de folha. */
 const TURN_MS = 900;
@@ -61,7 +61,6 @@ export function LibraryIndex() {
           {content.words.length} palavras · {content.expressions.length} expressões · {content.patterns.length} padrões ·{' '}
           {custom.length} {custom.length === 1 ? 'folha sua' : 'folhas suas'}.
         </p>
-        <NewspaperManLive className="cut-corner" width={84} />
       </section>
 
       <nav className="lib-tabs" aria-label="Folhas" ref={navRef}>
