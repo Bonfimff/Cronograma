@@ -10,7 +10,7 @@ import { addDays, fmtShort, today } from '../../core/dates';
 import { KIND_LABEL } from '../../core/planning/weeks';
 import { Empty } from '../components/common';
 import { Praise } from '../components/Doodles';
-import { CrowBooks, GhostCut, Trex } from '../components/Cutouts';
+import { CrowBooks, GhostFloat, Trex } from '../components/Cutouts';
 
 const ORDER: ReviewState[] = ['reinforce', 'review', 'not_reviewed', 'scheduled', 'consolidated'];
 
@@ -57,7 +57,7 @@ export function ReviewPage() {
 
       {!total && (
         <>
-          <GhostCut className="ghost-float" width="104" />
+          <GhostFloat className="ghost-float" width={104} />
           <Empty>O histórico começa quando você finaliza a primeira sessão.</Empty>
         </>
       )}
