@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ContentRef, Word } from '../../../core/types';
 import { content, examplesFor } from '../../../core/content/repository';
 import { speak } from '../../../core/lessons/lesson';
@@ -23,8 +23,8 @@ function shuffle<T>(arr: T[]): T[] {
 
 /**
  * Flashcards no estilo do recorte de papel: a frente mostra a palavra, a
- * pronúncia e o tipo; tocar vira o cartão e mostra tradução, exemplos e
- * variações. Arrastar pra direita carimba ACERTEI, pra esquerda ERREI (dos dois
+ * pronúncia e o tipo; tocar vira o cartão, que fala a palavra e mostra tradução,
+ * exemplos e variações. Arrastar pra direita carimba ACERTEI, pra esquerda ERREI (dos dois
  * lados do cartão) e passa pro próximo. As setas só navegam.
  */
 export function Flashcards() {
@@ -36,6 +36,11 @@ export function Flashcards() {
   const [tally, setTally] = useState({ ok: 0, bad: 0 });
   const startX = useRef<number | null>(null);
   const moved = useRef(false);
+
+  // ao virar o cartão, a palavra é pronunciada junto com a tradução
+  useEffect(() => {
+    if (open && deck[i]) speak(deck[i].word);
+  }, [open, i, deck]);
 
   if (!deck.length) return <Empty>Adicione palavras em conteúdo para usar os flashcards.</Empty>;
 
@@ -138,7 +143,7 @@ export function Flashcards() {
               )}
             </div>
           ) : (
-            <p className="fc-hint">toque para ver a tradução</p>
+            <p className="fc-hint">toque para ouvir e ver a tradução</p>
           )}
 
           {stamp ? (
