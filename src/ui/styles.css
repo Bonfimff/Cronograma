@@ -1013,16 +1013,16 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .cw-clue { margin: 0 0 10px; font-size: .98rem; line-height: 1.35; }
 .cw-clue small { color: var(--ink-3); }
 
-/* o leitor de jornal fica atrás do tabuleiro, como quem lê as cruzadas do jornal */
-.cw-stage { position: relative; margin-bottom: 10px; }
-.cw-reader {
-  position: absolute; right: -6px; bottom: -6px; z-index: 0; opacity: .5;
-  transform: rotate(4deg); pointer-events: none;
+/* o leitor de jornal fica ao lado do tabuleiro, nunca por baixo das letras */
+.cw-stage {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center;
+  gap: 8px; margin-bottom: 10px;
 }
+.cw-reader { flex: none; transform: rotate(4deg); pointer-events: none; }
 .cw-help { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
 .cw-help small { color: var(--ink-3); margin-left: 4px; }
 
-.cw-grid { position: relative; z-index: 1; display: grid; gap: 3px; margin: 0 auto; width: 100%; }
+.cw-grid { display: grid; gap: 3px; margin: 0; flex: 0 1 auto; min-width: 0; width: 100%; }
 .cw-block { aspect-ratio: 1; }
 .cw-cell {
   position: relative; aspect-ratio: 1; border-radius: 4px;

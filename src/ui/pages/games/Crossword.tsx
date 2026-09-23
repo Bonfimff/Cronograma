@@ -191,9 +191,8 @@ export function Crossword() {
         {active ? <><b>{active.num} {active.dir === 'across' ? 'horizontal' : 'vertical'}:</b> {active.clue} <small>({active.answer.length} letras)</small></> : 'Toque numa casa para começar.'}
       </p>
 
-      {/* o leitor de jornal fica atrás do tabuleiro, espiando por cima dele */}
+      {/* o leitor de jornal fica ao lado do tabuleiro, sem cobrir casa nenhuma */}
       <div className="cw-stage">
-        <NewspaperManLive className="cw-reader" width={86} />
         <div
           className="cw-grid"
           style={{ gridTemplateColumns: `repeat(${board.cols}, 1fr)`, maxWidth: `${board.cols * 42}px` }}
@@ -234,6 +233,7 @@ export function Crossword() {
           );
         }))}
         </div>
+        <NewspaperManLive className="cw-reader" width={78} />
       </div>
 
       <section className="cw-help">
