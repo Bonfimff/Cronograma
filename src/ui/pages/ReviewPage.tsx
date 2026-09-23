@@ -49,12 +49,18 @@ export function ReviewPage() {
           <blockquote className="chalk">
             “Repetição<br />é progresso.”
           </blockquote>
-          <GhostCut className="cut-aside" width="72" />
+          {/* sem nada para revisar o fantasma vagueia pelo meio da tela; com
+              conteúdo ele some e o corvo estudioso toma o lugar dele aqui */}
+          {total > 0 && <CrowBooks className="cut-aside" width="72" />}
         </div>
-        <CrowBooks className="cut-corner" width="92" />
       </section>
 
-      {!total && <Empty>O histórico começa quando você finaliza a primeira sessão.</Empty>}
+      {!total && (
+        <>
+          <GhostCut className="ghost-float" width="104" />
+          <Empty>O histórico começa quando você finaliza a primeira sessão.</Empty>
+        </>
+      )}
 
       {ORDER.map((k) => board[k].length > 0 && (
         <section key={k}>

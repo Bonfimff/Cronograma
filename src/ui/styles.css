@@ -1078,3 +1078,19 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .cw-done { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 14px; }
 .cw-new { display: block; margin: 16px auto 0; }
 @media (prefers-reduced-motion: reduce) { .cw-cell.bad { animation: none; } }
+
+/* o fantasma da revisão vazia flutua devagar pelo meio da tela */
+.ghost-float {
+  position: fixed; left: 50%; top: 46%; width: 104px; z-index: 0; opacity: .35;
+  margin: -52px 0 0 -52px; pointer-events: none;
+  animation: ghost-drift 18s ease-in-out infinite;
+}
+@keyframes ghost-drift {
+  0%   { transform: translate(0, 0) rotate(-3deg); }
+  20%  { transform: translate(-58px, -34px) rotate(4deg); }
+  40%  { transform: translate(52px, -12px) rotate(-2deg); }
+  60%  { transform: translate(34px, 40px) rotate(5deg); }
+  80%  { transform: translate(-44px, 26px) rotate(-4deg); }
+  100% { transform: translate(0, 0) rotate(-3deg); }
+}
+@media (prefers-reduced-motion: reduce) { .ghost-float { animation: none; } }
