@@ -92,23 +92,23 @@ export function GhostFloat({ className, width = 104 }: C) {
 
       // acelera na direção do alvo e perde velocidade no caminho: o movimento
       // ganha inércia e faz curvas largas em vez de virar de bico
-      const pull = 52; // aceleração rumo ao destino
+      const pull = 40; // aceleração (px/s²) rumo ao destino: ele só desliza
       vx += (dx / dist) * pull * dt;
       vy += (dy / dist) * pull * dt;
       const drag = Math.pow(0.42, dt); // freio do ar: segura a velocidade sem travar
       vx *= drag;
       vy *= drag;
 
-      pos = { x: pos.x + vx, y: pos.y + vy };
+      pos = { x: pos.x + vx * dt, y: pos.y + vy * dt }; // vx e vy são px por segundo
       const a = area();
       pos.x = Math.min(a.x1, Math.max(a.x0, pos.x));
       pos.y = Math.min(a.y1, Math.max(a.y0, pos.y));
 
       const t = now / 1000;
-      const bob = Math.sin(t * 1.7) * 6 + Math.sin(t * 0.9) * 3; // sobe e desce boiando
-      const sway = Math.sin(t * 1.1) * 2.5; // balanço do lençol
-      if (Math.abs(vx) > 0.25) face = vx > 0 ? 1 : -1;
-      const tilt = Math.max(-14, Math.min(14, vx * 2.2)) + sway;
+      const bob = Math.sin(t * 0.8) * 6 + Math.sin(t * 0.43) * 3; // sobe e desce boiando
+      const sway = Math.sin(t * 0.55) * 2.5; // balanço do lençol
+      if (Math.abs(vx) > 3) face = vx > 0 ? 1 : -1;
+      const tilt = Math.max(-12, Math.min(12, vx * 0.22)) + sway;
       // mais perto do rodapé, um tico maior: dá profundidade ao passeio
       const depth = 0.92 + ((pos.y - a.y0) / Math.max(1, a.y1 - a.y0)) * 0.22;
 
