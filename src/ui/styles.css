@@ -985,3 +985,20 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   .mt-line { animation: none; stroke-dashoffset: 0; }
   .mt-pill.bad, .mt-pill.hit { animation: none; }
 }
+
+/* fim de jogo: o tabuleiro fica preto e branco, e o aviso vem por cima */
+.wt-board.over { filter: grayscale(1) brightness(.5) contrast(1.1); transition: filter .45s ease; }
+.wt-stage { overflow: visible; }
+.wt-over {
+  position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px; text-align: center;
+  animation: wt-over-in .45s ease both;
+}
+.wt-over .goat-stage { margin: 0; }
+.wt-over-line {
+  margin: 0; font-family: var(--hand); font-size: 1.35rem; line-height: 1.2; color: var(--ink);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .9), 0 0 4px rgba(0, 0, 0, .9);
+}
+.wt-over-line b { color: var(--marker); }
+@keyframes wt-over-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .wt-over { animation: none; } }

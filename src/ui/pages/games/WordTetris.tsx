@@ -217,7 +217,7 @@ export function WordTetris() {
       <section>
         <div className="wt-stage">
           {levelUp && <StarBadge className="wt-levelup">level<br />up!</StarBadge>}
-          <div className="wt-board">
+          <div className={`wt-board ${over ? 'over' : ''}`}>
           {board.map((row, r) => row.map((cell, c) => cell && (
             <div
               key={`${r}-${c}`}
@@ -249,6 +249,18 @@ export function WordTetris() {
             </div>
           )}
           </div>
+          {over && (
+            <div className="wt-over">
+              <div className="goat-stage">
+                <GoatTalking width={92} />
+                <span className="goat-balloon"><b>Béééééééé!</b></span>
+              </div>
+              <p className="wt-over-line">
+                Fim de jogo.{' '}
+                {score >= best && score > 0 ? <><b>Novo recorde: {score} pontos!</b></> : <>{score} pontos.</>}
+              </p>
+            </div>
+          )}
         </div>
         {falling && !falling.dropping && (
           <div className={`wt-timer ${timeLeft < .3 ? 'hurry' : ''}`}>
@@ -276,16 +288,9 @@ export function WordTetris() {
 
       {over && (
         <section className="actions left">
-          <div className="wt-gameover">
-            <div className="goat-stage">
-              <GoatTalking width={124} />
-              <span className="goat-balloon"><b>Béééééééé!</b></span>
-            </div>
-            <p className="wt-quip">
-              “Toda vez que eu me deparo com essa situação aqui, me dá vontade de berrar, é isso…”
-            </p>
-            <p className="big-line">Fim de jogo — {score} pontos{score >= best && score > 0 ? ' (novo recorde!)' : ''}</p>
-          </div>
+          <p className="wt-quip">
+            “Toda vez que eu me deparo com essa situação aqui, me dá vontade de berrar, é isso…”
+          </p>
           <button className="primary" onClick={restart}>Jogar de novo</button>
           <a className="ghost" href="#/jogos">Voltar aos jogos</a>
         </section>
