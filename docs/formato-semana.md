@@ -28,7 +28,23 @@ existente em **Exportar semana**, edite e importe de volta.
 }
 ```
 
-Campos que começam com `$` (como `$leia_me`) são ignorados.
+Campos que começam com `$` (como `$leia_me` e `$plataforma`) são ignorados na importação —
+servem de instrução para quem (ou o que) escreve o arquivo.
+
+### O que a plataforma faz com cada campo
+
+O modelo baixado traz esta tabela em `$plataforma`, para quem monta a semana à mão ou pede a uma IA:
+
+| Recurso | De onde vem |
+|---|---|
+| **Aula guiada** (Entender → Observar → Relacionar → Praticar → Avaliar) | `app.intro`, `app.context`, `app.tips`, o conteúdo de `refs`, `exercises`, `expected` |
+| **Ler aula** (a mesma aula em texto corrido) | tudo acima; quanto mais campos preenchidos, mais completa |
+| **Ouvir e traduzir ao toque** | `words[].word`, `words[].audio`, `expressions[].text`, `examples[].en` + as traduções |
+| **Folha impressa e leitura do verso** | `sheet.copy`, `sheet.quiz`, `sheet.practice`, `whenToUse` |
+| **Revisão espaçada** | `refs` (entram no histórico ao finalizar a sessão) |
+| **Biblioteca** | `words`, `expressions`, `patterns`, `grammar`, `sheets` |
+| **Jogos** (Tetris, Flashcards, Ligar palavras, Cruzadas) | `words` e suas `variations`, `expressions`, `sheets` — nas cruzadas, só palavras de 3 a 9 letras sem espaço ou hífen |
+| **Exercícios** | `exercises` (ids existentes ou objetos completos); sem eles, a aula gera os seus |
 
 ### `content` — conteúdo novo
 

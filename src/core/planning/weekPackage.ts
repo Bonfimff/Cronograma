@@ -427,8 +427,21 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
 }
 
 /** Modelo comentado para começar uma semana nova. */
-export function templatePackage(weekStart: string): WeekPackage & { $leia_me: string[] } {
+export function templatePackage(weekStart: string): WeekPackage & { $leia_me: string[]; $plataforma: Record<string, string> } {
   return {
+    // o que a plataforma faz com cada coisa que vem no arquivo — para quem monta
+    // a semana (ou pede a uma IA que monte) saber o que vale a pena preencher
+    $plataforma: {
+      'aula guiada': 'Entender → Observar → Relacionar → Praticar → Avaliar. Usa app.intro/context/tips, o conteúdo de refs (explicação, exemplos, usos, variações), os exercises e expected.',
+      'ler aula': 'A mesma aula em texto corrido, para ler do começo ao fim. Quanto mais campos vierem preenchidos, mais completa ela fica.',
+      'ouvir e traduzir': 'Toda palavra, expressão e exemplo em inglês é falada ao toque (áudio do campo audio, se houver; senão a voz do sistema) e mostra a tradução ali mesmo.',
+      'folha impressa': 'sheet.copy (Conceito principal, até 3 linhas), sheet.quiz (Tente sem consultar, até 6), sheet.practice (Minha prática) e whenToUse. O verso é lido pela câmera em Escanear.',
+      'revisão espaçada': 'Cada conteúdo de refs entra no histórico ao finalizar a sessão e volta em Revisão conforme o resultado (absorvido, revisar, reforçar).',
+      'biblioteca': 'words, expressions, patterns e grammar viram fichas navegáveis; sheets vira folha de vocabulário do usuário.',
+      'jogos': 'words (e as variations delas), expressions e sheets alimentam o Tetris, os Flashcards, o Ligar palavras e as Palavras cruzadas. Cruzadas só usam palavras de 3 a 9 letras, sem espaço ou hífen.',
+      'exercícios': 'types: translate, fill, choice, match, build, qa, produce. Sem exercises, a aula gera exercícios a partir do conteúdo.',
+      'pontuação': 'Cada rodada de jogo vale 100 pontos; no Tetris, 5 acertos fecham um nível de 100.',
+    },
     $leia_me: [
       'Pacote semanal do Inglês Híbrido. Campos que começam com $ são ignorados.',
       'content: conteúdo NOVO da semana (mesmo formato dos arquivos em /content). Pode referenciar o conteúdo que já existe.',

@@ -1104,3 +1104,49 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   .ghost-float { left: 50%; top: 44%; transform: translate(-50%, -50%); }
 }
+
+/* ---------- conteúdos que falam (sessão e leitura) ---------- */
+.refcards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.refcard { border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2); overflow: hidden; }
+.refcard.on { border-color: var(--accent); }
+.refcard-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 12px 14px;
+}
+.refcard-title { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.refcard-title b { font-size: 1.05rem; }
+.refcard-title small, .refcard-side .copy-mark { color: var(--ink-3); font-size: .72rem; }
+.refcard-side { display: flex; align-items: center; gap: 8px; flex: none; }
+.refcard-say {
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--rule); color: var(--accent); font-size: .7rem;
+}
+.refcard.on .refcard-say { background: var(--accent); color: #06211f; border-color: transparent; }
+.refcard-body { padding: 0 14px 14px; display: grid; gap: 8px; }
+.refcard-body p { margin: 0; }
+.refcard-ex { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.refcard-ex li, .read-ex { display: grid; gap: 2px; }
+.refcard-links { display: flex; gap: 14px; flex-wrap: wrap; }
+.tight { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* uma linha em inglês que se pronuncia ao toque */
+.say-line {
+  display: inline-flex; align-items: baseline; gap: 6px; background: none; border: 0; padding: 0;
+  color: inherit; font: inherit; text-align: left;
+}
+.say-line span[aria-hidden] { color: var(--accent); font-size: .7em; }
+.say-line:disabled { color: inherit; }
+
+/* ---------- aula para ler ---------- */
+.reading { max-width: 680px; margin: 0 auto; }
+.read-head { padding-bottom: 8px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+.read-head .back { display: inline-block; margin-bottom: 8px; }
+.read-part { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.read-part h2 { font-size: 1.25rem; margin: 0 0 8px; }
+.read-concept h2 { font-size: 1.9rem; font-weight: 600; }
+.read-exs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 12px; }
+.read-ex .pt { color: var(--ink-2); }
+.read-ex .ctx { color: var(--ink-3); }
+.read-foot { margin: 18px 0 8px; }
+
+.lesson-head .read-link { float: right; }

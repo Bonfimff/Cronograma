@@ -42,6 +42,7 @@ export function LessonPage({ id }: { id: string }) {
     <div className="lesson">
       <header className="lesson-head">
         <a href={`#/sessao/${s.id}`} className="back">‹ {s.title}</a>
+        <a href={`#/leitura/${s.id}`} className="back read-link">ler a aula corrida ›</a>
         <ol className="steps">
           {STEPS.map((t, i) => (
             <li key={t} className={i === step ? 'on' : i < step ? 'done' : ''}>

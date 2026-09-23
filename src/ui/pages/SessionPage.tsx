@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import { deleteSession, findSession, finishSession, saveUserExercises, startSession, updateSession } from '../../core/sessions/sessions';
-import { refLabel, KIND_LABEL as CONTENT_KIND, parseRef } from '../../core/content/repository';
 import { fmtShort, weekdayName, weekStartOf } from '../../core/dates';
 import { SessionForm } from '../components/SessionForm';
 import { FinishForm } from '../components/FinishForm';
 import { Empty, Kind, MASTERY_LABEL, UNDERSTOOD_LABEL, USAGE_LABEL } from '../components/common';
+import { RefCardView } from '../components/RefCardView';
+import { getTopic } from '../../core/content/repository';
 
 export function SessionPage({ id }: { id: string }) {
   const data = useData();
@@ -14,6 +15,7 @@ export function SessionPage({ id }: { id: string }) {
   const [mode, setMode] = useState<'view' | 'edit' | 'finish'>('view');
   if (!s) return <Empty>Sessão {id} não encontrada.</Empty>;
   const sheet = data.worksheets.find((w) => w.sessionId === s.id);
+  const topic = s.topicId ? getTopic(s.topicId) : undefined;
 
   if (mode === 'edit')
     return (
@@ -50,7 +52,8 @@ export function SessionPage({ id }: { id: string }) {
               {s.status === 'in_progress' ? 'Continuar estudo' : 'Iniciar estudo'}
             </button>
           )}
-          {s.status === 'done' && <a className="ghost" href={`#/aula/${s.id}`}>Rever aula</a>}
+          {s.status === 'done' && <a className="ghost" href={`#/aula/${s.id}`}>Rever estudo</a>}
+          <a className="ghost" href={`#/leitura/${s.id}`}>Ler aula</a>
           <a className="ghost" href={`#/imprimir?ids=${s.id}`}>{sheet?.printedAt ? 'Reimprimir folha' : 'Gerar folha'}</a>
           {s.status !== 'planned' && <button className="ghost" onClick={() => setMode('finish')}>{s.status === 'done' ? 'Corrigir resultado' : 'Finalizar'}</button>}
           <button className="ghost" onClick={() => setMode('edit')}>Editar</button>
@@ -83,6 +86,24 @@ export function SessionPage({ id }: { id: string }) {
         </section>
       )}
 
+      {(s.app?.context || s.app?.intro || s.whenToUse || s.app?.tips?.length) ? (
+        <section>
+          <h2>Sobre esta aula</h2>
+          {s.app?.context && <p><span className="eyebrow">Situação</span><br />{s.app.context}</p>}
+          {s.app?.intro && <p>{s.app.intro}</p>}
+          {s.whenToUse && <p><span className="eyebrow">Quando usar</span><br />{s.whenToUse}</p>}
+          {s.app?.tips?.length ? <ul>{s.app.tips.map((t) => <li key={t}>{t}</li>)}</ul> : null}
+        </section>
+      ) : null}
+
+      {topic && (
+        <section>
+          <h2>Tema</h2>
+          <p><strong>{topic.title}</strong> — {topic.description}</p>
+          {topic.objective && <p className="muted">{topic.objective}</p>}
+        </section>
+      )}
+
       {s.expected && (
         <section>
           <h2>Resultado esperado</h2>
@@ -93,15 +114,35 @@ export function SessionPage({ id }: { id: string }) {
 
       <section>
         <h2>Conteúdos</h2>
-        <ul className="plain">
-          {s.refs.map((r) => (
-            <li key={r}>
-              <a href={`#/conteudo/${r}`}>{refLabel(r)}</a> <small>{CONTENT_KIND[parseRef(r).kind]}</small>
-              {s.copyRefs.includes(r) && <span className="copy-mark"> ✎ COPIE</span>}
-            </li>
-          ))}
+        <p className="muted">Toque num conteúdo para ouvir a pronúncia e ver a tradução.</p>
+        <ul className="refcards">
+          {s.refs.map((r) => <RefCardView key={r} refId={r} copy={s.copyRefs.includes(r)} />)}
         </ul>
       </section>
+
+      {(s.sheet?.copy?.length || s.sheet?.quiz?.length || s.sheet?.practice) ? (
+        <section>
+          <h2>Na folha</h2>
+          {s.sheet?.copy?.length ? (
+            <div className="copybox">
+              <p className="copy-mark">✎ COPIE — conceito principal</p>
+              {s.sheet.copy.map((l) => <p key={l}>{l}</p>)}
+            </div>
+          ) : null}
+          {s.sheet?.quiz?.length ? (
+            <>
+              <h3>Tente sem consultar</h3>
+              <ol className="tight">{s.sheet.quiz.map((q) => <li key={q}>{q}</li>)}</ol>
+            </>
+          ) : null}
+          {s.sheet?.practice ? (
+            <>
+              <h3>Minha prática</h3>
+              <p>{s.sheet.practice}</p>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="danger">
         <button className="link" onClick={() => {
