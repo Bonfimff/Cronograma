@@ -39,6 +39,7 @@ export function WordTetris() {
   const [over, setOver] = useState(false);
   const [paused, setPaused] = useState(false);
   const [levelUp, setLevelUp] = useState(false);
+  const [shake, setShake] = useState(false); // tremor da linha limpa (volta a false e pode disparar de novo)
   const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
   const [timeLeft, setTimeLeft] = useState(1);
   const timeoutRef = useRef<number | undefined>(undefined);
@@ -105,6 +106,12 @@ export function WordTetris() {
         window.setTimeout(() => setLevelUp(false), 1800);
       }
       setBoard(cleared);
+      if (n > 0) {
+        // linha limpa: o tabuleiro treme e o aparelho vibra (mais forte por linha)
+        setShake(true);
+        window.setTimeout(() => setShake(false), 420);
+        try { navigator.vibrate?.(n > 1 ? [40, 50, 70] : [55]); } catch { /* sem vibração no aparelho */ }
+      }
       setLines((l) => l + n);
       setScore(newScore);
       setStreak(streakRef.current);
@@ -218,7 +225,7 @@ export function WordTetris() {
       <section>
         <div className="wt-stage">
           {levelUp && <StarBadge className="wt-levelup">level<br />up!</StarBadge>}
-          <div className={`wt-board ${over ? 'over' : ''}`}>
+          <div className={`wt-board ${over ? 'over' : ''} ${shake ? 'shake' : ''}`}>
           {board.map((row, r) => row.map((cell, c) => cell && (
             <div
               key={`${r}-${c}`}

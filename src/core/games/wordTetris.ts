@@ -228,9 +228,14 @@ export function levelFor(score: number): number {
   return Math.min(MAX_LEVEL, Math.floor(score / LEVEL_STEP) + 1);
 }
 
-/** Tempo pra responder: mais generoso no início, mais apertado nos níveis altos. */
-export function timeLimitFor(level: number): number {
-  return Math.max(4000, 9000 - (level - 1) * 900);
+/**
+ * Tempo pra responder — o mesmo em todos os níveis. A peça cai sempre na mesma
+ * velocidade: o que aperta nos níveis altos são as formas e as palavras, não o
+ * relógio.
+ */
+export const FALL_MS = 9000;
+export function timeLimitFor(_level: number): number {
+  return FALL_MS;
 }
 
 /** Complexidade das peças liberada por nível (formas simples primeiro). */
@@ -295,10 +300,19 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+/** Peso de uma palavra no sorteio: quanto mais o jogador erra, mais ela aparece. */
+function weightFor(stats: WordStats, en: string, level: number): number {
+  // 0 até o nível 3, chegando a 1 no último nível
+  const bias = Math.max(0, level - 3) / Math.max(1, MAX_LEVEL - 3);
+  const f = familiarity(stats, en) ?? 0.6; // nunca vista: nem fácil nem difícil
+  return 1 + bias * 5 * (1 - f);
+}
+
 /**
  * A peça mostra a palavra em português; as opções são as traduções em inglês (uma certa + 3 erradas).
- * Em níveis baixos, prioriza palavras que o jogador já acerta mais (começo mais fácil); em níveis
- * altos, sorteia do vocabulário inteiro, misturando as que ele ainda erra mais.
+ * Em níveis baixos, prioriza palavras que o jogador já acerta mais (começo mais fácil). Dali para
+ * cima o sorteio vai pesando para as palavras que ele mais erra: no último nível, uma que ele nunca
+ * acertou tem seis vezes mais chance de cair que uma já dominada.
  */
 export function pickPiece(pool: VocabItem[], level: number, stats: WordStats, shape: Shape, avoidEn?: string): Piece {
   let choices = pool.length > 1 ? pool.filter((v) => v.en !== avoidEn) : pool;
@@ -310,7 +324,11 @@ export function pickPiece(pool: VocabItem[], level: number, stats: WordStats, sh
     });
     if (easier.length >= Math.min(4, choices.length)) choices = easier;
   }
-  const item = choices[Math.floor(Math.random() * choices.length)];
+  const weights = choices.map((v) => weightFor(stats, v.en, level));
+  let draw = Math.random() * weights.reduce((a, b) => a + b, 0);
+  let at = 0;
+  while (at < choices.length - 1 && draw > weights[at]) { draw -= weights[at]; at++; }
+  const item = choices[at];
   const distractors = shuffle(pool.filter((v) => v.en.toLowerCase() !== item.en.toLowerCase()))
     .slice(0, 3)
     .map((v) => v.en);
