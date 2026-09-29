@@ -1639,7 +1639,8 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .verbete .empty { color: #8a8170; }
 
 /* campos do verbete esperando ser preenchidos */
-.campos { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 8px 0 12px; align-items: baseline; }
+.campos { margin: 8px 0 12px; }
+.campo-linha { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; align-items: baseline; }
 .campos dt { color: #8a8170; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; }
 .campos dd { margin: 0; min-width: 0; }
 .campo-valor {

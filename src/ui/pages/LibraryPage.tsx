@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { createContext, useContext, useRef, useState } from 'react';
 import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import {
@@ -18,6 +18,10 @@ export function LibraryPage({ refId }: { refId?: string }) {
   return refId ? <Detail r={refId as ContentRef} /> : <LibraryIndex />;
 }
 
+/** Modo de edição do verbete: ligado no lápis, ao lado do alto-falante. */
+const Edicao = createContext(false);
+const usandoLapis = () => useContext(Edicao);
+
 function Detail({ r }: { r: ContentRef }) {
   const data = useData();
   const it = resolve(r);
@@ -25,9 +29,10 @@ function Detail({ r }: { r: ContentRef }) {
   const { kind } = parseRef(r);
   const st = reviewStatus(data, r);
   const hist = entriesFor(data, r);
+  const [editando, setEditando] = useState(false);
 
   return (
-    <>
+    <Edicao.Provider value={editando}>
       {/* o verbete é mais uma folha do caderno: mesma margem vermelha, mesma pauta */}
       <section className="hero lib-hero">
         <a href="#/conteudo" className="lib-voltar">‹</a>
@@ -38,9 +43,23 @@ function Detail({ r }: { r: ContentRef }) {
       <article className="lib-sheet verbete">
         <h2 className="lib-title">
           <span className="en">{refLabel(r)}</span>
+          {/* o lápis acende os campos: fora dele o verbete fica só de leitura */}
+          <button
+            className={`lib-voz ${editando ? 'on' : ''}`}
+            onClick={() => setEditando((x) => !x)}
+            aria-pressed={editando}
+            aria-label={editando ? 'Terminar a edição' : 'Editar este verbete'}
+            title={editando ? 'Terminar a edição' : 'Editar este verbete'}
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
           {kind !== 'grammar' && (
             <button className="lib-voz" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))} aria-label="Ouvir">🔊</button>
           )}
+
         </h2>
         {st && <p className="verbete-estado">{STATE_LABEL[st.state]}</p>}
 
@@ -103,7 +122,7 @@ function Detail({ r }: { r: ContentRef }) {
           </section>
         )}
       </article>
-    </>
+    </Edicao.Provider>
   );
 }
 
@@ -121,6 +140,7 @@ function Campo({
   textoLongo?: boolean;
   converter?: (v: string) => unknown;
 }) {
+  const lapis = usandoLapis();
   const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState(valor);
 
@@ -129,6 +149,8 @@ function Campo({
     if (texto.trim() === valor.trim()) return;
     store.update((d) => { atualizarItem(d, r, { [campo]: converter ? converter(texto) : texto.trim() }); });
   };
+
+  if (!lapis) return valor.trim() ? <span>{valor}</span> : null;
 
   if (editando) {
     const comum = {
@@ -162,6 +184,7 @@ function Campo({
 
 /** Um uso da palavra, com os campos abertos para escrita e exemplos próprios. */
 function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
+  const lapis = usandoLapis();
   const [novo, setNovo] = useState(false);
   const [en, setEn] = useState('');
   const [pt, setPt] = useState('');
@@ -181,7 +204,7 @@ function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
           <button className="say" onClick={() => speak(x.en)}>▶</button>
         </p>
       ))}
-      {novo ? (
+      {lapis && novo ? (
         <form
           className="lib-form"
           onSubmit={(e) => {
@@ -196,7 +219,7 @@ function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
           <button className="primary" disabled={!en.trim()}>Anotar</button>
           <button type="button" className="link" onClick={() => setNovo(false)}>cancelar</button>
         </form>
-      ) : (
+      ) : lapis ? (
         <p className="uso-acoes">
           <button className="link" onClick={() => setNovo(true)}>+ exemplo neste uso</button>
           <button
@@ -204,7 +227,7 @@ function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
             onClick={() => { if (window.confirm(`Tirar o uso "${u.label}"?`)) store.update((d) => removerUso(d, r, u.id)); }}
           >tirar uso</button>
         </p>
-      )}
+      ) : null}
     </li>
   );
 }
@@ -213,6 +236,7 @@ function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
 function CampoUso({
   r, usoId, nome, campo, valor, textoLongo,
 }: { r: ContentRef; usoId: string; nome: string; campo: string; valor: string; textoLongo?: boolean }) {
+  const lapis = usandoLapis();
   const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState(valor);
   const guardar = () => {
@@ -220,6 +244,7 @@ function CampoUso({
     if (texto.trim() === valor.trim()) return;
     store.update((d) => { atualizarUso(d, r, usoId, { [campo]: texto.trim() }); });
   };
+  if (!lapis) return valor.trim() ? <>{valor}</> : null;
   if (editando) {
     const comum = {
       value: texto,
@@ -251,11 +276,13 @@ function CampoUso({
 
 /** Anotar um uso novo da palavra. */
 function NovoUso({ r }: { r: ContentRef }) {
+  const lapis = usandoLapis();
   const [aberto, setAberto] = useState(false);
   const [label, setLabel] = useState('');
   const [meaning, setMeaning] = useState('');
   const [explanation, setExplanation] = useState('');
 
+  if (!lapis) return null;
   if (!aberto) return <button className="link campo-mais" onClick={() => setAberto(true)}>+ anotar um uso</button>;
   return (
     <form
@@ -278,9 +305,11 @@ function NovoUso({ r }: { r: ContentRef }) {
 
 /** Anotar um exemplo no verbete: é assim que uma palavra criada na correria vai ganhando corpo. */
 function NovoExemplo({ r }: { r: ContentRef }) {
+  const lapis = usandoLapis();
   const [en, setEn] = useState('');
   const [pt, setPt] = useState('');
   const enRef = useRef<HTMLInputElement>(null);
+  if (!lapis) return null;
   return (
     <form
       className="lib-form"
@@ -299,36 +328,58 @@ function NovoExemplo({ r }: { r: ContentRef }) {
 }
 
 function WordTree({ w, r }: { w: Word; r: ContentRef }) {
+  const lapis = usandoLapis();
   const traducoes = w.translations.map((t) => t.text).join(', ');
   return (
     <section className="tree">
       {/* os campos ficam à vista mesmo vazios: é só tocar e escrever */}
       <dl className="campos">
-        <dt>Tipo</dt>
-        <dd><Campo r={r} nome="Tipo" campo="type" valor={w.type} /></dd>
-        <dt>Pronúncia</dt>
-        <dd>
-          <Campo
-            r={r} nome="Pronúncia (IPA)" campo="pronunciation" valor={w.pronunciation.ipa}
-            converter={(v) => ({ ...w.pronunciation, ipa: v.trim() })}
-          />
-        </dd>
-        <dt>Como soa</dt>
-        <dd>
-          <Campo
-            r={r} nome="Como soa em português" campo="pronunciation" valor={w.pronunciation.respelling ?? ''}
-            converter={(v) => ({ ...w.pronunciation, respelling: v.trim() })}
-          />
-        </dd>
-        <dt>Tradução</dt>
-        <dd>
-          <Campo
-            r={r} nome="Tradução" campo="translations" valor={traducoes}
-            converter={(v) => v.split(',').map((x) => ({ text: x.trim() })).filter((x) => x.text)}
-          />
-        </dd>
-        <dt>Significado</dt>
-        <dd><Campo r={r} nome="Significado" campo="core_meaning" valor={w.core_meaning} textoLongo /></dd>
+        {[
+          { rotulo: 'Tipo', valor: w.type, campo: <Campo r={r} nome="Tipo" campo="type" valor={w.type} /> },
+          {
+            rotulo: 'Pronúncia',
+            valor: w.pronunciation.ipa,
+            campo: (
+              <Campo
+                r={r} nome="Pronúncia (IPA)" campo="pronunciation" valor={w.pronunciation.ipa}
+                converter={(v) => ({ ...w.pronunciation, ipa: v.trim() })}
+              />
+            ),
+          },
+          {
+            rotulo: 'Como soa',
+            valor: w.pronunciation.respelling ?? '',
+            campo: (
+              <Campo
+                r={r} nome="Como soa em português" campo="pronunciation" valor={w.pronunciation.respelling ?? ''}
+                converter={(v) => ({ ...w.pronunciation, respelling: v.trim() })}
+              />
+            ),
+          },
+          {
+            rotulo: 'Tradução',
+            valor: traducoes,
+            campo: (
+              <Campo
+                r={r} nome="Tradução" campo="translations" valor={traducoes}
+                converter={(v) => v.split(',').map((x) => ({ text: x.trim() })).filter((x) => x.text)}
+              />
+            ),
+          },
+          {
+            rotulo: 'Significado',
+            valor: w.core_meaning,
+            campo: <Campo r={r} nome="Significado" campo="core_meaning" valor={w.core_meaning} textoLongo />,
+          },
+        ]
+          // sem o lápis, linha vazia não aparece: o verbete fica limpo
+          .filter((linha) => lapis || linha.valor.trim())
+          .map((linha) => (
+            <div key={linha.rotulo} className="campo-linha">
+              <dt>{linha.rotulo}</dt>
+              <dd>{linha.campo}</dd>
+            </div>
+          ))}
       </dl>
 
       <ul className="branches">
