@@ -1150,3 +1150,17 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .read-foot { margin: 18px 0 8px; }
 
 .lesson-head .read-link { float: right; }
+
+/* ---------- conta ---------- */
+.conta-form { max-width: 380px; }
+.senha-campo { position: relative; display: block; }
+.senha-campo input { width: 100%; padding-right: 74px; }
+.senha-campo .link {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: .78rem; padding: 0;
+}
+/* recado de erro do servidor ou da validação */
+.aviso {
+  margin: 0; padding: 10px 12px; border-radius: 10px; font-size: .9rem;
+  background: rgba(240, 179, 172, .14); border: 1px solid rgba(240, 179, 172, .5); color: #f0b3ac;
+}

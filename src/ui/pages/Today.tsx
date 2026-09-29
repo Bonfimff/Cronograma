@@ -103,6 +103,7 @@ export function Today() {
       <section className="actions left">
         <a className="ghost small" href="#/imprimir">Imprimir folhas</a>
         <a className="ghost small" href="#/dados">Backup dos dados</a>
+        <a className="ghost small" href="#/conta">Conta</a>
         <a className="ghost small" href="#/jogos">Jogar</a>
       </section>
 
