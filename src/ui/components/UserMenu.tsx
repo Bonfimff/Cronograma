@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { session } from '../../core/api/session';
+import { aplicarTema, temaAtual, type Tema } from '../../core/tema';
 
 /**
  * Botão da conta, no alto à direita de todas as abas. Fechado, mostra a inicial
@@ -9,6 +10,7 @@ import { session } from '../../core/api/session';
 export function UserMenu() {
   const estado = useSyncExternalStore((cb) => session.subscribe(cb), () => session.get());
   const [aberto, setAberto] = useState(false);
+  const [tema, setTema] = useState<Tema>(temaAtual);
   const caixa = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,6 +26,14 @@ export function UserMenu() {
       document.removeEventListener('keydown', tecla);
     };
   }, [aberto]);
+
+  const trocarTema = () => {
+    const novo: Tema = tema === 'claro' ? 'escuro' : 'claro';
+    aplicarTema(novo);
+    setTema(novo);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', novo === 'claro' ? '#ece3d0' : '#0d0d0d');
+  };
 
   const dentro = !!estado.tokens;
   const inicial = estado.email?.trim()[0]?.toUpperCase();
@@ -52,6 +62,7 @@ export function UserMenu() {
               <p className="usuario-email">{estado.email}</p>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
+              <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
               <button
                 role="menuitem"
                 className="usuario-sair"
@@ -65,6 +76,7 @@ export function UserMenu() {
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Entrar</a>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Criar conta</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
+              <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
             </>
           )}
         </div>

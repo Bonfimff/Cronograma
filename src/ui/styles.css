@@ -23,7 +23,39 @@
   --hand: 'Caveat', 'Segoe Script', cursive;
   --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
   --radius: 16px;
+  /* superfícies que antes eram cor fixa: assim o tema claro só troca o valor */
+  --campo: rgba(13, 13, 13, .6);
+  --barra: rgba(14, 14, 14, .92);
+  --sombra: rgba(0, 0, 0, .45);
+  --textura: .5;
   color-scheme: dark;
+}
+
+/* ---------- tema claro: papel envelhecido, não branco de escritório ---------- */
+:root[data-tema="claro"] {
+  --paper: #ece3d0;
+  --paper-2: #f6efdf;
+  --paper-3: #e3d8c0;
+  --ink: #241f18;
+  --ink-2: #5b5346;
+  --ink-3: #8b8271;
+  --rule: #d2c5a9;
+  --accent: #c25812;
+  --accent-rgb: 194, 88, 18;
+  --accent-ink: #fdf3e8;
+  --accent-soft: rgba(var(--accent-rgb), .14);
+  --marker: #d9a017;
+  --ok: #1f7b70;
+  --bad: #b23a22;
+  --k-new: #1f7b70;
+  --k-practice: #5c58c2;
+  --k-review: #b07b0c;
+  --k-reinforce: #b23a22;
+  --k-consolidate: #3c8b52;
+  --campo: #fbf6e8;
+  --barra: rgba(246, 239, 223, .93);
+  --sombra: rgba(70, 55, 30, .18);
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -37,6 +69,8 @@ html, body {
   background-attachment: fixed;
   background-blend-mode: soft-light, normal, normal;
 }
+/* no papel claro o ruído precisa escurecer, não clarear */
+:root[data-tema="claro"] body { background-blend-mode: multiply, normal, normal; }
 .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 a { color: inherit; }
 h1, h2, h3 { line-height: 1.15; margin: 0 0 .5rem; font-weight: 700; letter-spacing: -.015em; }
@@ -59,7 +93,7 @@ code, .mono { font-family: var(--mono); font-size: .85em; }
 .brand span { color: var(--accent); }
 .nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex;
-  background: rgba(14, 14, 14, .92); backdrop-filter: blur(12px);
+  background: var(--barra); backdrop-filter: blur(12px);
   border-top: 1px solid var(--rule); padding-bottom: env(safe-area-inset-bottom);
 }
 .nav a {
@@ -184,7 +218,7 @@ button, .primary, .ghost, .file { font: inherit; cursor: pointer; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 16px; }
 .actions.left { justify-content: flex-start; }
 .actions.sticky {
-  position: sticky; bottom: calc(72px + env(safe-area-inset-bottom)); background: rgba(14,14,14,.94);
+  position: sticky; bottom: calc(72px + env(safe-area-inset-bottom)); background: var(--barra);
   backdrop-filter: blur(10px); padding: 12px; border: 1px solid var(--rule); border-radius: var(--radius); z-index: 5;
 }
 .app.bare .actions.sticky { bottom: 0; }
@@ -1162,11 +1196,11 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   background:
     radial-gradient(420px 220px at 100% -10%, var(--accent-soft), transparent 70%),
     linear-gradient(180deg, var(--paper-2), var(--paper-3));
-  box-shadow: 0 18px 44px rgba(0, 0, 0, .45);
+  box-shadow: 0 18px 44px var(--sombra);
 }
 .entrar-card::before {
   content: ''; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
-  border-top: 1px solid rgba(242, 239, 231, .06);
+  border-top: 1px solid rgba(255, 255, 255, .06);
 }
 /* batida de asa: uma tira de 24 desenhos correndo dentro de uma janelinha */
 .goose-rider { position: relative; display: block; overflow: hidden; aspect-ratio: 259 / 260; }
@@ -1185,7 +1219,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .entrar-acao { width: 100%; min-height: 50px; font-size: 1rem; font-weight: 700; border-radius: 14px; }
 .entrar-card .form { gap: 14px; }
 .entrar-card input {
-  min-height: 48px; border-radius: 14px; background: rgba(13, 13, 13, .6);
+  min-height: 48px; border-radius: 14px; background: var(--campo);
 }
 .entrar-card input:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
 .conta-resumo { margin-top: 14px; }
@@ -1196,7 +1230,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 
 .conta-abas {
   display: flex; gap: 4px; margin-bottom: 20px; padding: 4px;
-  border: 1px solid var(--rule); border-radius: 999px; background: rgba(13, 13, 13, .5);
+  border: 1px solid var(--rule); border-radius: 999px; background: var(--campo);
 }
 .conta-abas button {
   flex: 1; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 12px; min-height: 42px;
@@ -1225,7 +1259,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .usuario { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 12px; z-index: 20; }
 .usuario-bt {
   display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
-  border: 1px solid var(--rule); background: rgba(13, 13, 13, .72); color: var(--ink-2);
+  border: 1px solid var(--rule); background: var(--barra); color: var(--ink-2);
   backdrop-filter: blur(6px); font-weight: 700; font-size: .95rem;
 }
 .usuario-bt.dentro { border-color: var(--accent); color: var(--accent); }
@@ -1233,7 +1267,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .usuario-menu {
   position: absolute; top: 48px; right: 0; min-width: 208px; padding: 6px;
   border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, .55); display: flex; flex-direction: column;
+  box-shadow: 0 16px 34px var(--sombra); display: flex; flex-direction: column;
 }
 .usuario-menu a, .usuario-menu button {
   text-align: left; text-decoration: none; color: var(--ink); font: inherit; font-size: .92rem;
@@ -1313,3 +1347,9 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   .tabela th:first-child, .tabela td:first-child { padding-right: 8px; }
   .tabela-rolagem { margin: 0 -16px; padding: 0 16px; }
 }
+
+/* no papel claro, os recortes claros precisam de um contorno para não sumir */
+:root[data-tema="claro"] .cutout {
+  filter: drop-shadow(0 1px 1px rgba(70, 55, 30, .45)) drop-shadow(0 0 2px rgba(70, 55, 30, .25));
+}
+:root[data-tema="claro"] .entrar-cut { filter: drop-shadow(0 6px 12px rgba(70, 55, 30, .3)); }
