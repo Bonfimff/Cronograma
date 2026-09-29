@@ -830,40 +830,57 @@ h3 { font-size: .95rem; }
 
 .lib-book { position: relative; perspective: 1600px; margin-bottom: 24px; }
 /* folha de caderno: pautada, com margem vermelha à esquerda */
+/*
+ * A pauta é o compasso da folha: todo texto daqui usa altura de linha igual a
+ * --pauta e as alturas são múltiplos dela, então cada linha escrita cai em cima
+ * de uma linha impressa, como num caderno de verdade.
+ */
 .lib-sheet {
-  position: relative; min-height: 320px; padding: 18px 16px 22px 46px;
+  --pauta: 34px;
+  position: relative; min-height: calc(var(--pauta) * 10); padding: 0 16px calc(var(--pauta) / 2) 46px;
   color: #221f19; border-radius: 0 6px 8px 6px;
   background-color: #f3ecdc;
+  /* a pauta é desenhada linha a linha, embaixo de cada texto: assim a escrita
+     nunca fica boiando entre duas linhas, não importa o tamanho da letra */
   background-image:
-    linear-gradient(90deg, transparent 32px, rgba(200, 80, 70, .45) 32px, rgba(200, 80, 70, .45) 34px, transparent 34px),
-    repeating-linear-gradient(180deg, transparent 0 35px, rgba(60, 110, 150, .18) 35px 36px);
+    linear-gradient(90deg, transparent 32px, rgba(200, 80, 70, .45) 32px, rgba(200, 80, 70, .45) 34px, transparent 34px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, .45);
 }
-.lib-title { font-family: var(--hand); font-size: 1.8rem; margin: 0 0 6px; color: #221f19; line-height: 1.2; }
+.lib-sheet > * { margin-top: 0; margin-bottom: 0; }
+.pauta { border-bottom: 1px solid rgba(60, 110, 150, .3); }
+.lib-title {
+  font-family: var(--hand); font-size: 1.8rem; margin: 0; color: #221f19;
+  min-height: calc(var(--pauta) * 2); line-height: calc(var(--pauta) * 2);
+  border-bottom: 1px solid rgba(60, 110, 150, .3);
+}
 .lib-list { list-style: none; margin: 0; padding: 0; }
 .lib-row {
-  display: flex; align-items: baseline; gap: 10px; min-height: 36px; padding: 6px 0;
-  text-decoration: none; color: inherit;
+  display: flex; align-items: baseline; gap: 10px; min-height: var(--pauta); padding: 0;
+  line-height: var(--pauta); text-decoration: none; color: inherit;
+  border-bottom: 1px solid rgba(60, 110, 150, .3);
 }
 a.lib-row:hover .lib-main b { text-decoration: underline; }
-.lib-main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+/* uma caixa de linha só: em flex com tamanhos de letra diferentes, o alinhamento
+   pela base estica a altura e a escrita sai do compasso da pauta */
+.lib-main { flex: 1; min-width: 0; display: block; }
+.lib-main > * + * { margin-left: 6px; }
 .lib-main b { font-weight: 700; }
 .lib-main em { font-style: normal; font-size: .78rem; color: #8a8170; }
-.lib-main .dot { width: 8px; height: 8px; flex: none; align-self: center; }
+.lib-main .dot { width: 8px; height: 8px; display: inline-block; vertical-align: middle; margin-right: 6px; }
 .lib-side { color: #5c5546; font-size: .92rem; text-align: right; }
-.lib-note { color: #6c6455; font-size: .92rem; }
-.lib-form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.lib-note { color: #6c6455; font-size: .92rem; line-height: var(--pauta); margin: 0; border-bottom: 1px solid rgba(60, 110, 150, .3); }
+.lib-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-height: calc(var(--pauta) * 2); border-bottom: 1px solid rgba(60, 110, 150, .3); }
 .lib-form input {
   flex: 1 1 120px; min-width: 0; font: inherit; padding: 9px 12px; border-radius: 10px;
   border: 1.5px solid #cbbf9f; background: #fbf7ec; color: #221f19;
 }
-.lib-form .primary { flex: none; min-height: 42px; }
+.lib-form .primary { flex: none; min-height: calc(var(--pauta) * 1.2); }
 .lib-del {
   flex: none; border: 0; background: none; color: #a7937a; cursor: pointer;
   font-size: .9rem; padding: 2px 4px;
 }
 .lib-del:hover { color: #b3261e; }
-.lib-remove { display: block; margin: 18px 0 0 auto; color: #a14b42; font-size: .85rem; }
+.lib-remove { display: block; margin: 0 0 0 auto; line-height: var(--pauta); color: #a14b42; font-size: .85rem; }
 
 /* virada: a folha dobra numa linha que corre da direita pra esquerda (JS) */
 .lib-book { overflow-x: clip; overflow-y: visible; }
@@ -1413,7 +1430,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 /* itens da capa: mesma linha das outras folhas, mas clicáveis como botão */
 button.lib-row {
   width: 100%; font: inherit; text-align: left; background: none; border: 0; cursor: pointer;
-  border-bottom: 1px solid rgba(60, 110, 150, .18);
+  border-bottom: 1px solid rgba(60, 110, 150, .3);
 }
 button.lib-row:hover .lib-main { text-decoration: underline; }
 button.lib-row .lib-side { font-variant-numeric: tabular-nums; }
@@ -1421,6 +1438,7 @@ button.lib-row .lib-side { font-variant-numeric: tabular-nums; }
 button.back { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 /* número da folha, no pé do papel */
 .lib-pagina {
-  margin: 18px 0 0; text-align: center; color: #8a8170;
+  margin: 0; text-align: center; color: #8a8170;
+  height: calc(var(--pauta) * 2); line-height: calc(var(--pauta) * 2);
   font-family: var(--hand); font-size: 1.05rem; letter-spacing: .04em;
 }
