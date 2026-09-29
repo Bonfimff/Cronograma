@@ -77,10 +77,6 @@ export function LibraryIndex() {
         )}
         <p className="eyebrow">Conteúdo</p>
         <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
-        <p className="lead">
-          {content.words.length} palavras · {content.expressions.length} expressões · {content.patterns.length} padrões ·{' '}
-          {custom.length} {custom.length === 1 ? 'folha sua' : 'folhas suas'}.
-        </p>
       </section>
 
       {/*
