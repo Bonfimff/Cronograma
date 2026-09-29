@@ -1571,3 +1571,12 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .acoes-json > *:hover { border-color: var(--accent); transform: translateY(-2px); }
 .acoes-json b { font-size: .95rem; }
 .acoes-json small { color: var(--ink-3); font-size: .76rem; line-height: 1.25; }
+/* nome da folha: dá para trocar tocando nele */
+.lib-title-nome {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: text; text-align: left;
+}
+.lib-title-nome:hover { text-decoration: underline dotted; text-underline-offset: 4px; }
+.lib-title-editar {
+  font: inherit; color: inherit; width: 100%; min-height: 0; padding: 0 6px;
+  border: 0; border-bottom: 2px solid var(--accent); border-radius: 0; background: rgba(255, 255, 255, .4);
+}

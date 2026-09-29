@@ -1,6 +1,7 @@
 import { useData } from '../hooks';
 import { useSyncExternalStore } from 'react';
 import { favoritas } from '../../core/library/favoritas';
+import { nomes } from '../../core/library/nomes';
 import { sheetsOf } from '../../core/library/sheets';
 import { content } from '../../core/content/repository';
 import { sessionsOn, getWeek } from '../../core/planning/weeks';
@@ -139,9 +140,9 @@ function FolhasMarcadas() {
   const folhas = marcadas
     .map((k) => {
       const f = fixas[k];
-      if (f) return { chave: k, ...f };
+      if (f) return { chave: k, nome: nomes.de(k, f.nome), total: f.total };
       const s = suas.find((x) => x.id === k);
-      return s ? { chave: k, nome: s.title, total: s.items.length } : null;
+      return s ? { chave: k, nome: nomes.de(k, s.title), total: s.items.length } : null;
     })
     .filter(Boolean) as { chave: string; nome: string; total: number }[];
 

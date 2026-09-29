@@ -7,6 +7,7 @@ import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
 import { buscar } from '../../core/content/search';
 import { favoritas } from '../../core/library/favoritas';
+import { nomes } from '../../core/library/nomes';
 import { assinarVoz, estaLendo, lerFalas, pararLeitura, type Fala } from '../../core/lessons/voz';
 import { LaptopCut } from '../components/Cutouts';
 
@@ -28,12 +29,14 @@ type Tab = { key: string; label: ReactNode; count?: number };
 export function LibraryIndex() {
   const data = useData();
   const custom = sheetsOf(data);
+  const escolhidos = useSyncExternalStore((cb) => nomes.subscribe(cb), () => nomes.get());
+  const nomeDe = (chave: string, padrao: string) => escolhidos[chave]?.trim() || padrao;
   const tabs: Tab[] = [
-    { key: 'word', label: 'Vocabulário', count: content.words.length },
-    { key: 'expression', label: 'Expressões', count: content.expressions.length },
-    { key: 'pattern', label: 'Padrões', count: content.patterns.length },
-    { key: 'grammar', label: 'Gramática', count: content.grammar.length },
-    ...custom.map((s) => ({ key: s.id, label: s.title, count: s.items.length })),
+    { key: 'word', label: nomeDe('word', 'Vocabulário'), count: content.words.length },
+    { key: 'expression', label: nomeDe('expression', 'Expressões'), count: content.expressions.length },
+    { key: 'pattern', label: nomeDe('pattern', 'Padrões'), count: content.patterns.length },
+    { key: 'grammar', label: nomeDe('grammar', 'Gramática'), count: content.grammar.length },
+    ...custom.map((s) => ({ key: s.id, label: nomeDe(s.id, s.title), count: s.items.length })),
     { key: NEW_TAB, label: '+ nova folha' },
   ];
 
@@ -394,8 +397,8 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
 /** O que cada folha tem a dizer, em ordem e com a língua de cada trecho. */
 function falasDaFolha(tabKey: string, data: UserData, tabs: Tab[]): Fala[] {
   if (tabKey === CAPA) {
-    const nomes = tabs.filter((t) => t.key !== NEW_TAB && typeof t.label === 'string') as { label: string }[];
-    return [{ texto: 'Folhas: ' + nomes.map((t) => t.label).join(', '), idioma: 'pt' }];
+    const lista = tabs.filter((t) => t.key !== NEW_TAB && typeof t.label === 'string') as { label: string }[];
+    return [{ texto: lista.map((t) => t.label).join(', '), idioma: 'pt' }];
   }
   if (tabKey === 'word') {
     return content.words.flatMap((w) => [
@@ -447,9 +450,49 @@ function BotaoVoz({ falas }: { falas: Fala[] }) {
 
 /** Título da folha com a estrela ao lado. */
 function Titulo({ chave, falas, children }: { chave?: string; falas?: Fala[]; children: ReactNode }) {
+  const escolhidos = useSyncExternalStore((cb) => nomes.subscribe(cb), () => nomes.get());
+  const padrao = typeof children === 'string' ? children : '';
+  const atual = chave ? (escolhidos[chave]?.trim() || padrao) : padrao;
+  const [editando, setEditando] = useState(false);
+  const [texto, setTexto] = useState(atual);
+
+  const salvar = () => {
+    if (chave) nomes.definir(chave, texto);
+    setEditando(false);
+  };
+
+  if (editando && chave) {
+    return (
+      <h2 className="lib-title">
+        <input
+          className="lib-title-editar"
+          value={texto}
+          autoFocus
+          onChange={(e) => setTexto(e.target.value)}
+          onBlur={salvar}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); salvar(); }
+            if (e.key === 'Escape') { setTexto(atual); setEditando(false); }
+          }}
+          aria-label="Nome da folha"
+        />
+      </h2>
+    );
+  }
+
   return (
     <h2 className="lib-title">
-      <span>{children}</span>
+      {chave ? (
+        <button
+          className="lib-title-nome"
+          onClick={() => { setTexto(atual); setEditando(true); }}
+          title="Tocar para mudar o nome da folha"
+        >
+          {atual || children}
+        </button>
+      ) : (
+        <span>{children}</span>
+      )}
       {chave && <Estrela chave={chave} />}
       {falas && <BotaoVoz falas={falas} />}
     </h2>
