@@ -38,17 +38,24 @@ export class ApiError extends Error {
 const MESSAGES: Record<number, string> = {
   401: 'E-mail ou senha incorretos.',
   409: 'Já existe uma conta com esse e-mail.',
-  422: 'Confira o e-mail e a senha (mínimo de 8 caracteres).',
+  422: 'Confira o e-mail e a senha.',
   429: 'Muitas tentativas. Espere um pouco e tente de novo.',
 };
+
+/** Erro de validação do FastAPI: diz qual campo está errado, em vez de culpar os dois. */
+function fieldMessage(detail: { loc?: unknown[]; msg?: string }[]): string {
+  const campo = String(detail[0]?.loc?.[1] ?? '');
+  if (campo === 'email') return 'E-mail inválido — confira o endereço (exemplo: nome@dominio.com).';
+  if (campo === 'password') return 'A senha precisa de pelo menos 8 caracteres.';
+  return MESSAGES[422];
+}
 
 async function readError(res: Response): Promise<string> {
   try {
     const body = await res.json();
     const detail = body?.detail;
     if (typeof detail === 'string') return detail;
-    // erro de validação do FastAPI: lista de campos
-    if (Array.isArray(detail) && detail[0]?.msg) return MESSAGES[422];
+    if (Array.isArray(detail) && detail.length) return fieldMessage(detail);
   } catch {
     /* resposta sem JSON */
   }

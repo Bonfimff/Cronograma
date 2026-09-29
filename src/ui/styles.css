@@ -1152,7 +1152,15 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .lesson-head .read-link { float: right; }
 
 /* ---------- conta ---------- */
+/* abas Entrar / Criar conta: as duas opções sempre à vista */
+.conta-abas { display: flex; gap: 6px; margin-bottom: 18px; max-width: 380px; }
+.conta-abas button {
+  flex: 1; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-2); color: var(--ink-2);
+}
+.conta-abas button.on { background: var(--accent); border-color: transparent; color: #06211f; }
 .conta-form { max-width: 380px; }
+.aviso .link { color: inherit; text-decoration: underline; font-weight: 600; }
 .senha-campo { position: relative; display: block; }
 .senha-campo input { width: 100%; padding-right: 74px; }
 .senha-campo .link {

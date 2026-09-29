@@ -23,6 +23,7 @@ export function AccountPage() {
   const [senha, setSenha] = useState('');
   const [verSenha, setVerSenha] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [semConta, setSemConta] = useState(false); // login recusado: pode ser que ainda não exista
   const [ocupado, setOcupado] = useState(false);
   const [conta, setConta] = useState<Account | null>(null);
 
@@ -36,9 +37,16 @@ export function AccountPage() {
     return () => { vivo = false; };
   }, [estado.tokens]);
 
+  const trocarModo = (novo: 'entrar' | 'criar') => {
+    setModo(novo);
+    setErro(null);
+    setSemConta(false);
+  };
+
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+    setSemConta(false);
     if (senha.length < MIN_SENHA) return setErro(`A senha precisa de pelo menos ${MIN_SENHA} caracteres.`);
     setOcupado(true);
     try {
@@ -47,6 +55,8 @@ export function AccountPage() {
       setSenha('');
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o servidor.');
+      // senha errada e conta inexistente dão a mesma resposta, então o convite é sempre oferecido
+      setSemConta(modo === 'entrar' && e instanceof ApiError && e.status === 401);
     } finally {
       setOcupado(false);
     }
@@ -113,6 +123,11 @@ export function AccountPage() {
       </section>
 
       <section>
+        <nav className="conta-abas">
+          <button className={modo === 'entrar' ? 'on' : ''} onClick={() => trocarModo('entrar')}>Entrar</button>
+          <button className={modo === 'criar' ? 'on' : ''} onClick={() => trocarModo('criar')}>Criar conta</button>
+        </nav>
+
         <form className="form conta-form" onSubmit={enviar}>
           <label>
             E-mail
@@ -144,18 +159,23 @@ export function AccountPage() {
             <small className="muted">Pelo menos {MIN_SENHA} caracteres.</small>
           </label>
 
-          {erro && <p className="aviso">{erro}</p>}
+          {erro && (
+            <p className="aviso">
+              {erro}
+              {semConta && (
+                <>
+                  {' '}
+                  <button type="button" className="link" onClick={() => trocarModo('criar')}>
+                    Criar conta com este e-mail
+                  </button>
+                </>
+              )}
+            </p>
+          )}
 
           <div className="actions left">
             <button className="primary" type="submit" disabled={ocupado}>
               {ocupado ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta'}
-            </button>
-            <button
-              type="button"
-              className="ghost"
-              onClick={() => { setModo(modo === 'entrar' ? 'criar' : 'entrar'); setErro(null); }}
-            >
-              {modo === 'entrar' ? 'Criar uma conta' : 'Já tenho conta'}
             </button>
           </div>
         </form>
