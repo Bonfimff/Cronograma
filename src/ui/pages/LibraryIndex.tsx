@@ -133,11 +133,18 @@ type CorpoProps = {
   onOpen: (key: string) => void;
 };
 
-/** Rodapé com o número da folha, como num caderno paginado. */
-function Numero({ tabKey, ordem }: { tabKey: string; ordem: string[] }) {
+/** Rodapé discreto: o número da folha e a volta para a primeira página. */
+function Numero({ tabKey, ordem, onOpen }: { tabKey: string; ordem: string[]; onOpen?: (key: string) => void }) {
   const i = ordem.indexOf(tabKey);
   if (i < 0) return null;
-  return <p className="lib-pagina">{i + 1} / {ordem.length}</p>;
+  return (
+    <p className="lib-pagina">
+      {i > 0 && onOpen && (
+        <button className="lib-inicio" onClick={() => onOpen(CAPA)}>« início</button>
+      )}
+      {i + 1} / {ordem.length}
+    </p>
+  );
 }
 
 function Sheet({ tabKey, data, onCreated, tabs, onOpen, ordem }: CorpoProps & { ordem: string[] }) {
@@ -154,8 +161,7 @@ function Sheet({ tabKey, data, onCreated, tabs, onOpen, ordem }: CorpoProps & { 
       const estilo = getComputedStyle(f);
       const pauta = parseFloat(estilo.getPropertyValue('--pauta')) || 34;
       const util = f.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom);
-      // o número da folha ocupa duas linhas no pé
-      setVazias(Math.max(0, Math.floor((util - c.offsetHeight) / pauta) - 2));
+      setVazias(Math.max(0, Math.floor((util - c.offsetHeight) / pauta)));
     };
     medir();
     const ro = new ResizeObserver(medir);
@@ -170,7 +176,7 @@ function Sheet({ tabKey, data, onCreated, tabs, onOpen, ordem }: CorpoProps & { 
         <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} tabs={tabs} onOpen={onOpen} />
       </div>
       {Array.from({ length: vazias }, (_, i) => <div key={i} className="lib-vazia" aria-hidden />)}
-      <Numero tabKey={tabKey} ordem={ordem} />
+      <Numero tabKey={tabKey} ordem={ordem} onOpen={onOpen} />
     </article>
   );
 }
