@@ -1154,7 +1154,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 /* ---------- conta ---------- */
 /* abas Entrar / Criar conta: as duas opções sempre à vista */
 /* ---------- conta: entrar e criar ---------- */
-.entrar { display: flex; justify-content: center; padding: 18px 0 32px; }
+.entrar { display: flex; justify-content: center; padding: 44px 0 32px; }
 .entrar-card {
   position: relative; width: 100%; max-width: 400px; padding: 26px 22px 24px;
   border: 1px solid var(--rule); border-radius: 22px;
@@ -1167,9 +1167,15 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   content: ''; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
   border-top: 1px solid rgba(242, 239, 231, .06);
 }
-/* animação quadro a quadro: os seis desenhos ficam empilhados, um visível por vez */
-.goose-rider { position: relative; display: block; aspect-ratio: 439 / 420; }
-.goose-rider img { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* batida de asa: uma tira de 24 desenhos correndo dentro de uma janelinha */
+.goose-rider { position: relative; display: block; overflow: hidden; aspect-ratio: 272 / 260; }
+.goose-rider i {
+  position: absolute; top: 0; left: 0; height: 100%; width: 2400%;
+  background-repeat: no-repeat; background-size: 100% 100%;
+  animation: goose-voo 2.16s steps(24) infinite;
+}
+@keyframes goose-voo { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .goose-rider i { animation: none; } }
 .entrar-cut {
   position: absolute; top: -52px; right: 6px;
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .5)); pointer-events: none;

@@ -28,32 +28,17 @@ function Cut({ file, className, width }: C & { file: string }) {
 /** Filósofo de óculos escuros — o personagem do topo da referência. */
 export const Philosopher = (p: C) => <Cut file="philosopher" {...p} />;
 /**
- * Guaxinim montado no ganso, quadro a quadro. Os seis desenhos vieram da mesma
- * folha e foram recortados na mesma moldura, então basta trocar a imagem no
- * tempo certo para as asas baterem. Quem pediu menos movimento vê só o primeiro.
+ * Guaxinim montado no ganso. Os seis desenhos da folha viraram uma tira única
+ * (public/cut/goose-rider.webp) com 24 posições: a ordem segue a altura real da
+ * ponta da asa, sobe e desce em vaivém para não saltar ao repetir, e na quarta
+ * batida entra o disparo. Quem toca a tira é o próprio navegador, com uma
+ * animação em passos: nada de estado do React a cada desenho, por isso corre
+ * solto mesmo em telefone modesto. Com "reduzir movimento" fica parado.
  */
-export function GooseRider({ className, width = 132, ms = 130 }: C & { ms?: number }) {
-  const [quadro, setQuadro] = useState(0);
-
-  useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    const t = setInterval(() => setQuadro((q) => (q + 1) % 6), ms);
-    return () => clearInterval(t);
-  }, [ms]);
-
+export function GooseRider({ className, width = 132 }: C) {
   return (
     <span className={`goose-rider ${className ?? ''}`} style={{ width }} aria-hidden>
-      {Array.from({ length: 6 }, (_, i) => (
-        <img
-          key={i}
-          src={`${BASE}cut/goose-rider-${i + 1}.webp`}
-          className="cutout"
-          style={{ opacity: i === quadro ? 1 : 0 }}
-          alt=""
-          decoding="async"
-          draggable={false}
-        />
-      ))}
+      <i style={{ backgroundImage: `url(${BASE}cut/goose-rider.webp)` }} />
     </span>
   );
 }
