@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Recortes de imagem da referência (pasta /IMG, tratados em public/cut).
@@ -27,6 +27,37 @@ function Cut({ file, className, width }: C & { file: string }) {
 
 /** Filósofo de óculos escuros — o personagem do topo da referência. */
 export const Philosopher = (p: C) => <Cut file="philosopher" {...p} />;
+/**
+ * Guaxinim montado no ganso, quadro a quadro. Os seis desenhos vieram da mesma
+ * folha e foram recortados na mesma moldura, então basta trocar a imagem no
+ * tempo certo para as asas baterem. Quem pediu menos movimento vê só o primeiro.
+ */
+export function GooseRider({ className, width = 132, ms = 130 }: C & { ms?: number }) {
+  const [quadro, setQuadro] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const t = setInterval(() => setQuadro((q) => (q + 1) % 6), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+
+  return (
+    <span className={`goose-rider ${className ?? ''}`} style={{ width }} aria-hidden>
+      {Array.from({ length: 6 }, (_, i) => (
+        <img
+          key={i}
+          src={`${BASE}cut/goose-rider-${i + 1}.webp`}
+          className="cutout"
+          style={{ opacity: i === quadro ? 1 : 0 }}
+          alt=""
+          decoding="async"
+          draggable={false}
+        />
+      ))}
+    </span>
+  );
+}
+
 /** Gato professor de casaca, com ponteiro e lousa. */
 export const CatTeacher = (p: C) => <Cut file="cat-teacher" {...p} />;
 /** Corvo lendo em cima de uma pilha de livros antigos. */

@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { api, ApiError, type Account } from '../../core/api/client';
 import { session } from '../../core/api/session';
-import { Philosopher } from '../components/Cutouts';
+import { GooseRider, Philosopher } from '../components/Cutouts';
 
 /**
  * Conta: entrar, criar conta e ver o que está guardado no servidor.
@@ -116,7 +116,7 @@ export function AccountPage() {
   return (
     <section className="entrar">
       <div className="entrar-card">
-        <Philosopher className="entrar-cut" width={108} />
+        <GooseRider className="entrar-cut" width={150} />
 
         <p className="eyebrow">Conta</p>
         <h1 className="entrar-titulo">{modo === 'entrar' ? 'Bem-vindo de volta' : 'Criar conta'}</h1>
