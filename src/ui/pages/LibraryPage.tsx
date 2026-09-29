@@ -23,15 +23,21 @@ function Detail({ r }: { r: ContentRef }) {
 
   return (
     <>
-      <section className="hero">
-        <a href="#/conteudo" className="back">‹ Biblioteca</a>
-        <div className="paper-card tape">
-          <p className="eyebrow">{KIND_LABEL[kind]}{st && <> · {STATE_LABEL[st.state]}</>}</p>
-          <h1 className="en">{refLabel(r)} {kind !== 'grammar' && <button className="say" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))}>▶</button>}</h1>
-          <span className="sticker sticker-go">let's go</span>
-          <CatMegaphone className="cut-shout" width="92" />
-        </div>
+      {/* o verbete é mais uma folha do caderno: mesma margem vermelha, mesma pauta */}
+      <section className="hero lib-hero">
+        <a href="#/conteudo" className="lib-voltar">‹</a>
+        <h1>{KIND_LABEL[kind]}</h1>
+        <CatMegaphone className="lib-cut" width="58" />
       </section>
+
+      <article className="lib-sheet verbete">
+        <h2 className="lib-title">
+          <span className="en">{refLabel(r)}</span>
+          {kind !== 'grammar' && (
+            <button className="lib-voz" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))} aria-label="Ouvir">🔊</button>
+          )}
+        </h2>
+        {st && <p className="verbete-estado">{STATE_LABEL[st.state]}</p>}
 
       {kind === 'word' && <WordTree w={it as Word} />}
       {kind === 'expression' && (() => {
@@ -73,14 +79,15 @@ function Detail({ r }: { r: ContentRef }) {
         </ul>
       </section>
 
-      <section>
-        <h2>Histórico</h2>
-        {hist.length ? (
-          <ul className="history">
-            {hist.map((h) => <li key={h.id}><span className="mono">{fmtShort(h.date)}</span>: {EVENT_LABEL[h.event]} <a href={`#/sessao/${h.sessionId}`} className="muted mono">{h.sessionId}</a></li>)}
-          </ul>
-        ) : <Empty>Ainda não estudado.</Empty>}
-      </section>
+        <section className="verbete-historico">
+          <h2>Histórico</h2>
+          {hist.length ? (
+            <ul className="history">
+              {hist.map((h) => <li key={h.id}><span className="mono">{fmtShort(h.date)}</span>: {EVENT_LABEL[h.event]} <a href={`#/sessao/${h.sessionId}`} className="muted mono">{h.sessionId}</a></li>)}
+            </ul>
+          ) : <Empty>Ainda não estudado.</Empty>}
+        </section>
+      </article>
     </>
   );
 }

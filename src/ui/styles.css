@@ -1477,7 +1477,8 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 /* o marca-texto amarelo continua embaixo do nome, como no resto do app */
 .lib-hero h1 { margin: 0; font-size: 1.4rem; display: inline-block; }
 .lib-voltar {
-  flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--rule);
+  flex: none; display: grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 50%; border: 1px solid var(--rule); text-decoration: none;
   background: var(--paper-2); color: var(--ink); font-size: 1.1rem; line-height: 1; cursor: pointer;
 }
 .lib-cut { margin-left: -2px; margin-right: auto; }
@@ -1614,3 +1615,25 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .chave.on { background: var(--accent-soft); border-color: var(--accent); }
 .chave.on i { transform: translateX(20px); background: var(--accent); }
 .voz-painel .actions { margin-top: 16px; }
+
+/* ---------- verbete: a palavra vista como mais uma folha do caderno ---------- */
+.verbete { height: auto; overflow: visible; padding-top: 14px; padding-bottom: 22px; margin-bottom: 20px; }
+.verbete .lib-title { margin-bottom: 4px; }
+.verbete-estado {
+  margin: 0 0 12px; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: #8a8170;
+}
+.verbete section { margin: 0 0 6px; }
+.verbete h2 {
+  font-family: var(--hand); font-size: 1.25rem; color: #221f19; margin: 14px 0 6px;
+  border-bottom: 1px solid rgba(60, 110, 150, .3);
+}
+.verbete p, .verbete li { color: #3a352c; }
+.verbete .muted { color: #6c6455; }
+.verbete .pron { color: #6c6455; font-family: var(--mono); font-size: .82rem; }
+.verbete .branch { color: #1f5c55; font-weight: 700; }
+.verbete .ex-inline { border-bottom: 1px solid rgba(60, 110, 150, .22); padding-bottom: 4px; }
+.verbete .examples .en { color: #221f19; }
+.verbete .say { color: #1f5c55; border-color: #bdb096; }
+.verbete a { color: #1f5c55; }
+.verbete .history { color: #6c6455; }
+.verbete .empty { color: #8a8170; }

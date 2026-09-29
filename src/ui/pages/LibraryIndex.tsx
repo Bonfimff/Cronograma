@@ -7,6 +7,7 @@ import { content } from '../../core/content/repository';
 import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
 import { buscar } from '../../core/content/search';
+import { novaExpressao, novaPalavra, saveUserContent, slug } from '../../core/content/novos';
 import { favoritas } from '../../core/library/favoritas';
 import { nomes } from '../../core/library/nomes';
 import {
@@ -352,6 +353,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
             />
           ))}
         </ul>
+        <AnotarNaFolha tipo="word" />
       </>
     );
   }
@@ -370,6 +372,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
             />
           ))}
         </ul>
+        <AnotarNaFolha tipo="expression" />
       </>
     );
   }
@@ -382,6 +385,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
             <Row key={p.id} href={`#/conteudo/pattern:${p.id}`} state={st(`pattern:${p.id}`)} main={<b className="en">{p.formula}</b>} side={p.name} />
           ))}
         </ul>
+        <AnotarNaFolha tipo="pattern" />
       </>
     );
   }
@@ -394,6 +398,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
             <Row key={g.id} href={`#/conteudo/grammar:${g.id}`} state={st(`grammar:${g.id}`)} main={<b>{g.title}</b>} side="" />
           ))}
         </ul>
+        <AnotarNaFolha tipo="grammar" />
       </>
     );
   }
@@ -673,6 +678,52 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
         </ul>
       )}
     </>
+  );
+}
+
+/**
+ * Anotar um item novo direto na folha de conteúdo. O que é escrito aqui vira
+ * conteúdo do usuário, do mesmo jeito que o criado no formulário da sessão, e
+ * aparece na biblioteca, nas aulas e nos jogos.
+ */
+function AnotarNaFolha({ tipo }: { tipo: 'word' | 'expression' | 'pattern' | 'grammar' }) {
+  const [en, setEn] = useState('');
+  const [pt, setPt] = useState('');
+  const enRef = useRef<HTMLInputElement>(null);
+
+  const rotulos: Record<typeof tipo, [string, string]> = {
+    word: ['Palavra em inglês', 'Tradução'],
+    expression: ['Expressão em inglês', 'Tradução'],
+    pattern: ['Fórmula (ex.: How + are + subject?)', 'Nome do padrão'],
+    grammar: ['Título', 'Explicação'],
+  };
+  const [rotuloEn, rotuloPt] = rotulos[tipo];
+
+  const anotar = (e: React.FormEvent) => {
+    e.preventDefault();
+    const a = en.trim();
+    const b = pt.trim();
+    if (!a) return;
+    store.update((d) => {
+      if (tipo === 'word') saveUserContent(d, { words: [novaPalavra(a, b)] });
+      else if (tipo === 'expression') saveUserContent(d, { expressions: [novaExpressao(a, b)] });
+      else if (tipo === 'pattern') {
+        saveUserContent(d, { patterns: [{ id: slug(a), name: b || a, formula: a, slots: [], explanation: '', examples: [] }] });
+      } else {
+        saveUserContent(d, { grammar: [{ id: slug(a), title: a, explanation: b, points: [], examples: [] }] });
+      }
+    });
+    setEn('');
+    setPt('');
+    enRef.current?.focus();
+  };
+
+  return (
+    <form className="lib-form" onSubmit={anotar}>
+      <input ref={enRef} value={en} onChange={(e) => setEn(e.target.value)} placeholder={rotuloEn} lang={tipo === 'grammar' ? 'pt' : 'en'} />
+      <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder={rotuloPt} />
+      <button className="primary" disabled={!en.trim()}>Anotar</button>
+    </form>
   );
 }
 
