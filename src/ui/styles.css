@@ -906,32 +906,70 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .mt-crown { color: var(--marker); }
 .mt-flame { color: #f08a3c; }
 
-/* lousa com as duas colunas; o miolo fica livre pras linhas das ligações */
+/* mesa de trabalho com as duas colunas; o miolo fica livre pras linhas das ligações */
 .mt-board {
-  position: relative; display: grid; grid-template-columns: 1fr 36px 1fr;
-  column-gap: 4px; row-gap: 9px; padding: 16px 12px;
-  border-radius: 16px; border: 1px solid var(--rule);
-  background: radial-gradient(120% 80% at 50% 0%, #22211f, #151514);
+  position: relative; display: grid; grid-template-columns: 1fr 34px 1fr;
+  column-gap: 6px; row-gap: 11px; padding: 18px 12px;
+  border-radius: 18px; border: 1px solid var(--rule);
+  background:
+    radial-gradient(130% 90% at 50% -10%, rgba(var(--accent-rgb), .07), transparent 60%),
+    linear-gradient(180deg, #23211e, #141413);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+:root[data-tema="claro"] .mt-board {
+  background:
+    radial-gradient(130% 90% at 50% -10%, rgba(var(--accent-rgb), .1), transparent 60%),
+    linear-gradient(180deg, #d9caab, #cdbc9a);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35);
 }
 
-/* tiras de papel rasgado */
+/* tiras de papel rasgado soltas sobre a mesa */
 .mt-pill {
-  position: relative; isolation: isolate; min-width: 0; min-height: 38px; padding: 7px 8px;
+  position: relative; isolation: isolate; min-width: 0; min-height: 42px; padding: 9px 10px;
   border: 0; background: none; cursor: pointer; font: 600 .95rem var(--sans); line-height: 1.15;
-  text-align: center; overflow-wrap: anywhere; transition: transform .15s ease;
+  text-align: center; overflow-wrap: anywhere;
+  transition: transform .15s ease, opacity .25s ease;
 }
 .mt-pill::before {
-  content: ''; position: absolute; inset: 0; z-index: -1; filter: url(#torn-soft);
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  filter: url(#torn-soft) drop-shadow(0 3px 5px rgba(0, 0, 0, .45));
   transform: rotate(var(--tilt)); transition: background .2s ease, box-shadow .2s ease;
 }
-.mt-pt { color: #efe9dc; }
-.mt-pt::before { background: #0f0f0e; box-shadow: 0 0 0 1.5px rgba(239, 233, 220, .55); }
+
+/* esquerda: cartão escuro, letra clara (o português) */
+.mt-pt { color: #f2ece0; text-shadow: 0 1px 0 rgba(0, 0, 0, .5); }
+.mt-pt::before {
+  background: linear-gradient(180deg, #2b2724, #1a1816);
+  box-shadow: inset 0 0 0 1.5px rgba(242, 236, 224, .3), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+/* direita: papel creme, letra escura (o inglês) */
 .mt-en { color: #221f19; }
-.mt-en::before { background: #efe6d2; }
-.mt-pill.sel { transform: scale(1.05); }
-.mt-pill.sel::before { box-shadow: 0 0 0 3px var(--marker), 0 0 14px rgba(244, 185, 66, .45); }
-.mt-pill.ok { color: #06211f; cursor: default; }
-.mt-pill.ok::before { background: var(--accent); box-shadow: none; }
+.mt-en::before {
+  background: linear-gradient(180deg, #f6eeda, #e8dcc2);
+  box-shadow: inset 0 0 0 1px rgba(34, 31, 25, .12);
+}
+
+/* escolhida: sobe da mesa, com o contorno na cor de destaque */
+.mt-pill.sel { transform: translateY(-2px) scale(1.04); }
+.mt-pill.sel::before {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 16px rgba(var(--accent-rgb), .45);
+  filter: url(#torn-soft) drop-shadow(0 6px 9px rgba(0, 0, 0, .5));
+}
+
+/* ligada: o papel continua papel, só ganha o tom da cor e um visto a lápis */
+.mt-pill.ok { cursor: default; opacity: .96; }
+.mt-pt.ok { color: #ffd9b8; }
+.mt-pt.ok::before {
+  background: linear-gradient(180deg, #43291a, #2c1a0f);
+  box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb), .85);
+}
+.mt-en.ok { color: #4a2a10; }
+.mt-en.ok::before {
+  background: linear-gradient(180deg, #fae3c9, #f2d2ae);
+  box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb), .75);
+}
+/* o visto ficaria por cima do vergão da chicotada, então a marca da ligação
+   é só o contorno na cor de destaque mais a linha que une o par */
 .mt-pill:disabled { opacity: 1; }
 .mt-pill.bad { animation: mt-shake .45s ease; }
 .mt-pill.bad::before { box-shadow: 0 0 0 3px #e0574b; }
