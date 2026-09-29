@@ -32,10 +32,6 @@ export function WeekPage({ start }: { start?: string }) {
             <span key={k}>{i > 0 && <b>→</b>}<span className={`kind k-${k}`}>{KIND_LABEL[k]}</span> <em>{n}</em></span>
           ))}
         </p>
-        <div className="actions left">
-          <a className="ghost small" href={`#/montar?semana=${ws}`}>Montar semana (JSON)</a>
-          <a className="ghost small" href={`#/imprimir?modo=week&semana=${ws}`}>Imprimir plano semanal</a>
-        </div>
         <div className="chalk-row">
           <blockquote className="chalk mark">
             “Disciplina<br />também é liberdade.”
@@ -43,6 +39,11 @@ export function WeekPage({ start }: { start?: string }) {
           </blockquote>
           <SignpostLive className="cut-aside" width={78} />
         </div>
+        {/* atalhos discretos, depois da frase: são de uso eventual */}
+        <p className="atalhos">
+          <a href={`#/montar?semana=${ws}`}>Montar semana</a>
+          <a href={`#/imprimir?modo=week&semana=${ws}`}>Imprimir plano</a>
+        </p>
       </section>
 
       <nav className="daystrip">
