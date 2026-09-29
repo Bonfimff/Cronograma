@@ -7,6 +7,7 @@ import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
 import { buscar } from '../../core/content/search';
 import { favoritas } from '../../core/library/favoritas';
+import { assinarVoz, estaLendo, lerFalas, pararLeitura, type Fala } from '../../core/lessons/voz';
 import { LaptopCut } from '../components/Cutouts';
 
 /** Duração da virada de folha. */
@@ -315,7 +316,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'word') {
     return (
       <>
-        <Titulo chave="word">Vocabulário</Titulo>
+        <Titulo chave="word" falas={falasDaFolha('word', data, tabs)}>Vocabulário</Titulo>
         <ul className="lib-list">
           {content.words.map((w) => (
             <Row
@@ -333,7 +334,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'expression') {
     return (
       <>
-        <Titulo chave="expression">Expressões</Titulo>
+        <Titulo chave="expression" falas={falasDaFolha('expression', data, tabs)}>Expressões</Titulo>
         <ul className="lib-list">
           {content.expressions.map((e) => (
             <Row
@@ -351,7 +352,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'pattern') {
     return (
       <>
-        <Titulo chave="pattern">Padrões</Titulo>
+        <Titulo chave="pattern" falas={falasDaFolha('pattern', data, tabs)}>Padrões</Titulo>
         <ul className="lib-list">
           {content.patterns.map((p) => (
             <Row key={p.id} href={`#/conteudo/pattern:${p.id}`} state={st(`pattern:${p.id}`)} main={<b className="en">{p.formula}</b>} side={p.name} />
@@ -363,7 +364,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'grammar') {
     return (
       <>
-        <Titulo chave="grammar">Gramática</Titulo>
+        <Titulo chave="grammar" falas={falasDaFolha('grammar', data, tabs)}>Gramática</Titulo>
         <ul className="lib-list">
           {content.grammar.map((g) => (
             <Row key={g.id} href={`#/conteudo/grammar:${g.id}`} state={st(`grammar:${g.id}`)} main={<b>{g.title}</b>} side="" />
@@ -379,12 +380,67 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   return <CustomSheet id={sheet.id} />;
 }
 
+/** O que cada folha tem a dizer, em ordem e com a língua de cada trecho. */
+function falasDaFolha(tabKey: string, data: UserData, tabs: Tab[]): Fala[] {
+  if (tabKey === CAPA) {
+    const nomes = tabs.filter((t) => t.key !== NEW_TAB && typeof t.label === 'string') as { label: string }[];
+    return [{ texto: 'Folhas: ' + nomes.map((t) => t.label).join(', '), idioma: 'pt' }];
+  }
+  if (tabKey === 'word') {
+    return content.words.flatMap((w) => [
+      { texto: w.word, idioma: 'en' as const },
+      { texto: w.translations.map((t) => t.text).join(', '), idioma: 'pt' as const },
+    ]);
+  }
+  if (tabKey === 'expression') {
+    return content.expressions.flatMap((e) => [
+      { texto: e.text, idioma: 'en' as const },
+      { texto: e.translation, idioma: 'pt' as const },
+    ]);
+  }
+  if (tabKey === 'pattern') {
+    return content.patterns.flatMap((p) => [
+      { texto: p.formula.replace(/\+/g, ' '), idioma: 'en' as const },
+      { texto: p.name, idioma: 'pt' as const },
+    ]);
+  }
+  if (tabKey === 'grammar') {
+    return content.grammar.flatMap((g) => [
+      { texto: g.title, idioma: 'pt' as const },
+      { texto: g.explanation ?? '', idioma: 'pt' as const },
+    ]).filter((f) => f.texto);
+  }
+  const folha = sheetsOf(data).find((x) => x.id === tabKey);
+  if (!folha) return [];
+  return folha.items.flatMap((i) => [
+    { texto: i.en, idioma: 'en' as const },
+    { texto: i.pt, idioma: 'pt' as const },
+  ]);
+}
+
+/** Alto-falante que lê a folha inteira, alternando inglês e português. */
+function BotaoVoz({ falas }: { falas: Fala[] }) {
+  const lendo = useSyncExternalStore((cb) => assinarVoz(cb), () => estaLendo());
+  if (!falas.length) return null;
+  return (
+    <button
+      className={`lib-voz ${lendo ? 'on' : ''}`}
+      onClick={() => (lendo ? pararLeitura() : lerFalas(falas))}
+      aria-label={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
+      title={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
+    >
+      {lendo ? '◼' : '🔊'}
+    </button>
+  );
+}
+
 /** Título da folha com a estrela ao lado. */
-function Titulo({ chave, children }: { chave?: string; children: ReactNode }) {
+function Titulo({ chave, falas, children }: { chave?: string; falas?: Fala[]; children: ReactNode }) {
   return (
     <h2 className="lib-title">
       <span>{children}</span>
       {chave && <Estrela chave={chave} />}
+      {falas && <BotaoVoz falas={falas} />}
     </h2>
   );
 }
@@ -421,7 +477,7 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
 
   return (
     <>
-      <h2 className="lib-title">Folhas</h2>
+      <Titulo falas={falasDaFolha(CAPA, data, tabs)}>Folhas</Titulo>
 
       <div className="lib-busca">
         <input
@@ -502,7 +558,7 @@ function CustomSheet({ id }: { id: string }) {
 
   return (
     <>
-      <Titulo chave={sheet.id}>{sheet.title}</Titulo>
+      <Titulo chave={sheet.id} falas={falasDaFolha(sheet.id, data, [])}>{sheet.title}</Titulo>
       {sheet.items.length ? (
         <ul className="lib-list">
           {sheet.items.map((it, i) => (
