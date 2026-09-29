@@ -1391,3 +1391,16 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   filter: drop-shadow(0 1px 1px rgba(70, 55, 30, .45)) drop-shadow(0 0 2px rgba(70, 55, 30, .25));
 }
 :root[data-tema="claro"] .entrar-cut { filter: drop-shadow(0 6px 12px rgba(70, 55, 30, .3)); }
+
+/* ---------- jogos: só ícone e nome ---------- */
+.jogo-grade { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.jogo-bloco {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  aspect-ratio: 1 / .82; padding: 16px 10px; text-decoration: none; text-align: center;
+  color: var(--ink); background: var(--paper-2); border: 1px solid var(--rule); border-radius: 18px;
+  font-size: .95rem; font-weight: 600;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.jogo-bloco:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--paper-3); }
+.jogo-icone { color: var(--accent); display: block; }
+@media (min-width: 620px) { .jogo-grade { grid-template-columns: repeat(4, 1fr); } }

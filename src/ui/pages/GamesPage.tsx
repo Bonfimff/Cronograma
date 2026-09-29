@@ -1,5 +1,13 @@
-import { Device, Praise } from '../components/Doodles';
+import { IconCards, IconGrid, IconLink, IconTetris, Praise } from '../components/Doodles';
 import { CatTeacher, Raccoon } from '../components/Cutouts';
+
+/** Lista de jogos: ícone e nome, sem mais nada. A explicação aparece dentro de cada jogo. */
+const JOGOS = [
+  { to: 'tetris', nome: 'Tetris', Icon: IconTetris },
+  { to: 'palavras', nome: 'Ligar palavras', Icon: IconLink },
+  { to: 'cruzadas', nome: 'Cruzadas', Icon: IconGrid },
+  { to: 'flashcards', nome: 'Flashcards', Icon: IconCards },
+];
 
 export function GamesPage() {
   return (
@@ -7,7 +15,6 @@ export function GamesPage() {
       <section className="hero">
         <p className="eyebrow">Jogos</p>
         <h1>Pratique jogando</h1>
-        <p className="lead">Jogos curtos que usam o mesmo vocabulário do seu conteúdo.</p>
         <div className="chalk-row">
           <blockquote className="chalk">
             “Mesmo objetivo.<br />Mais leve. Do seu jeito.”
@@ -16,33 +23,16 @@ export function GamesPage() {
           <CatTeacher className="cut-aside" width="96" />
         </div>
       </section>
-      <section className="game-cards">
-        <a className="game-card" href="#/jogos/tetris">
-          <span className="game-card-head">
-            <b>Tetris de vocabulário</b>
-            <Device className="doodle mark" width="26" />
-          </span>
-          <span>Traduza a palavra em português antes que a peça caia. Acertar encaixa a peça; errar deixa a pilha bagunçada.</span>
-        </a>
-        <a className="game-card" href="#/jogos/palavras">
-          <span className="game-card-head">
-            <b>Ligar palavras</b>
-          </span>
-          <span>Ligue cada palavra em português à tradução em inglês. Acertou, estala o chicote e a linha fica marcada.</span>
-        </a>
-        <a className="game-card" href="#/jogos/cruzadas">
-          <span className="game-card-head">
-            <b>Palavras cruzadas</b>
-          </span>
-          <span>As dicas são as traduções em português; as respostas, as palavras em inglês. Cada cruzada é montada na hora com o seu vocabulário.</span>
-        </a>
-        <a className="game-card" href="#/jogos/flashcards">
-          <span className="game-card-head">
-            <b>Flashcards</b>
-          </span>
-          <span>Veja a palavra, tente lembrar o significado e toque no cartão para conferir tradução e exemplos.</span>
-        </a>
+
+      <section className="jogo-grade">
+        {JOGOS.map((j) => (
+          <a key={j.to} className="jogo-bloco" href={`#/jogos/${j.to}`}>
+            <j.Icon className="jogo-icone" width="34" />
+            <span>{j.nome}</span>
+          </a>
+        ))}
       </section>
+
       <p className="praise-line">
         <Praise>tá bom demais!</Praise>
         <Raccoon className="cut-inline" width="70" />

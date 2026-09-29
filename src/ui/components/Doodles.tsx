@@ -173,6 +173,60 @@ export function Praise({ children, className }: { children: ReactNode; className
 
 /* ── Ícones da barra de navegação, no mesmo traço de giz ────────────────── */
 
+/* ---------- ícones dos jogos: traço simples, só a ideia ---------- */
+
+/** Peças empilhadas. */
+export function IconTetris({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
+      <g {...stroke}>
+        <path d="M6 4h8v8h-8z" />
+        <path d="M14 12h8v8h-8z" />
+        <path d="M6 20h16v8h-16z" />
+      </g>
+    </svg>
+  );
+}
+
+/** Dois pontos ligados. */
+export function IconLink({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
+      <g {...stroke}>
+        <circle cx="7" cy="9" r="3.2" />
+        <circle cx="25" cy="23" r="3.2" />
+        <path d="M9.8 10.8c5.8 1.4 8.6 5.2 11.6 10" />
+      </g>
+    </svg>
+  );
+}
+
+/** Grade com uma casa marcada. */
+export function IconGrid({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
+      <g {...stroke}>
+        <path d="M5 5h22v22h-22z" />
+        <path d="M12 5v22M20 5v22M5 12h22M5 20h22" strokeWidth={1.4} opacity=".65" />
+      </g>
+      <path d="M12 12h8v8h-8z" fill="currentColor" opacity=".25" />
+    </svg>
+  );
+}
+
+/** Duas cartas, uma atrás da outra. */
+export function IconCards({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
+      <g {...stroke}>
+        <rect x="4" y="9" width="17" height="19" rx="3" />
+        <path d="M11 6h14a3 3 0 0 1 3 3v14" opacity=".6" />
+        <path d="M9 17h7M9 21h5" strokeWidth={1.6} opacity=".7" />
+      </g>
+    </svg>
+  );
+}
+
 export function IconHome({ className, width }: P) {
   return (
     <svg viewBox="0 0 24 24" className={className} width={width} aria-hidden>
