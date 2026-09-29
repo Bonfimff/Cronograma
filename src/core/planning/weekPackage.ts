@@ -427,7 +427,11 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
 }
 
 /** Modelo comentado para começar uma semana nova. */
-export function templatePackage(weekStart: string): WeekPackage & { $leia_me: string[]; $plataforma: Record<string, string> } {
+export function templatePackage(weekStart: string): WeekPackage & {
+  $leia_me: string[];
+  $plataforma: Record<string, string>;
+  $como_pedir: { pedido: string; preencha: Record<string, string>; regras: string[] };
+} {
   return {
     // o que a plataforma faz com cada coisa que vem no arquivo — para quem monta
     // a semana (ou pede a uma IA que monte) saber o que vale a pena preencher
@@ -444,6 +448,34 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
       'ler a folha em voz alta': 'Na Biblioteca, cada folha lê tudo em sequência, alternando inglês e português, com velocidade, pausa e repetição. Vem de words/expressions/patterns/grammar e das traduções.',
       'meu progresso': 'Palavras que mais acerta e que mais escapam (placar dos jogos), frequência de estudo e tempo até um conteúdo firmar. Vem do histórico de refs e do resultado das sessões corrigidas, não do arquivo.',
       'só no aparelho': 'Tema claro/escuro, estrela das folhas, nome que você dá a cada folha e as vozes dos Ajustes ficam no aparelho: não entram nem saem neste arquivo.',
+    },
+    // pronto para colar num chat de IA: o pedido, o que o aluno preenche e as
+    // regras que o arquivo precisa respeitar para o aplicativo aceitar
+    $como_pedir: {
+      pedido:
+        'Você vai montar uma semana de estudo de inglês para mim no formato deste arquivo JSON. '
+        + 'Responda só com o JSON, sem texto em volta, começando em "format" e mantendo exatamente os nomes de campo daqui. '
+        + 'Use os campos $plataforma e $leia_me deste modelo para saber o que cada campo faz, siga as regras de $como_pedir.regras '
+        + 'e apague os campos que começam com $ na sua resposta.',
+      preencha: {
+        'meu nível': 'ex.: iniciante, sei me apresentar e pouco mais',
+        'quanto tempo por dia': 'ex.: 20 minutos, de segunda a sexta',
+        'o que preciso nesta semana': 'ex.: pedir informação em viagem: aeroporto, hotel e restaurante',
+        'o que já estudei': 'ex.: how, what, where, verbo be, perguntas com do',
+        'como gosto de estudar': 'ex.: muitos exemplos curtos e uma produção escrita por dia',
+      },
+      regras: [
+        'Escreva tudo em português, menos o inglês que está sendo estudado.',
+        'week: a segunda-feira da semana, no formato AAAA-MM-DD. As datas dos dias ficam dentro dessa semana.',
+        'ids: minúsculos, sem acento e sem espaço (ex.: "where-do-you-work"). Cada id aparece uma vez só.',
+        'refs e exercises só podem citar ids que existem neste arquivo ou já no aplicativo.',
+        'Todo exemplo citado em uses[].examples, words[].examples ou expressions[].examples precisa estar em content.examples.',
+        'kind vai de new no começo da semana para practice, review, reinforce e consolidate no fim.',
+        'sheet.copy: no máximo 3 linhas. sheet.quiz: no máximo 6 itens. São o que cabe na folha impressa.',
+        'exercises.type: translate, fill, choice, match, build, qa ou produce. choice precisa de options; match precisa de pairs.',
+        'Palavras para as cruzadas funcionam melhor com 3 a 9 letras, sem espaço nem hífen.',
+        'Não invente campos novos: use só os que aparecem neste modelo.',
+      ],
     },
     $leia_me: [
       'Pacote semanal do Inglês Híbrido. Campos que começam com $ são ignorados.',

@@ -126,6 +126,32 @@ sessões serão criadas, atualizadas, mantidas e removidas antes de importar.
 
 ---
 
+## Pedir a semana a uma IA
+
+O arquivo foi feito para isso: você baixa o modelo em **Semana → Montar semana (JSON) → Modelo**,
+cola num chat de IA junto com o pedido abaixo e importa a resposta de volta.
+
+O próprio modelo já traz tudo o que a IA precisa ler, em três blocos que o aplicativo ignora na
+importação (campos que começam com `$`):
+
+| Bloco | Para quê |
+|---|---|
+| `$como_pedir.pedido` | o texto do pedido, pronto para colar |
+| `$como_pedir.preencha` | o que **você** responde antes: nível, tempo por dia, o que precisa nesta semana, o que já estudou, como gosta de estudar |
+| `$como_pedir.regras` | as regras que o arquivo precisa respeitar para o aplicativo aceitar (ids, datas, limites da folha, tipos de exercício) |
+| `$plataforma` | o que cada recurso do aplicativo faz com cada campo |
+| `$leia_me` | o significado campo a campo |
+
+Roteiro curto:
+
+1. Baixe o modelo e abra o arquivo.
+2. Preencha as respostas de `$como_pedir.preencha` (pode escrever direto no chat).
+3. Cole o arquivo inteiro e o pedido na IA.
+4. Traga o JSON da resposta para **Montar semana**, confira a prévia e importe.
+
+A prévia mostra o que vai ser criado, atualizado ou mantido antes de qualquer coisa mudar, então dá
+para importar sem medo e ajustar depois.
+
 ## Backup
 
 É o `UserData` inteiro mais os dados dos jogos:

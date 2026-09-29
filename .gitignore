@@ -9,3 +9,4 @@ server/.env
 server/*.db
 .env.local
 .tmp-check
+.tmp2

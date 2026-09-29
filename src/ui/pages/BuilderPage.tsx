@@ -52,7 +52,7 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
         <div className="acoes-json">
           <button onClick={() => download(`modelo-semana-${week}.json`, templatePackage(week))}>
             <b>Modelo</b>
-            <small>arquivo em branco para preencher</small>
+            <small>com o pedido pronto para colar numa IA</small>
           </button>
           <button onClick={() => download(`semana-${week}.json`, exportPackage(data, week))}>
             <b>Exportar</b>
