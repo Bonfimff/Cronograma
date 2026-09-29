@@ -106,19 +106,19 @@ export function LibraryIndex() {
 
   return (
     <>
-      <section className="hero">
-        {/* o voltar fica sempre no lugar (invisível na capa) para o caderno não
-            mudar de altura e todas as folhas terem as mesmas linhas */}
+      {/* cabeçalho enxuto: voltar, título e o recorte na mesma linha, para o
+          caderno começar mais alto e caber mais folha na tela */}
+      <section className="hero lib-hero">
         <button
-          className={`back ${current === CAPA ? 'oculto' : ''}`}
+          className={`lib-voltar ${current === CAPA ? 'oculto' : ''}`}
           onClick={() => open(CAPA)}
           tabIndex={current === CAPA ? -1 : 0}
-          aria-hidden={current === CAPA}
+          aria-label="Voltar para a capa"
         >
-          ‹ Biblioteca
+          ‹
         </button>
-        <p className="eyebrow">Conteúdo</p>
-        <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
+        <h1>Biblioteca</h1>
+        <LaptopCut className="lib-cut" width="58" />
       </section>
 
       {/*
