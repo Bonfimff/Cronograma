@@ -1168,7 +1168,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   border-top: 1px solid rgba(242, 239, 231, .06);
 }
 /* batida de asa: uma tira de 24 desenhos correndo dentro de uma janelinha */
-.goose-rider { position: relative; display: block; overflow: hidden; aspect-ratio: 272 / 260; }
+.goose-rider { position: relative; display: block; overflow: hidden; aspect-ratio: 259 / 260; }
 .goose-rider i {
   position: absolute; top: 0; left: 0; height: 100%; width: 2400%;
   background-repeat: no-repeat; background-size: 100% 100%;
