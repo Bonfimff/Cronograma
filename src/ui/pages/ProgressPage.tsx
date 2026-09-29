@@ -24,6 +24,9 @@ function loadStats(): WordStats {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
+/** No gráfico cabem poucas barras sem os nomes se atropelarem; a tabela mostra o resto. */
+const NO_GRAFICO = 6;
+
 function Palavras({ lista, vazio }: { lista: WordScore[]; vazio: string }) {
   if (!lista.length) return <Empty>{vazio}</Empty>;
   return (
@@ -93,7 +96,7 @@ export function ProgressPage() {
         <SketchLine valores={semanasEstudo.map((w) => w.dias)} />
         <div className="grafico-rotulos">
           {semanasEstudo.map((w, i) => (
-            <span key={w.inicio}>{i % 3 === 0 ? fmtShort(w.inicio) : ''}</span>
+            <span key={w.inicio}>{i % 4 === 0 ? fmtShort(w.inicio) : ''}</span>
           ))}
         </div>
         <div className="calor" role="img" aria-label={`${freq.diasEstudados} dias de estudo nas últimas ${semanas} semanas`}>
@@ -132,15 +135,15 @@ export function ProgressPage() {
 
       <section>
         <h2>Palavras que já grudaram</h2>
-        <SketchBars itens={bons.map((p) => ({ label: p.en, valor: p.taxa }))} />
-        <div className="grafico-rotulos">{bons.map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
+        <SketchBars itens={bons.slice(0, NO_GRAFICO).map((p) => ({ label: p.en, valor: p.taxa }))} />
+        <div className="grafico-rotulos">{bons.slice(0, NO_GRAFICO).map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
         <Palavras lista={bons} vazio="Jogue um pouco para o placar encher." />
       </section>
 
       <section>
         <h2>Palavras que ainda escapam</h2>
-        <SketchBars itens={dificeis.map((p) => ({ label: p.en, valor: p.taxa }))} />
-        <div className="grafico-rotulos">{dificeis.map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
+        <SketchBars itens={dificeis.slice(0, NO_GRAFICO).map((p) => ({ label: p.en, valor: p.taxa }))} />
+        <div className="grafico-rotulos">{dificeis.slice(0, NO_GRAFICO).map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
         <Palavras lista={dificeis} vazio="Nada errado por aqui ainda." />
       </section>
 
