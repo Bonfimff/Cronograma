@@ -1,3 +1,9 @@
 node_modules
 dist
 IMG
+server/.venv
+server/__pycache__
+server/**/__pycache__
+server/.pytest_cache
+server/.env
+server/*.db

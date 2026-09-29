@@ -34,6 +34,17 @@ src/core/                lógica pura, sem React (reaproveitável no Android)
 src/ui/                  interface React (telas e componentes)
 ```
 
+```
+server/                  backend em Python (FastAPI): contas e sincronização
+  app/main.py            aplicação, CORS e rotas
+  app/models.py          usuários e registros sincronizados
+  app/routers/auth.py    criar conta, entrar, renovar, sair de todos
+  app/routers/sync.py    push/pull por revisão, com tombstones
+  tests/                 pytest (contas, sincronização e conflitos)
+```
+
+O servidor é opcional: o app funciona inteiro sem ele. Veja [server/README.md](server/README.md).
+
 Os dados do usuário (sessões, semanas, folhas impressas, folhas da Biblioteca, histórico) ficam no
 navegador, com um único formato (`UserData`). Faça o backup em **Hoje → Backup dos dados** — ele leva
 também os recordes dos jogos.
