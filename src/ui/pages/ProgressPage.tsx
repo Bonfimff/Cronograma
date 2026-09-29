@@ -2,8 +2,9 @@ import { useData } from '../hooks';
 import { GAME_KEYS } from '../../core/storage/backup';
 import type { WordStats } from '../../core/games/wordTetris';
 import {
-  bestWords, exerciseAccuracy, frequency, hardestWords, learningSpeed, type WordScore,
+  bestWords, byWeek, exerciseAccuracy, frequency, hardestWords, learningSpeed, type WordScore,
 } from '../../core/progress/progress';
+import { SketchBars, SketchDots, SketchLine, SketchRing } from '../components/Charts';
 import { refLabel } from '../../core/content/repository';
 import { fmtShort, weekdayShort } from '../../core/dates';
 import { Empty } from '../components/common';
@@ -29,9 +30,8 @@ function Palavras({ lista, vazio }: { lista: WordScore[]; vazio: string }) {
       {lista.map((p) => (
         <li key={p.en}>
           <span className="en">{p.en}</span>
-          <span className="placar-barra"><span style={{ width: pct(p.taxa) }} /></span>
           <span className="placar-num">{pct(p.taxa)}</span>
-          <small className="muted">{p.certos}/{p.tentativas}</small>
+          <small className="muted">{p.certos} de {p.tentativas}</small>
         </li>
       ))}
     </ul>
@@ -48,6 +48,7 @@ export function ProgressPage() {
   const acertos = exerciseAccuracy(data);
   const semanas = 12;
   const ultimos = freq.dias.slice(-semanas * 7);
+  const semanasEstudo = byWeek(freq);
 
   return (
     <>
@@ -58,16 +59,25 @@ export function ProgressPage() {
 
       <section>
         <h2>Resumo</h2>
-        <dl className="facts">
+        <div className="com-anel">
+          <SketchRing valor={acertos.taxa ?? 0} centro={acertos.taxa === null ? '?' : pct(acertos.taxa)} />
+          <dl className="facts">
           <dt>Dias estudados</dt><dd>{freq.diasEstudados} nas últimas {semanas} semanas</dd>
           <dt>Sequência atual</dt><dd>{freq.sequenciaAtual} {freq.sequenciaAtual === 1 ? 'dia' : 'dias'} (melhor: {freq.melhorSequencia})</dd>
           <dt>Tempo somado</dt><dd>{Math.round(freq.minutosTotais / 6) / 10} h</dd>
-          <dt>Acerto nos exercícios</dt><dd>{acertos.taxa === null ? 'sem folhas corrigidas' : `${pct(acertos.taxa)} (${acertos.certos} de ${acertos.total})`}</dd>
-        </dl>
+            <dt>Acerto nos exercícios</dt><dd>{acertos.taxa === null ? 'sem folhas corrigidas' : `${acertos.certos} de ${acertos.total}`}</dd>
+          </dl>
+        </div>
       </section>
 
       <section>
         <h2>Frequência <small>{freq.porSemana} dias por semana</small></h2>
+        <SketchLine valores={semanasEstudo.map((w) => w.dias)} />
+        <div className="grafico-rotulos">
+          {semanasEstudo.map((w, i) => (
+            <span key={w.inicio}>{i % 3 === 0 ? fmtShort(w.inicio) : ''}</span>
+          ))}
+        </div>
         <div className="calor" role="img" aria-label={`${freq.diasEstudados} dias de estudo nas últimas ${semanas} semanas`}>
           {ultimos.map((d) => (
             <i
@@ -94,15 +104,25 @@ export function ProgressPage() {
             <dt>Ainda em curso</dt><dd>{ritmo.emAndamento} {ritmo.emAndamento === 1 ? 'conteúdo' : 'conteúdos'}</dd>
           </dl>
         )}
+        {ritmo.concluidos.length > 0 && (
+          <>
+            <SketchDots valores={ritmo.concluidos.map((c) => c.dias)} />
+            <div className="grafico-rotulos"><span>no mesmo dia</span><span>{ritmo.maisLento?.dias} dias</span></div>
+          </>
+        )}
       </section>
 
       <section>
         <h2>Palavras que já grudaram</h2>
+        <SketchBars itens={bons.map((p) => ({ label: p.en, valor: p.taxa }))} />
+        <div className="grafico-rotulos">{bons.map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
         <Palavras lista={bons} vazio="Jogue um pouco para o placar encher." />
       </section>
 
       <section>
         <h2>Palavras que ainda escapam</h2>
+        <SketchBars itens={dificeis.map((p) => ({ label: p.en, valor: p.taxa }))} />
+        <div className="grafico-rotulos">{dificeis.map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
         <Palavras lista={dificeis} vazio="Nada errado por aqui ainda." />
       </section>
     </>

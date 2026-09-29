@@ -36,10 +36,10 @@ export function bestWords(stats: WordStats, minimo = 3, quantas = 8): WordScore[
     .slice(0, quantas);
 }
 
-/** Palavras que mais escapam: ordena pelo número de erros e pela taxa. */
-export function hardestWords(stats: WordStats, minimo = 2, quantas = 8): WordScore[] {
+/** Palavras que mais escapam: erram pelo menos uma em cada quatro. */
+export function hardestWords(stats: WordStats, minimo = 2, quantas = 8, teto = 0.75): WordScore[] {
   return wordScores(stats)
-    .filter((p) => p.errados >= 1 && p.tentativas >= minimo)
+    .filter((p) => p.errados >= 1 && p.tentativas >= minimo && p.taxa <= teto)
     .sort((a, b) => a.taxa - b.taxa || b.errados - a.errados)
     .slice(0, quantas);
 }
@@ -177,4 +177,24 @@ export function exerciseAccuracy(data: UserData): ExerciseAccuracy {
     certos += s.result.exercises.correct;
   }
   return { total, certos, taxa: total ? certos / total : null };
+}
+
+export interface WeekStudy {
+  inicio: string; // segunda-feira
+  dias: number;
+  minutos: number;
+}
+
+/** Junta os dias em semanas, para o gráfico da frequência. */
+export function byWeek(freq: Frequency): WeekStudy[] {
+  const semanas: WeekStudy[] = [];
+  for (let i = 0; i < freq.dias.length; i += 7) {
+    const pedaco = freq.dias.slice(i, i + 7);
+    semanas.push({
+      inicio: pedaco[0].date,
+      dias: pedaco.filter((d) => d.sessoes > 0).length,
+      minutos: pedaco.reduce((t, d) => t + d.minutos, 0),
+    });
+  }
+  return semanas;
 }
