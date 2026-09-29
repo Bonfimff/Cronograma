@@ -7,11 +7,17 @@
  * Quem pediu menos movimento no sistema também fica sem o tranco.
  */
 
+/**
+ * O navegador não deixa escolher a força do motor, só quanto tempo ele fica
+ * ligado: pulso mais longo é sentido como tranco mais forte. Por isso os
+ * valores abaixo são generosos, e os padrões com pausa curta somam impacto em
+ * vez de virar cócegas.
+ */
 export const TRANCO = {
-  carimbo: [28] as number[],
-  linha: [40, 50, 70] as number[],
-  linhaUnica: [55] as number[],
-  chicote: [10, 30, 60] as number[],
+  carimbo: [120] as number[],
+  linha: [110, 45, 90, 45, 180] as number[],
+  linhaUnica: [150] as number[],
+  chicote: [45, 35, 200] as number[],
 };
 
 export function vibrar(padrao: number | number[]): void {
