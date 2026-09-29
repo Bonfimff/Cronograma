@@ -397,6 +397,14 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
   const achados = buscar(data, termo);
   const buscando = termo.trim().length >= 2;
 
+  // a capa mostra só as folhas marcadas com estrela (as outras continuam a um
+  // deslize ou a uma busca de distância); sem nenhuma marcada, mostra todas
+  const marcadas = useSyncExternalStore((cb) => favoritas.subscribe(cb), () => favoritas.get());
+  const escolhidas = tabs.filter((t) => marcadas.includes(t.key));
+  const lista = escolhidas.length
+    ? [...escolhidas, ...tabs.filter((t) => t.key === NEW_TAB)]
+    : tabs;
+
   return (
     <>
       <h2 className="lib-title">Folhas</h2>
@@ -435,11 +443,10 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
         )
       ) : (
         <ul className="lib-list">
-          {tabs.map((t) => (
+          {lista.map((t) => (
             <li key={t.key}>
               <button className={`lib-row ${t.key === NEW_TAB ? 'lib-nova' : ''}`} onClick={() => onOpen(t.key)}>
                 <span className="lib-main">{t.label}</span>
-                <span className="lib-side">{t.count !== undefined ? t.count : '›'}</span>
               </button>
             </li>
           ))}
