@@ -1523,3 +1523,23 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .trilha li.k-review.tem .trilha-conta { background: var(--k-review); }
 .trilha li.k-reinforce.tem .trilha-conta { background: var(--k-reinforce); }
 .trilha li.k-consolidate.tem .trilha-conta { background: var(--k-consolidate); }
+
+/* ---------- placas da semana escritas por cima do recorte ---------- */
+.signpost { container-type: inline-size; }
+.placa {
+  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #f7f3e8; border: 1.5px solid #1b1a19; border-radius: 2px; color: #14130f;
+  font-family: var(--sans); font-weight: 800; line-height: 1.05; text-align: center; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+}
+.placa b { font-size: 7.5cqw; }
+.placa small { font-size: 5cqw; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; opacity: .75; }
+/* a plaquinha comprida da direita, um pouco torta como no recorte */
+.placa-datas { left: 53%; top: 43.5%; width: 41%; height: 6.5%; transform: rotate(-3.5deg); }
+.placa-contagem { left: 53%; top: 50.5%; width: 41%; height: 6.5%; transform: rotate(-3.5deg); flex-direction: row; gap: 4%; }
+.placa-contagem b { font-size: 8cqw; }
+/* a placa quadrada de baixo, à esquerda */
+.placa-proxima { left: 26%; top: 64.8%; width: 28%; height: 13%; }
+/* a placa de baixo, à direita (onde ficava o aviso de multa) */
+.placa-feitas { left: 55.5%; top: 71.5%; width: 25%; height: 18%; gap: 2%; }
+.placa-feitas b { font-size: 9cqw; }

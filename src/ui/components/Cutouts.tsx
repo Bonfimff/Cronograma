@@ -186,13 +186,14 @@ export const Signpost = (p: C) => <Cut file="signpost" {...p} />;
  * as três luzes são bolinhas por cima, posicionadas em porcentagem da imagem
  * (assim acompanham qualquer largura). O ciclo é verde → amarelo → vermelho.
  */
-export function SignpostLive({ className, width }: C) {
+export function SignpostLive({ className, width, children }: C & { children?: React.ReactNode }) {
   return (
     <span className={`cut-live signpost ${className ?? ''}`} style={{ width }}>
       <Cut file="signpost" />
       <i className="lamp lamp-red" />
       <i className="lamp lamp-amber" />
       <i className="lamp lamp-green" />
+      {children}
     </span>
   );
 }

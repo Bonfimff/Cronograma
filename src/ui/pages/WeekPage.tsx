@@ -16,6 +16,11 @@ export function WeekPage({ start }: { start?: string }) {
   const [adding, setAdding] = useState<string | null>(null);
   const weekSessions = data.sessions.filter((s) => s.weekStart === ws);
   const counts = KIND_ORDER.map((k) => [k, weekSessions.filter((s) => s.kind === k).length] as const);
+  // a primeira sessão ainda não concluída, de hoje em diante
+  const feitas = weekSessions.filter((s) => s.status === 'done').length;
+  const proxima = weekSessions
+    .filter((s) => s.status !== 'done' && s.date >= today())
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return (
     <>
@@ -37,7 +42,26 @@ export function WeekPage({ start }: { start?: string }) {
               </li>
             ))}
           </ol>
-          <SignpostLive className="semana-placa" width={116} />
+          {/* as placas da rua passam a dizer coisas da semana, no lugar das
+              frases de trânsito em inglês do recorte original */}
+          <SignpostLive className="semana-placa" width={160}>
+            <span className="placa placa-datas">
+              <b>{fmtShort(ws)} a {fmtShort(addDays(ws, 6))}</b>
+            </span>
+            <span className="placa placa-contagem">
+              <b>{weekSessions.length}</b>
+              <small>{weekSessions.length === 1 ? 'sessão' : 'sessões'}</small>
+            </span>
+            <span className="placa placa-feitas">
+              <small>feitas</small>
+              <b>{feitas}</b>
+              <small>de {weekSessions.length}</small>
+            </span>
+            <span className="placa placa-proxima">
+              <small>{proxima ? 'próxima' : 'semana'}</small>
+              <b>{proxima ? weekdayShort(proxima.date) : 'livre'}</b>
+            </span>
+          </SignpostLive>
         </div>
         {/* atalhos discretos, depois da frase: são de uso eventual */}
         <p className="atalhos">
