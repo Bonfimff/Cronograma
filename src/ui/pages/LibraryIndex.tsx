@@ -89,14 +89,22 @@ export function LibraryIndex() {
       const recuo = app ? parseFloat(getComputedStyle(app).paddingBottom) || 0 : 0;
       const margem = parseFloat(getComputedStyle(el).marginBottom) || 0;
       const topo = el.getBoundingClientRect().top;
-      const larguraMax = el.parentElement?.clientWidth ?? el.clientWidth;
+      // largura útil do corpo da página: clientWidth inclui os recuos laterais,
+      // e usá-lo cru fazia a folha passar da borda direita no celular
+      const pai = el.parentElement;
+      const estiloPai = pai ? getComputedStyle(pai) : null;
+      const larguraMax = pai && estiloPai
+        ? pai.clientWidth - parseFloat(estiloPai.paddingLeft) - parseFloat(estiloPai.paddingRight)
+        : el.clientWidth;
       // altura da janela útil: no celular a barra de endereço encolhe e cresce,
       // e o visualViewport é quem sabe o tamanho que sobrou de fato
       const janela = window.visualViewport?.height ?? window.innerHeight;
       // a folha usa toda a altura livre; a largura nunca passa da proporção de uma
       // folha de papel em pé, então no computador ela fica esbelta e centralizada,
       // e no celular ocupa a tela toda em vez de sobrar espaço embaixo
-      const altura = Math.max(240, janela - topo - recuo - margem - 4);
+      // o corpo da página também tem recuo embaixo, e ele conta
+      const recuoPai = estiloPai ? parseFloat(estiloPai.paddingBottom) || 0 : 0;
+      const altura = Math.max(240, janela - topo - recuo - recuoPai - margem - 2);
       el.style.height = `${altura}px`;
       el.style.width = `${Math.min(larguraMax, altura * PROPORCAO)}px`;
     };
