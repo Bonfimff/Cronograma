@@ -349,7 +349,8 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
               href={`#/conteudo/word:${w.id}`}
               state={st(`word:${w.id}`)}
               main={<><b className="en">{w.word}</b> <em>{w.type}</em></>}
-              side={w.translations.map((t) => t.text).join(', ')}
+              // na folha cabem os dois sentidos mais usados; o resto fica no verbete
+              side={w.translations.slice(0, 2).map((t) => t.text).join(', ') + (w.translations.length > 2 ? '…' : '')}
             />
           ))}
         </ul>
