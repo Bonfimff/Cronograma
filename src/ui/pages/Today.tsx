@@ -1,4 +1,8 @@
 import { useData } from '../hooks';
+import { useSyncExternalStore } from 'react';
+import { favoritas } from '../../core/library/favoritas';
+import { sheetsOf } from '../../core/library/sheets';
+import { content } from '../../core/content/repository';
 import { sessionsOn, getWeek } from '../../core/planning/weeks';
 import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/dates';
 import { reviewBoard } from '../../core/reviews/reviews';
@@ -95,6 +99,8 @@ export function Today() {
         </section>
       )}
 
+      <FolhasMarcadas />
+
       <section>
         <h2>Próximos dias</h2>
         {upcoming.length ? upcoming.map((s) => <SessionRow key={s.id} s={s} showDate />) : <Empty>Nenhuma sessão nos próximos 7 dias.</Empty>}
@@ -113,5 +119,43 @@ export function Today() {
         <CrowRaincoat className="cut-foot" width="76" />
       </footer>
     </>
+  );
+}
+
+/** Folhas que o usuário marcou com estrela na Biblioteca. */
+function FolhasMarcadas() {
+  const data = useData();
+  const marcadas = useSyncExternalStore((cb) => favoritas.subscribe(cb), () => favoritas.get());
+  if (!marcadas.length) return null;
+
+  const fixas: Record<string, { nome: string; total: number }> = {
+    word: { nome: 'Vocabulário', total: content.words.length },
+    expression: { nome: 'Expressões', total: content.expressions.length },
+    pattern: { nome: 'Padrões', total: content.patterns.length },
+    grammar: { nome: 'Gramática', total: content.grammar.length },
+  };
+  const suas = sheetsOf(data);
+
+  const folhas = marcadas
+    .map((k) => {
+      const f = fixas[k];
+      if (f) return { chave: k, ...f };
+      const s = suas.find((x) => x.id === k);
+      return s ? { chave: k, nome: s.title, total: s.items.length } : null;
+    })
+    .filter(Boolean) as { chave: string; nome: string; total: number }[];
+
+  if (!folhas.length) return null;
+  return (
+    <section>
+      <h2>Folhas marcadas</h2>
+      <p className="chips">
+        {folhas.map((f) => (
+          <a key={f.chave} className="chip" href={`#/conteudo?folha=${encodeURIComponent(f.chave)}`}>
+            {f.nome} <small>{f.total}</small>
+          </a>
+        ))}
+      </p>
+    </section>
   );
 }

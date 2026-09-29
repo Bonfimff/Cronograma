@@ -1,10 +1,12 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { useData } from '../hooks';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useData, useRoute } from '../hooks';
 import { store } from '../../core/storage/store';
 import type { ContentRef, UserData } from '../../core/types';
 import { content } from '../../core/content/repository';
 import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
+import { buscar } from '../../core/content/search';
+import { favoritas } from '../../core/library/favoritas';
 import { LaptopCut } from '../components/Cutouts';
 
 /** Duração da virada de folha. */
@@ -32,7 +34,9 @@ export function LibraryIndex() {
     { key: NEW_TAB, label: '+ nova folha' },
   ];
 
-  const [tab, setTab] = useState(CAPA);
+  // a página Hoje pode pedir uma folha: #/conteudo?folha=word
+  const pedida = useRoute().query.get('folha');
+  const [tab, setTab] = useState(pedida ?? CAPA);
   const [turning, setTurning] = useState<{ from: string; dir: 1 | -1 } | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const current = tab === CAPA || tabs.some((t) => t.key === tab) ? tab : CAPA; // folha apagada volta pra capa
@@ -291,24 +295,8 @@ function Row({ href, main, side, state }: { href: string; main: ReactNode; side:
 function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   const st = (r: string) => reviewStatus(data, r as ContentRef)?.state;
 
-  // capa do caderno: o índice das folhas
-  if (tabKey === CAPA) {
-    return (
-      <>
-        <h2 className="lib-title">Folhas</h2>
-        <ul className="lib-list">
-          {tabs.map((t) => (
-            <li key={t.key}>
-              <button className={`lib-row ${t.key === NEW_TAB ? 'lib-nova' : ''}`} onClick={() => onOpen(t.key)}>
-                <span className="lib-main">{t.label}</span>
-                <span className="lib-side">{t.count !== undefined ? t.count : '›'}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </>
-    );
-  }
+  // capa do caderno: a busca e o índice das folhas
+  if (tabKey === CAPA) return <Capa data={data} tabs={tabs} onOpen={onOpen} />;
 
   if (tabKey === 'word') {
     return (
@@ -375,6 +363,81 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   const sheet = sheetsOf(data).find((s) => s.id === tabKey);
   if (!sheet) return null;
   return <CustomSheet id={sheet.id} />;
+}
+
+/** Estrela que marca a folha para ela aparecer na página Hoje. */
+function Estrela({ chave }: { chave: string }) {
+  const marcadas = useSyncExternalStore((cb) => favoritas.subscribe(cb), () => favoritas.get());
+  const marcada = marcadas.includes(chave);
+  return (
+    <button
+      className={`lib-estrela ${marcada ? 'on' : ''}`}
+      onClick={() => favoritas.alternar(chave)}
+      aria-pressed={marcada}
+      title={marcada ? 'Tirar da página Hoje' : 'Mostrar na página Hoje'}
+    >
+      {marcada ? '★' : '☆'}
+    </button>
+  );
+}
+
+/** Primeira folha: campo de busca e, abaixo, a lista das folhas. */
+function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (key: string) => void }) {
+  const [termo, setTermo] = useState('');
+  const achados = buscar(data, termo);
+  const buscando = termo.trim().length >= 2;
+
+  return (
+    <>
+      <h2 className="lib-title">Folhas</h2>
+
+      <div className="lib-busca">
+        <input
+          type="search"
+          value={termo}
+          onChange={(e) => setTermo(e.target.value)}
+          placeholder="Buscar palavra ou folha"
+          aria-label="Buscar palavra ou folha"
+        />
+      </div>
+
+      {buscando ? (
+        achados.length ? (
+          <ul className="lib-list">
+            {achados.map((a) => (
+              <li key={a.chave}>
+                {a.href ? (
+                  <a className="lib-row" href={a.href}>
+                    <span className="lib-main"><b className="en">{a.titulo}</b> <em>{a.onde}</em></span>
+                    <span className="lib-side">{a.detalhe}</span>
+                  </a>
+                ) : (
+                  <button className="lib-row" onClick={() => a.folha && onOpen(a.folha)}>
+                    <span className="lib-main"><b className="en">{a.titulo}</b> <em>{a.onde}</em></span>
+                    <span className="lib-side">{a.detalhe}</span>
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="lib-note">Nada encontrado para "{termo}".</p>
+        )
+      ) : (
+        <ul className="lib-list">
+          {tabs.map((t) => (
+            <li key={t.key} className="lib-linha">
+              <button className={`lib-row ${t.key === NEW_TAB ? 'lib-nova' : ''}`} onClick={() => onOpen(t.key)}>
+                <span className="lib-main">{t.label}</span>
+                <span className="lib-side">{t.count !== undefined ? t.count : '›'}</span>
+              </button>
+              {t.key !== NEW_TAB && <Estrela chave={t.key} />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
 }
 
 function NewSheetForm({ onCreated }: { onCreated: (key: string) => void }) {
