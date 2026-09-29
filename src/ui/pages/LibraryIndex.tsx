@@ -13,6 +13,8 @@ import { LaptopCut } from '../components/Cutouts';
 const TURN_MS = 900;
 const NEW_TAB = 'nova';
 const CAPA = 'capa';
+/** Proporção de uma folha de papel em pé (largura / altura), como no A4. */
+const PROPORCAO = 1 / Math.SQRT2;
 
 type Tab = { key: string; label: ReactNode; count?: number };
 
@@ -83,8 +85,13 @@ export function LibraryIndex() {
       const barra = document.querySelector('.nav') as HTMLElement | null;
       const debaixo = barra && getComputedStyle(barra).position === 'fixed' ? barra.offsetHeight : 0;
       const topo = el.getBoundingClientRect().top - (el.offsetHeight ? 0 : 0);
+      const larguraMax = el.parentElement?.clientWidth ?? el.clientWidth;
       let altura = Math.max(240, window.innerHeight - topo - debaixo - 12);
+      // a folha guarda a proporção de uma folha de papel (A4 em pé): se a tela
+      // for estreita, a altura é que cede; se for baixa, a largura é que cede
+      altura = Math.min(altura, larguraMax / PROPORCAO);
       el.style.height = `${altura}px`;
+      el.style.width = `${Math.min(larguraMax, altura * PROPORCAO)}px`;
       // a rolagem tem de acontecer dentro da folha, nunca na página: se ainda
       // sobrar algo rolando (recuos, barra estática no computador), encolhe o
       // caderno até a página caber inteira na tela
@@ -93,14 +100,21 @@ export function LibraryIndex() {
         if (sobra <= 0 || altura <= 240) break;
         altura = Math.max(240, altura - sobra);
         el.style.height = `${altura}px`;
+        el.style.width = `${Math.min(larguraMax, altura * PROPORCAO)}px`;
       }
     };
-    medir();
-    const depois = requestAnimationFrame(medir); // depois de a folha se acomodar
-    window.addEventListener('resize', medir);
+    // uma medida agora e outra no quadro seguinte, quando a folha já se acomodou
+    let pendente = 0;
+    const remedir = () => {
+      cancelAnimationFrame(pendente);
+      medir();
+      pendente = requestAnimationFrame(medir);
+    };
+    remedir();
+    window.addEventListener('resize', remedir);
     return () => {
-      cancelAnimationFrame(depois);
-      window.removeEventListener('resize', medir);
+      cancelAnimationFrame(pendente);
+      window.removeEventListener('resize', remedir);
     };
   }, [current]);
 

@@ -828,7 +828,7 @@ h3 { font-size: .95rem; }
   .lib-tab-long { display: none; }
 }
 
-.lib-book { position: relative; perspective: 1600px; margin-bottom: 16px; }
+.lib-book { position: relative; perspective: 1600px; margin: 0 auto 16px; }
 /* folha de caderno: pautada, com margem vermelha à esquerda */
 /*
  * A pauta é o compasso da folha: todo texto daqui usa altura de linha igual a
@@ -1425,8 +1425,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 
 /* a folha do caderno ocupa toda a largura da tela no celular */
 @media (max-width: 560px) {
-  .lib-book { margin-left: -16px; margin-right: -16px; }
-  .lib-sheet { border-radius: 0; padding-right: 14px; }
+  .lib-sheet { border-radius: 2px; padding-right: 14px; }
 }
 /* itens da capa: mesma linha das outras folhas, mas clicáveis como botão */
 button.lib-row {
