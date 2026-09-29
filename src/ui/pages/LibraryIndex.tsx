@@ -83,26 +83,22 @@ export function LibraryIndex() {
     const medir = () => {
       const el = livro.current;
       if (!el) return;
-      const barra = document.querySelector('.nav') as HTMLElement | null;
-      const debaixo = barra && getComputedStyle(barra).position === 'fixed' ? barra.offsetHeight : 0;
-      const topo = el.getBoundingClientRect().top - (el.offsetHeight ? 0 : 0);
+      // espaço já reservado embaixo para a barra fixa do celular (no computador a
+      // barra fica no alto e esse recuo é zero)
+      const app = el.closest('.app') as HTMLElement | null;
+      const recuo = app ? parseFloat(getComputedStyle(app).paddingBottom) || 0 : 0;
+      const margem = parseFloat(getComputedStyle(el).marginBottom) || 0;
+      const topo = el.getBoundingClientRect().top;
       const larguraMax = el.parentElement?.clientWidth ?? el.clientWidth;
+      // altura da janela útil: no celular a barra de endereço encolhe e cresce,
+      // e o visualViewport é quem sabe o tamanho que sobrou de fato
+      const janela = window.visualViewport?.height ?? window.innerHeight;
       // a folha usa toda a altura livre; a largura nunca passa da proporção de uma
       // folha de papel em pé, então no computador ela fica esbelta e centralizada,
       // e no celular ocupa a tela toda em vez de sobrar espaço embaixo
-      let altura = Math.max(240, window.innerHeight - topo - debaixo - 12);
+      const altura = Math.max(240, janela - topo - recuo - margem - 4);
       el.style.height = `${altura}px`;
       el.style.width = `${Math.min(larguraMax, altura * PROPORCAO)}px`;
-      // a rolagem tem de acontecer dentro da folha, nunca na página: se ainda
-      // sobrar algo rolando (recuos, barra estática no computador), encolhe o
-      // caderno até a página caber inteira na tela
-      for (let i = 0; i < 4; i++) {
-        const sobra = document.documentElement.scrollHeight - window.innerHeight;
-        if (sobra <= 0 || altura <= 240) break;
-        altura = Math.max(240, altura - sobra);
-        el.style.height = `${altura}px`;
-        el.style.width = `${Math.min(larguraMax, altura * PROPORCAO)}px`;
-      }
     };
     // uma medida agora e outra no quadro seguinte, quando a folha já se acomodou
     let pendente = 0;
@@ -113,6 +109,7 @@ export function LibraryIndex() {
     };
     remedir();
     window.addEventListener('resize', remedir);
+    window.visualViewport?.addEventListener('resize', remedir);
     // o cabeçalho muda de altura quando o recorte termina de carregar
     const alvo = livro.current?.parentElement;
     const ro = alvo ? new ResizeObserver(remedir) : null;
@@ -121,6 +118,7 @@ export function LibraryIndex() {
       cancelAnimationFrame(pendente);
       ro?.disconnect();
       window.removeEventListener('resize', remedir);
+      window.visualViewport?.removeEventListener('resize', remedir);
     };
   }, [current]);
 
