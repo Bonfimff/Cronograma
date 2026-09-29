@@ -1559,3 +1559,15 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .placa-feitas { clip-path: polygon(55.09% 78.48%, 80.01% 78.01%, 80.39% 91.18%, 54.71% 92.34%); }
 .placa-feitas > span { left: 67.55%; top: 85%; rotate: -2.1deg; }
 .placa-feitas b { font-size: 8cqw; }
+
+/* ---------- ações do pacote semanal: cartões em vez de botões espremidos ---------- */
+.acoes-json { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 4px; }
+.acoes-json > * {
+  display: flex; flex-direction: column; gap: 3px; align-items: flex-start; text-align: left;
+  padding: 12px 14px; border: 1px solid var(--rule); border-radius: 14px;
+  background: var(--paper-2); color: var(--ink); text-decoration: none; font: inherit; cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.acoes-json > *:hover { border-color: var(--accent); transform: translateY(-2px); }
+.acoes-json b { font-size: .95rem; }
+.acoes-json small { color: var(--ink-3); font-size: .76rem; line-height: 1.25; }

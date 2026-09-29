@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import { deleteSession, findSession, finishSession, saveUserExercises, startSession, updateSession } from '../../core/sessions/sessions';
+import { saveUserContent } from '../../core/content/novos';
 import { fmtShort, weekdayName, weekStartOf } from '../../core/dates';
 import { SessionForm } from '../components/SessionForm';
 import { FinishForm } from '../components/FinishForm';
@@ -27,8 +28,9 @@ export function SessionPage({ id }: { id: string }) {
           onCancel={() => setMode('view')}
           onSubmit={(v) => {
             store.update((d) => {
-              const { newExercises, ...rest } = v;
+              const { newExercises, newContent, ...rest } = v;
               saveUserExercises(d, newExercises ?? []);
+              saveUserContent(d, newContent ?? {});
               updateSession(d, s.id, { ...rest, weekStart: weekStartOf(v.date) });
             });
             setMode('view');

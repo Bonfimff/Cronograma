@@ -48,14 +48,20 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
       <section className="hero">
         <p className="eyebrow">Montar semana</p>
         <h1>Pacote semanal (JSON)</h1>
-        <p className="lead">
-          Um arquivo com toda a semana: conteúdo novo, contexto, exemplos, o que vai para a folha, o que fica no app,
-          os exercícios e o resultado esperado. Também dá para criar tudo pela plataforma, em <a href={`#/semana/${week}`}>Semana → + sessão</a>.
-        </p>
-        <div className="actions left">
-          <button className="ghost small" onClick={() => download(`modelo-semana-${week}.json`, templatePackage(week))}>Baixar modelo</button>
-          <button className="ghost small" onClick={() => download(`semana-${week}.json`, exportPackage(data, week))}>Exportar semana {fmtShort(week)}</button>
-          <a className="ghost small" href="#/semana">Ver planejamento</a>
+        <p className="lead">Uma semana inteira num arquivo.</p>
+        <div className="acoes-json">
+          <button onClick={() => download(`modelo-semana-${week}.json`, templatePackage(week))}>
+            <b>Modelo</b>
+            <small>arquivo em branco para preencher</small>
+          </button>
+          <button onClick={() => download(`semana-${week}.json`, exportPackage(data, week))}>
+            <b>Exportar</b>
+            <small>salva a semana de {fmtShort(week)}</small>
+          </button>
+          <a href="#/semana">
+            <b>Planejamento</b>
+            <small>voltar para a semana</small>
+          </a>
         </div>
         <label className="week-pick">
           Semana para exportar / modelo

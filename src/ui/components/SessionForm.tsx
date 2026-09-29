@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { ContentRef, Exercise, ExerciseType, ExpectedResult, SessionApp, SessionKind, SessionSheet } from '../../core/types';
+import type { ContentBundle, ContentRef, Exercise, ExerciseType, ExpectedResult, SessionApp, SessionKind, SessionSheet } from '../../core/types';
 import { allRefs, content, copyBlock, getTopic, KIND_LABEL as CONTENT_KIND, parseRef, refLabel } from '../../core/content/repository';
 import { KIND_LABEL, KIND_ORDER, weekDates } from '../../core/planning/weeks';
 import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/dates';
+import { novaExpressao, novaPalavra, novoTema } from '../../core/content/novos';
 
 export interface SessionFormValue {
   date: string;
@@ -19,6 +20,8 @@ export interface SessionFormValue {
   exerciseIds?: string[];
   /** Exercícios novos escritos neste formulário (viram conteúdo do usuário). */
   newExercises?: Exercise[];
+  /** Palavras, expressões e temas escritos aqui (viram conteúdo do usuário). */
+  newContent?: Partial<ContentBundle>;
 }
 
 const lines = (t: string) => t.split('\n').map((x) => x.trim()).filter(Boolean);
@@ -46,7 +49,12 @@ export function SessionForm({
     whenToUse: initial?.whenToUse ?? '',
     exerciseIds: initial?.exerciseIds ?? [],
     newExercises: [],
+    newContent: {},
   });
+  // o que foi escrito agora ainda não está no repositório: entra na lista à mão
+  const [novos, setNovos] = useState<{ ref: ContentRef; rotulo: string; tipo: string }[]>([]);
+  const [draftRef, setDraftRef] = useState({ tipo: 'word' as 'word' | 'expression', en: '', pt: '' });
+  const [temaNovo, setTemaNovo] = useState('');
   // campos de texto livre (uma linha por item)
   const [txt, setTxt] = useState({
     copy: (initial?.sheet?.copy ?? []).join('\n'),
@@ -77,6 +85,35 @@ export function SessionForm({
   };
 
   const refs = allRefs();
+
+  /** Cria uma palavra ou expressão e já deixa marcada na sessão. */
+  const addConteudo = () => {
+    const en = draftRef.en.trim();
+    if (!en) return;
+    const item = draftRef.tipo === 'word'
+      ? novaPalavra(en, draftRef.pt)
+      : novaExpressao(en, draftRef.pt);
+    const ref = `${draftRef.tipo}:${item.id}` as ContentRef;
+    const pacote = v.newContent ?? {};
+    set({
+      refs: [...v.refs, ref],
+      newContent: draftRef.tipo === 'word'
+        ? { ...pacote, words: [...(pacote.words ?? []), item as never] }
+        : { ...pacote, expressions: [...(pacote.expressions ?? []), item as never] },
+    });
+    setNovos((x) => [...x, { ref, rotulo: en, tipo: draftRef.tipo === 'word' ? 'Palavra' : 'Expressão' }]);
+    setDraftRef({ ...draftRef, en: '', pt: '' });
+  };
+
+  /** Cria um tema com o nome escrito e usa o título da sessão. */
+  const addTema = () => {
+    const titulo = temaNovo.trim();
+    if (!titulo) return;
+    const t = novoTema(titulo, v.refs);
+    const pacote = v.newContent ?? {};
+    set({ topicId: t.id, title: v.title || titulo, newContent: { ...pacote, topics: [...(pacote.topics ?? []), t] } });
+    setTemaNovo('');
+  };
 
   return (
     <form
@@ -130,7 +167,17 @@ export function SessionForm({
         <select value={v.topicId ?? ''} onChange={(e) => pickTopic(e.target.value)}>
           <option value="">(livre)</option>
           {content.topics.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+          {(v.newContent?.topics ?? []).map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
         </select>
+        <span className="inline-answer">
+          <input
+            value={temaNovo}
+            onChange={(e) => setTemaNovo(e.target.value)}
+            placeholder="ou escreva um tema novo"
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTema(); } }}
+          />
+          <button type="button" className="ghost small" onClick={addTema} disabled={!temaNovo.trim()}>Criar tema</button>
+        </span>
       </label>
 
       <label>
@@ -151,6 +198,15 @@ export function SessionForm({
       <fieldset>
         <legend>Conteúdos <small>· ✎ = vai para a folha</small></legend>
         <ul className="picklist">
+          {novos.map((n) => (
+            <li key={n.ref} className={v.refs.includes(n.ref) ? 'on' : ''}>
+              <label className="check">
+                <input type="checkbox" checked={v.refs.includes(n.ref)} onChange={() => toggle('refs', n.ref)} />
+                <span>{n.rotulo}</span>
+                <small>{n.tipo} (novo)</small>
+              </label>
+            </li>
+          ))}
           {refs.map((r) => {
             const on = v.refs.includes(r);
             return (
@@ -172,6 +228,31 @@ export function SessionForm({
             );
           })}
         </ul>
+        <div className="form new-ex">
+          <div className="grid2">
+            <select value={draftRef.tipo} onChange={(e) => setDraftRef({ ...draftRef, tipo: e.target.value as 'word' | 'expression' })}>
+              <option value="word">Palavra</option>
+              <option value="expression">Expressão</option>
+            </select>
+            <input
+              value={draftRef.en}
+              onChange={(e) => setDraftRef({ ...draftRef, en: e.target.value })}
+              placeholder="Em inglês"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addConteudo(); } }}
+            />
+          </div>
+          <div className="grid2">
+            <input
+              value={draftRef.pt}
+              onChange={(e) => setDraftRef({ ...draftRef, pt: e.target.value })}
+              placeholder="Tradução em português"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addConteudo(); } }}
+            />
+          </div>
+          <button type="button" className="ghost small" onClick={addConteudo} disabled={!draftRef.en.trim()}>
+            + Adicionar conteúdo
+          </button>
+        </div>
       </fieldset>
 
       <details className="more-fields" open={!!(initial?.sheet || initial?.expected)}>

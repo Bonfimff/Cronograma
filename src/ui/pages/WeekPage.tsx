@@ -8,6 +8,7 @@ import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
 import { CalendarDoodle } from '../components/Doodles';
 import { SignpostLive } from '../components/Cutouts';
+import { saveUserContent } from '../../core/content/novos';
 
 export function WeekPage({ start }: { start?: string }) {
   const data = useData();
@@ -133,6 +134,7 @@ export function WeekPage({ start }: { start?: string }) {
                     let id = '';
                     store.update((d) => {
                       saveUserExercises(d, v.newExercises ?? []);
+                      saveUserContent(d, v.newContent ?? {});
                       id = createSession(d, v).id;
                       updateSession(d, id, { sheet: v.sheet, app: v.app, expected: v.expected, exerciseIds: v.exerciseIds });
                     });

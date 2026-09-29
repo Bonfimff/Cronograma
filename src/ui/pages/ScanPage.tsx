@@ -5,6 +5,7 @@ import { assignSheet, lookupCode } from '../../core/worksheets/worksheets';
 import { PAGES } from '../../core/worksheets/templates';
 import { readQR, readSheet, type Img, type SheetReading } from '../../core/scanner/omr';
 import { createSession, finishSession, saveUserExercises, startSession, updateSession } from '../../core/sessions/sessions';
+import { saveUserContent } from '../../core/content/novos';
 import { isBackPayload, isCode, normalizeCode } from '../../core/qrcodes/ids';
 import type { MasteryStatus, UnderstoodStatus, UsageStatus } from '../../core/types';
 import { SessionForm } from '../components/SessionForm';
@@ -137,6 +138,7 @@ export function ScanPage({ code: initialCode, autoCam, autoManual }: { code?: st
             onSubmit={(v) => {
               store.update((d) => {
                 saveUserExercises(d, v.newExercises ?? []);
+                saveUserContent(d, v.newContent ?? {});
                 createSession(d, { ...v, code });
                 updateSession(d, code, { sheet: v.sheet, app: v.app, expected: v.expected, exerciseIds: v.exerciseIds });
                 assignSheet(d, code, code);
