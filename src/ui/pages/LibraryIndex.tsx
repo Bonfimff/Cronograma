@@ -87,10 +87,10 @@ export function LibraryIndex() {
       const debaixo = barra && getComputedStyle(barra).position === 'fixed' ? barra.offsetHeight : 0;
       const topo = el.getBoundingClientRect().top - (el.offsetHeight ? 0 : 0);
       const larguraMax = el.parentElement?.clientWidth ?? el.clientWidth;
+      // a folha usa toda a altura livre; a largura nunca passa da proporção de uma
+      // folha de papel em pé, então no computador ela fica esbelta e centralizada,
+      // e no celular ocupa a tela toda em vez de sobrar espaço embaixo
       let altura = Math.max(240, window.innerHeight - topo - debaixo - 12);
-      // a folha guarda a proporção de uma folha de papel (A4 em pé): se a tela
-      // for estreita, a altura é que cede; se for baixa, a largura é que cede
-      altura = Math.min(altura, larguraMax / PROPORCAO);
       el.style.height = `${altura}px`;
       el.style.width = `${Math.min(larguraMax, altura * PROPORCAO)}px`;
       // a rolagem tem de acontecer dentro da folha, nunca na página: se ainda
@@ -113,8 +113,13 @@ export function LibraryIndex() {
     };
     remedir();
     window.addEventListener('resize', remedir);
+    // o cabeçalho muda de altura quando o recorte termina de carregar
+    const alvo = livro.current?.parentElement;
+    const ro = alvo ? new ResizeObserver(remedir) : null;
+    if (alvo && ro) ro.observe(alvo);
     return () => {
       cancelAnimationFrame(pendente);
+      ro?.disconnect();
       window.removeEventListener('resize', remedir);
     };
   }, [current]);

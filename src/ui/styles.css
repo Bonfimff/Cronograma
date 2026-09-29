@@ -868,7 +868,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .lib-main b { font-weight: 700; }
 .lib-main em { font-style: normal; font-size: .78rem; color: #8a8170; }
 .lib-main .dot { width: 8px; height: 8px; display: inline-block; vertical-align: middle; margin-right: 6px; }
-.lib-side { color: #5c5546; font-size: .92rem; text-align: right; }
+.lib-side { color: #5c5546; font-size: .92rem; text-align: right; max-width: 52%; }
 .lib-note { color: #6c6455; font-size: .92rem; line-height: var(--pauta); margin: 0; border-bottom: 1px solid rgba(60, 110, 150, .3); }
 .lib-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-height: calc(var(--pauta) * 2); border-bottom: 1px solid rgba(60, 110, 150, .3); }
 .lib-form input {
