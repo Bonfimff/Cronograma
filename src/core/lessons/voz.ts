@@ -1,9 +1,10 @@
 /**
- * Leitura em voz alta de uma folha inteira.
+ * Leitura em voz alta de uma folha inteira, com controle de ritmo.
  *
  * Cada trecho sabe em que língua está, porque a mesma voz lendo inglês e
- * português soa errada nos dois. As falas entram numa fila: o navegador só
- * aceita uma de cada vez, então a próxima só começa quando a anterior termina.
+ * português soa errada nos dois. O navegador só toca uma fala por vez, então
+ * aqui há um tocador: fala, espera a pausa escolhida, chama a próxima, e no fim
+ * repete a lista quantas vezes o usuário pediu.
  */
 
 export interface Fala {
@@ -11,10 +12,40 @@ export interface Fala {
   idioma: 'en' | 'pt';
 }
 
+export interface OpcoesVoz {
+  /** Ler também a tradução em português. */
+  traducao: boolean;
+  /** 0,5x a 2x. */
+  velocidade: number;
+  /** Segundos de silêncio entre uma fala e a próxima. */
+  pausa: number;
+  /** Quantas vezes repetir a lista (ignorado quando `semParar`). */
+  vezes: number;
+  semParar: boolean;
+}
+
+export const OPCOES_PADRAO: OpcoesVoz = { traducao: true, velocidade: 1, pausa: 0.6, vezes: 1, semParar: false };
+
 const VOZES: Record<Fala['idioma'], string> = { en: 'en-US', pt: 'pt-BR' };
+const OPCOES_KEY = 'ingles-hibrido:voz';
+
+export function lerOpcoes(): OpcoesVoz {
+  try {
+    const raw = localStorage.getItem(OPCOES_KEY);
+    return raw ? { ...OPCOES_PADRAO, ...(JSON.parse(raw) as Partial<OpcoesVoz>) } : OPCOES_PADRAO;
+  } catch {
+    return OPCOES_PADRAO;
+  }
+}
+
+export function guardarOpcoes(op: OpcoesVoz): void {
+  try { localStorage.setItem(OPCOES_KEY, JSON.stringify(op)); } catch { /* sem armazenamento */ }
+}
 
 let lendo = false;
-let ouvintes = new Set<() => void>();
+let cancelar = false;
+let espera: number | undefined;
+const ouvintes = new Set<() => void>();
 
 export function assinarVoz(o: () => void): () => void {
   ouvintes.add(o);
@@ -22,32 +53,49 @@ export function assinarVoz(o: () => void): () => void {
 }
 
 export const estaLendo = () => lendo;
-
-function avisar() {
-  ouvintes.forEach((o) => o());
-}
+const avisar = () => ouvintes.forEach((o) => o());
 
 export function pararLeitura(): void {
-  if (typeof speechSynthesis === 'undefined') return;
-  speechSynthesis.cancel();
+  cancelar = true;
+  window.clearTimeout(espera);
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
   lendo = false;
   avisar();
 }
 
-export function lerFalas(falas: Fala[]): void {
-  if (typeof speechSynthesis === 'undefined' || !falas.length) return;
+function falar(f: Fala, velocidade: number): Promise<void> {
+  return new Promise((pronto) => {
+    const u = new SpeechSynthesisUtterance(f.texto);
+    u.lang = VOZES[f.idioma];
+    u.rate = Math.max(0.5, Math.min(2, velocidade * (f.idioma === 'en' ? 0.95 : 1)));
+    u.onend = () => pronto();
+    u.onerror = () => pronto();
+    speechSynthesis.speak(u);
+  });
+}
+
+const dormir = (ms: number) => new Promise<void>((pronto) => { espera = window.setTimeout(pronto, ms); });
+
+export async function lerFalas(todas: Fala[], op: OpcoesVoz = OPCOES_PADRAO): Promise<void> {
+  if (typeof speechSynthesis === 'undefined' || !todas.length) return;
+  const falas = op.traducao ? todas : todas.filter((f) => f.idioma === 'en');
+  if (!falas.length) return;
+
   speechSynthesis.cancel();
+  cancelar = false;
   lendo = true;
   avisar();
 
-  falas.forEach((f, i) => {
-    const u = new SpeechSynthesisUtterance(f.texto);
-    u.lang = VOZES[f.idioma];
-    u.rate = f.idioma === 'en' ? 0.9 : 1;
-    if (i === falas.length - 1) {
-      u.onend = () => { lendo = false; avisar(); };
-      u.onerror = u.onend;
+  const voltas = op.semParar ? Infinity : Math.max(1, op.vezes);
+  for (let volta = 0; volta < voltas && !cancelar; volta++) {
+    for (const f of falas) {
+      if (cancelar) break;
+      await falar(f, op.velocidade);
+      if (cancelar) break;
+      if (op.pausa > 0) await dormir(op.pausa * 1000);
     }
-    speechSynthesis.speak(u);
-  });
+  }
+
+  lendo = false;
+  avisar();
 }

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useData, useRoute } from '../hooks';
 import { store } from '../../core/storage/store';
 import type { ContentRef, UserData } from '../../core/types';
@@ -8,7 +9,9 @@ import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } fro
 import { buscar } from '../../core/content/search';
 import { favoritas } from '../../core/library/favoritas';
 import { nomes } from '../../core/library/nomes';
-import { assinarVoz, estaLendo, lerFalas, pararLeitura, type Fala } from '../../core/lessons/voz';
+import {
+  assinarVoz, estaLendo, guardarOpcoes, lerFalas, lerOpcoes, pararLeitura, type Fala, type OpcoesVoz,
+} from '../../core/lessons/voz';
 import { LaptopCut } from '../components/Cutouts';
 
 /** Duração da virada de folha. */
@@ -439,19 +442,106 @@ function falasDaFolha(tabKey: string, data: UserData, tabs: Tab[]): Fala[] {
   ]);
 }
 
-/** Alto-falante que lê a folha inteira, alternando inglês e português. */
+/** Alto-falante que lê a folha inteira, e ao lado o ajuste de repetição. */
 function BotaoVoz({ falas }: { falas: Fala[] }) {
   const lendo = useSyncExternalStore((cb) => assinarVoz(cb), () => estaLendo());
+  const [painel, setPainel] = useState(false);
+  const [op, setOp] = useState<OpcoesVoz>(lerOpcoes);
   if (!falas.length) return null;
+
+  const mudar = (p: Partial<OpcoesVoz>) => setOp((x) => ({ ...x, ...p }));
+  const iniciar = () => {
+    guardarOpcoes(op);
+    setPainel(false);
+    lerFalas(falas, op);
+  };
+
   return (
-    <button
-      className={`lib-voz ${lendo ? 'on' : ''}`}
-      onClick={() => (lendo ? pararLeitura() : lerFalas(falas))}
-      aria-label={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
-      title={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
-    >
-      {lendo ? '◼' : '🔊'}
-    </button>
+    <>
+      <button
+        className="lib-voz"
+        onClick={() => setPainel(true)}
+        aria-label="Como repetir a leitura"
+        title="Como repetir a leitura"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 10V8a3 3 0 0 1 3-3h10" />
+          <path d="m14 2 3 3-3 3" />
+          <path d="M20 14v2a3 3 0 0 1-3 3H7" />
+          <path d="m10 22-3-3 3-3" />
+        </svg>
+      </button>
+      <button
+        className={`lib-voz ${lendo ? 'on' : ''}`}
+        onClick={() => (lendo ? pararLeitura() : lerFalas(falas, op))}
+        aria-label={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
+        title={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
+      >
+        {lendo ? '◼' : '🔊'}
+      </button>
+
+      {painel && createPortal(
+        <div className="voz-fundo" onClick={() => setPainel(false)}>
+          <div className="voz-painel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Reproduzir folha">
+            <h3>Reproduzir a folha</h3>
+            <p className="voz-nota">Lê a folha inteira em voz alta, do começo ao fim.</p>
+
+            <label className="voz-linha">
+              <span>Incluir tradução</span>
+              <button
+                type="button"
+                className={`chave ${op.traducao ? 'on' : ''}`}
+                onClick={() => mudar({ traducao: !op.traducao })}
+                aria-pressed={op.traducao}
+              ><i /></button>
+            </label>
+
+            <label className="voz-linha coluna">
+              <span>Velocidade: {op.velocidade.toFixed(1)}x</span>
+              <input
+                type="range" min="0.5" max="2" step="0.1" value={op.velocidade}
+                onChange={(e) => mudar({ velocidade: Number(e.target.value) })}
+              />
+            </label>
+
+            <label className="voz-linha coluna">
+              <span>Pausa entre as falas: {op.pausa.toFixed(1)}s</span>
+              <input
+                type="range" min="0" max="3" step="0.1" value={op.pausa}
+                onChange={(e) => mudar({ pausa: Number(e.target.value) })}
+              />
+            </label>
+
+            <label className="voz-linha">
+              <span>Repetir sem parar</span>
+              <button
+                type="button"
+                className={`chave ${op.semParar ? 'on' : ''}`}
+                onClick={() => mudar({ semParar: !op.semParar })}
+                aria-pressed={op.semParar}
+              ><i /></button>
+            </label>
+
+            {!op.semParar && (
+              <label className="voz-linha">
+                <span>Repetir a lista: {op.vezes} {op.vezes === 1 ? 'vez' : 'vezes'}</span>
+                <span className="stepper voz-stepper">
+                  <button type="button" onClick={() => mudar({ vezes: Math.max(1, op.vezes - 1) })}>-</button>
+                  <span>{op.vezes}</span>
+                  <button type="button" onClick={() => mudar({ vezes: Math.min(20, op.vezes + 1) })}>+</button>
+                </span>
+              </label>
+            )}
+
+            <div className="actions">
+              <button className="ghost" onClick={() => setPainel(false)}>Cancelar</button>
+              <button className="primary" onClick={iniciar}>Iniciar</button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
