@@ -6,9 +6,10 @@
   --ink-2: #a7a29a;
   --ink-3: #6f6a63;
   --rule: #2a2927;
-  --accent: #4ecdc4;
-  --accent-ink: #06211f;
-  --accent-soft: rgba(78, 205, 196, .12);
+  --accent: #f2833e;
+  --accent-rgb: 242, 131, 62;
+  --accent-ink: #2a1204;
+  --accent-soft: rgba(var(--accent-rgb), .12);
   --marker: #f4b942;
   --ok: #4ecdc4;
   --bad: #e8705c;
@@ -31,7 +32,7 @@ html, body {
   background: var(--paper);
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"),
-    radial-gradient(1200px 600px at 50% -10%, rgba(78, 205, 196, .06), transparent 70%),
+    radial-gradient(1200px 600px at 50% -10%, rgba(var(--accent-rgb), .07), transparent 70%),
     radial-gradient(800px 500px at 100% 100%, rgba(244, 185, 66, .04), transparent 70%);
   background-attachment: fixed;
   background-blend-mode: soft-light, normal, normal;
@@ -68,7 +69,7 @@ code, .mono { font-family: var(--mono); font-size: .85em; }
 }
 .nav-icon { width: 22px; height: 22px; color: currentColor; opacity: .85; }
 .nav a.on { color: var(--accent); font-weight: 600; }
-.nav a.on .nav-icon { opacity: 1; filter: drop-shadow(0 0 8px rgba(78, 205, 196, .5)); }
+.nav a.on .nav-icon { opacity: 1; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), .5)); }
 @media (min-width: 760px) {
   .app { padding-bottom: 0; }
   .nav { position: static; border: 0; gap: 4px; background: none; backdrop-filter: none; padding: 12px 16px 0; max-width: 760px; margin: 0 auto; justify-content: flex-end; }
@@ -952,7 +953,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .mt-line {
   fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; opacity: .9;
   stroke-dasharray: 1; stroke-dashoffset: 1; animation: mt-draw .38s ease-out forwards;
-  filter: drop-shadow(0 0 3px rgba(78, 205, 196, .5));
+  filter: drop-shadow(0 0 3px rgba(var(--accent-rgb), .5));
 }
 @keyframes mt-draw { to { stroke-dashoffset: 0; } }
 /* chicote de couro preto trançado */
@@ -1121,7 +1122,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
   border: 1px solid var(--rule); color: var(--accent); font-size: .7rem;
 }
-.refcard.on .refcard-say { background: var(--accent); color: #06211f; border-color: transparent; }
+.refcard.on .refcard-say { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .refcard-body { padding: 0 14px 14px; display: grid; gap: 8px; }
 .refcard-body p { margin: 0; }
 .refcard-ex { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -1204,7 +1205,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 }
 .conta-abas button.on {
   background: var(--accent); color: var(--accent-ink);
-  box-shadow: 0 2px 10px rgba(78, 205, 196, .25);
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb), .3);
 }
 .conta-form { max-width: 100%; }
 .aviso .link { color: inherit; text-decoration: underline; font-weight: 600; }
