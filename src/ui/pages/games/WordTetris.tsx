@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { TRANCO, vibrar } from '../../../core/vibrar';
 import {
   COLS, DANGER_AT, NEUTRAL_TONE, ROWS, bestColumn, buildVocabPool, clearFullRows, contrastText, emptyBoard,
   fitsAnywhere, levelFor, pickPiece, pickShapeFor, placePiece, randomTone, spawnColumn, stackHeight, wordPoints,
@@ -119,7 +120,7 @@ export function WordTetris() {
         // linha limpa: o tabuleiro treme e o aparelho vibra (mais forte por linha)
         setShake(true);
         window.setTimeout(() => setShake(false), 420);
-        try { navigator.vibrate?.(n > 1 ? [40, 50, 70] : [55]); } catch { /* sem vibração no aparelho */ }
+        vibrar(n > 1 ? TRANCO.linha : TRANCO.linhaUnica);
       }
       setLines((l) => l + n);
       setScore(newScore);

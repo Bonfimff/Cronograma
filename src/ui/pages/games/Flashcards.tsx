@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { TRANCO, vibrar } from '../../../core/vibrar';
 import type { ContentRef, Word } from '../../../core/types';
 import { content, examplesFor } from '../../../core/content/repository';
 import { speak } from '../../../core/lessons/lesson';
@@ -10,6 +11,8 @@ import { GameTabs } from './GameTabs';
 const SWIPE_PX = 60;
 /** Tempo do carimbo na tela antes de passar pro próximo cartão. */
 const STAMP_MS = 900;
+/** Instante em que o carimbo encosta no papel, dentro da animação. */
+const BATIDA_MS = 200;
 
 type Stamp = 'ok' | 'bad';
 
@@ -61,6 +64,8 @@ export function Flashcards() {
       scored.current.add(i); // cada cartão pontua uma vez, mesmo revendo o baralho
       setScore((n) => n + shares(deck.length)[i]);
     }
+    // o carimbo desce em .34s e encosta no papel a 60% do caminho
+    window.setTimeout(() => vibrar(TRANCO.carimbo), BATIDA_MS);
     window.setTimeout(() => { setStamp(null); go(1); }, STAMP_MS);
   };
 

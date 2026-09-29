@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { TRANCO, vibrar } from '../../../core/vibrar';
 import { buildVocabPool } from '../../../core/games/wordTetris';
 import { newRound, pairPoints, type MatchRound } from '../../../core/games/wordMatch';
 import { ROUND_POINTS } from '../../../core/games/scoring';
@@ -245,7 +246,7 @@ export function WordMatch() {
       primeAudio(); // o som precisa ser liberado dentro do toque
       setWhip({ i: l, key: Date.now() });
       const crack = WHIP_MS * CRACK_AT;
-      later(() => { playCrack(); setHit(l); setShake(true); setLinked((k) => [...k, l]); }, crack);
+      later(() => { playCrack(); vibrar(TRANCO.chicote); setHit(l); setShake(true); setLinked((k) => [...k, l]); }, crack);
       later(() => setShake(false), crack + 300);
       later(() => speak(round.pairs[l].en), crack + SPEAK_DELAY);
       later(() => setHit((h) => (h === l ? null : h)), crack + 700);
