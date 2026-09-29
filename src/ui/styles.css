@@ -1652,3 +1652,10 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   border: 1.5px solid #cbbf9f; background: #fbf7ec;
 }
 .campo-mais { color: #8a4a12; font-size: .88rem; display: inline-block; margin: 2px 0 10px; }
+/* campos soltos no meio do texto do verbete */
+.campo-valor.solto { display: inline; width: auto; border-bottom: 0; padding: 0; }
+.campo-valor.solto.vazio { border-bottom: 1px dashed rgba(60, 110, 150, .5); }
+.campo-curto { display: inline-block; width: auto; min-width: 8rem; }
+.uso-acoes { display: flex; gap: 14px; margin: 4px 0 0; font-size: .82rem; }
+.uso-acoes .link { color: #8a4a12; }
+.uso-acoes .lib-del { color: #a14b42; }

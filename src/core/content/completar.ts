@@ -59,3 +59,34 @@ export function adicionarUso(draft: UserData, ref: ContentRef, label: string, me
   saveUserContent(draft, { words: [{ ...w, uses: [...w.uses, uso] }] });
   return true;
 }
+
+/** Muda um campo de um uso da palavra. */
+export function atualizarUso(draft: UserData, ref: ContentRef, usoId: string, mudanca: Record<string, unknown>): boolean {
+  const w = resolve(ref) as Word | undefined;
+  if (!w || parseRef(ref).kind !== 'word') return false;
+  saveUserContent(draft, {
+    words: [{ ...w, uses: w.uses.map((u) => (u.id === usoId ? { ...u, ...mudanca } : u)) }],
+  });
+  return true;
+}
+
+/** Anota um exemplo dentro de um uso, e não solto no verbete. */
+export function adicionarExemploNoUso(draft: UserData, ref: ContentRef, usoId: string, en: string, pt: string): boolean {
+  const w = resolve(ref) as Word | undefined;
+  const texto = en.trim();
+  if (!w || parseRef(ref).kind !== 'word' || !texto) return false;
+  const exemplo: Example = { id: slug(texto), en: texto, pt: pt.trim() };
+  saveUserContent(draft, {
+    examples: [exemplo],
+    words: [{ ...w, uses: w.uses.map((u) => (u.id === usoId ? { ...u, examples: [...u.examples, exemplo.id] } : u)) }],
+  });
+  return true;
+}
+
+/** Tira um uso da palavra (os exemplos dele continuam guardados). */
+export function removerUso(draft: UserData, ref: ContentRef, usoId: string): boolean {
+  const w = resolve(ref) as Word | undefined;
+  if (!w || parseRef(ref).kind !== 'word') return false;
+  saveUserContent(draft, { words: [{ ...w, uses: w.uses.filter((u) => u.id !== usoId) }] });
+  return true;
+}

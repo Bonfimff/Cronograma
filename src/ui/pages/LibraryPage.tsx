@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
-import { adicionarExemplo, adicionarUso, atualizarItem } from '../../core/content/completar';
-import type { ContentRef, Expression, Grammar, Pattern, Word } from '../../core/types';
+import {
+  adicionarExemplo, adicionarExemploNoUso, adicionarUso, atualizarItem, atualizarUso, removerUso,
+} from '../../core/content/completar';
+import type { ContentRef, Expression, Grammar, Pattern, Word, WordUse } from '../../core/types';
 import { examplesFor, getExamples, KIND_LABEL, parseRef, refLabel, resolve } from '../../core/content/repository';
 import { entriesFor, EVENT_LABEL } from '../../core/history/history';
 import { reviewStatus, STATE_LABEL } from '../../core/reviews/reviews';
@@ -158,6 +160,95 @@ function Campo({
   );
 }
 
+/** Um uso da palavra, com os campos abertos para escrita e exemplos próprios. */
+function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
+  const [novo, setNovo] = useState(false);
+  const [en, setEn] = useState('');
+  const [pt, setPt] = useState('');
+
+  const campo = (nome: string, chave: 'label' | 'meaning' | 'explanation', valor: string, longo?: boolean) => (
+    <CampoUso r={r} usoId={u.id} nome={nome} campo={chave} valor={valor} textoLongo={longo} />
+  );
+
+  return (
+    <li>
+      <span className="branch">uso: {campo('nome do uso', 'label', u.label)}</span>{' '}
+      {campo('em português', 'meaning', u.meaning)}
+      <p className="muted">{campo('explicação', 'explanation', u.explanation, true)}</p>
+      {getExamples(u.examples).map((x) => (
+        <p key={x.id} className="ex-inline">
+          <span className="en">{x.en}</span> {x.pt}
+          <button className="say" onClick={() => speak(x.en)}>▶</button>
+        </p>
+      ))}
+      {novo ? (
+        <form
+          className="lib-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            let ok = false;
+            store.update((d) => { ok = adicionarExemploNoUso(d, r, u.id, en, pt); });
+            if (ok) { setEn(''); setPt(''); setNovo(false); }
+          }}
+        >
+          <input value={en} onChange={(e) => setEn(e.target.value)} placeholder="Exemplo em inglês" lang="en" autoFocus />
+          <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder="Tradução" />
+          <button className="primary" disabled={!en.trim()}>Anotar</button>
+          <button type="button" className="link" onClick={() => setNovo(false)}>cancelar</button>
+        </form>
+      ) : (
+        <p className="uso-acoes">
+          <button className="link" onClick={() => setNovo(true)}>+ exemplo neste uso</button>
+          <button
+            className="link lib-del"
+            onClick={() => { if (window.confirm(`Tirar o uso "${u.label}"?`)) store.update((d) => removerUso(d, r, u.id)); }}
+          >tirar uso</button>
+        </p>
+      )}
+    </li>
+  );
+}
+
+/** Campo editável dentro de um uso. */
+function CampoUso({
+  r, usoId, nome, campo, valor, textoLongo,
+}: { r: ContentRef; usoId: string; nome: string; campo: string; valor: string; textoLongo?: boolean }) {
+  const [editando, setEditando] = useState(false);
+  const [texto, setTexto] = useState(valor);
+  const guardar = () => {
+    setEditando(false);
+    if (texto.trim() === valor.trim()) return;
+    store.update((d) => { atualizarUso(d, r, usoId, { [campo]: texto.trim() }); });
+  };
+  if (editando) {
+    const comum = {
+      value: texto,
+      autoFocus: true,
+      onBlur: guardar,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTexto(e.target.value),
+      placeholder: nome,
+      'aria-label': nome,
+    };
+    return textoLongo
+      ? <textarea className="campo-verbete" rows={2} {...comum} />
+      : (
+        <input
+          className="campo-verbete campo-curto"
+          {...comum}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); guardar(); }
+            if (e.key === 'Escape') { setTexto(valor); setEditando(false); }
+          }}
+        />
+      );
+  }
+  return (
+    <button className={`campo-valor solto ${valor.trim() ? '' : 'vazio'}`} onClick={() => { setTexto(valor); setEditando(true); }}>
+      {valor.trim() || `anotar ${nome}`}
+    </button>
+  );
+}
+
 /** Anotar um uso novo da palavra. */
 function NovoUso({ r }: { r: ContentRef }) {
   const [aberto, setAberto] = useState(false);
@@ -241,13 +332,7 @@ function WordTree({ w, r }: { w: Word; r: ContentRef }) {
       </dl>
 
       <ul className="branches">
-        {w.uses.map((u) => (
-          <li key={u.id}>
-            <span className="branch">uso: {u.label}</span> {u.meaning}
-            {u.explanation && <p className="muted">{u.explanation}</p>}
-            {getExamples(u.examples).map((x) => <p key={x.id} className="ex-inline"><span className="en">{x.en}</span> {x.pt}</p>)}
-          </li>
-        ))}
+        {w.uses.map((u) => <Uso key={u.id} r={r} u={u} />)}
         {w.variations.map((v) => (
           <li key={v.form}>
             <span className="branch en">{v.ref ? <a href={`#/conteudo/${v.ref}`}>{v.form}</a> : v.form}</span> {v.meaning}
