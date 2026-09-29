@@ -99,9 +99,11 @@ export function LibraryIndex() {
       const larguraMax = pai && estiloPai
         ? pai.clientWidth - parseFloat(estiloPai.paddingLeft) - parseFloat(estiloPai.paddingRight)
         : el.clientWidth;
-      // altura da janela útil: no celular a barra de endereço encolhe e cresce,
-      // e o visualViewport é quem sabe o tamanho que sobrou de fato
-      const janela = window.visualViewport?.height ?? window.innerHeight;
+      // altura da janela útil: no celular a barra de endereço encolhe e cresce, e o
+      // visualViewport é quem sabe o que sobrou. Mas ele também encolhe quando o
+      // teclado abre, e aí a folha não pode diminuir: nesse caso vale a janela toda
+      const visual = window.visualViewport?.height ?? window.innerHeight;
+      const janela = visual < window.innerHeight * 0.8 ? window.innerHeight : visual;
       // a folha usa toda a altura livre; a largura nunca passa da proporção de uma
       // folha de papel em pé, então no computador ela fica esbelta e centralizada,
       // e no celular ocupa a tela toda em vez de sobrar espaço embaixo
@@ -113,7 +115,12 @@ export function LibraryIndex() {
     };
     // uma medida agora e outra no quadro seguinte, quando a folha já se acomodou
     let pendente = 0;
+    const digitando = () => {
+      const el = document.activeElement as HTMLElement | null;
+      return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    };
     const remedir = () => {
+      if (digitando()) return; // teclado aberto: não é hora de remedir a folha
       cancelAnimationFrame(pendente);
       medir();
       pendente = requestAnimationFrame(medir);
