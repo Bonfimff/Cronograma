@@ -91,10 +91,6 @@ export function AccountPage() {
             <dt>Revisão do servidor</dt><dd>{conta ? conta.revision : '—'}</dd>
             <dt>Já aplicado aqui</dt><dd>{estado.revision}</dd>
           </dl>
-          <p className="muted">
-            A sincronização automática entra na próxima etapa. Por enquanto a conta já fica guardada
-            neste aparelho e o servidor reconhece você.
-          </p>
         </section>
 
         <section className="actions left">
@@ -163,14 +159,6 @@ export function AccountPage() {
             </button>
           </div>
         </form>
-      </section>
-
-      <section>
-        <p className="muted">
-          A senha não é guardada em lugar nenhum: o servidor conhece só um resumo embaralhado dela.
-          Seus dados de estudo continuam no aparelho e podem ser exportados em{' '}
-          <a href="#/dados">Backup dos dados</a>.
-        </p>
       </section>
     </>
   );
