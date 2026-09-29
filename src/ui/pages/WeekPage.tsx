@@ -6,7 +6,7 @@ import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from
 import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
 import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
-import { CalendarDoodle, Swash } from '../components/Doodles';
+import { CalendarDoodle } from '../components/Doodles';
 import { SignpostLive } from '../components/Cutouts';
 
 export function WeekPage({ start }: { start?: string }) {
@@ -27,21 +27,17 @@ export function WeekPage({ start }: { start?: string }) {
           <a href={`#/semana/${addDays(ws, 7)}`}>›</a>
           <CalendarDoodle className="doodle mark week-doodle" width="26" />
         </div>
-        {/* a semana como uma trilha: uma conta por etapa, ligadas por um fio */}
-        <ol className="trilha">
-          {counts.map(([k, n]) => (
-            <li key={k} className={`k-${k} ${n ? 'tem' : ''}`}>
-              <span className="trilha-conta">{n}</span>
-              <small>{KIND_LABEL[k]}</small>
-            </li>
-          ))}
-        </ol>
-        <div className="chalk-row">
-          <blockquote className="chalk mark">
-            “Disciplina<br />também é liberdade.”
-            <Swash className="chalk-swash" />
-          </blockquote>
-          <SignpostLive className="cut-aside" width={78} />
+        {/* a semana como uma trilha que desce ao lado da placa: uma conta por etapa */}
+        <div className="semana-topo">
+          <ol className="trilha">
+            {counts.map(([k, n]) => (
+              <li key={k} className={`k-${k} ${n ? 'tem' : ''}`}>
+                <span className="trilha-conta">{n}</span>
+                <small>{KIND_LABEL[k]}</small>
+              </li>
+            ))}
+          </ol>
+          <SignpostLive className="semana-placa" width={116} />
         </div>
         {/* atalhos discretos, depois da frase: são de uso eventual */}
         <p className="atalhos">
