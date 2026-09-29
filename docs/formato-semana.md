@@ -5,7 +5,7 @@ O app lê dois tipos de arquivo JSON:
 | Arquivo | Onde importar | Para quê |
 |---|---|---|
 | **Pacote semanal** (`ingles-hibrido/semana@1`) | Semana → Montar semana (JSON) | planejar uma semana: conteúdo novo, folhas da Biblioteca, plano dos dias e sessões |
-| **Backup** (`ingles-hibrido/backup@1`) | Hoje → Backup dos dados | levar **todos** os dados para outro aparelho ou guardar uma cópia |
+| **Backup** (`ingles-hibrido/backup@1`) | Ajustes → Outros → Backup dos dados | levar **todos** os dados para outro aparelho ou guardar uma cópia |
 
 Os dois são validados antes de entrar. Erros bloqueiam a importação e dizem o que corrigir;
 avisos só informam. Um arquivo trocado (pacote no lugar do backup) é reconhecido e o app diz onde importá-lo.
@@ -45,6 +45,9 @@ O modelo baixado traz esta tabela em `$plataforma`, para quem monta a semana à 
 | **Biblioteca** | `words`, `expressions`, `patterns`, `grammar`, `sheets` |
 | **Jogos** (Tetris, Flashcards, Ligar palavras, Cruzadas) | `words` e suas `variations`, `expressions`, `sheets` — nas cruzadas, só palavras de 3 a 9 letras sem espaço ou hífen |
 | **Exercícios** | `exercises` (ids existentes ou objetos completos); sem eles, a aula gera os seus |
+| **Ler a folha em voz alta** (Biblioteca) | `words`, `expressions`, `patterns`, `grammar` e as traduções; o ritmo vem do painel de repetição e dos Ajustes |
+| **Meu progresso** | histórico de `refs` e o resultado das sessões corrigidas, mais o placar dos jogos (nada disso vem no arquivo) |
+| **Só no aparelho** (não entra nem sai do arquivo) | tema claro/escuro, estrela das folhas, nome dado a cada folha, vozes e velocidades dos Ajustes |
 
 ### `content` — conteúdo novo
 

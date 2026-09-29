@@ -8,3 +8,4 @@ server/.pytest_cache
 server/.env
 server/*.db
 .env.local
+.tmp-check

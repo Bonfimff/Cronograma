@@ -441,6 +441,9 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
       'jogos': 'words (e as variations delas), expressions e sheets alimentam o Tetris, os Flashcards, o Ligar palavras e as Palavras cruzadas. Cruzadas só usam palavras de 3 a 9 letras, sem espaço ou hífen.',
       'exercícios': 'types: translate, fill, choice, match, build, qa, produce. Sem exercises, a aula gera exercícios a partir do conteúdo.',
       'pontuação': 'Cada rodada de jogo vale 100 pontos; no Tetris, 5 acertos fecham um nível de 100.',
+      'ler a folha em voz alta': 'Na Biblioteca, cada folha lê tudo em sequência, alternando inglês e português, com velocidade, pausa e repetição. Vem de words/expressions/patterns/grammar e das traduções.',
+      'meu progresso': 'Palavras que mais acerta e que mais escapam (placar dos jogos), frequência de estudo e tempo até um conteúdo firmar. Vem do histórico de refs e do resultado das sessões corrigidas, não do arquivo.',
+      'só no aparelho': 'Tema claro/escuro, estrela das folhas, nome que você dá a cada folha e as vozes dos Ajustes ficam no aparelho: não entram nem saem neste arquivo.',
     },
     $leia_me: [
       'Pacote semanal do Inglês Híbrido. Campos que começam com $ são ignorados.',
@@ -454,6 +457,12 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
       'id (na sessão): código da sessão, vem na semana exportada. Reimportando, a sessão de mesmo código é atualizada no lugar (a folha impressa continua valendo); sem id = sessão nova.',
       'sheets: folhas da Biblioteca (title + items com en/pt). Mesmo título soma na folha que já existe.',
       'goals: objetivos da semana; saem no campo de anotações da folha semanal impressa.',
+      'copyRefs: quais dos refs entram na folha com o bloco ✎ COPIE (o conteúdo precisa ter copy).',
+      'copy (no conteúdo): { lines: [...] } é o bloco ✎ COPIE daquele item, copiado à mão na folha.',
+      'topic (na sessão): id de um tema de content.topics; ao escolher, título, objetivo e refs vêm dele.',
+      'topics: temas reutilizáveis (id, title, description, objective, refs) que aparecem no formulário da sessão.',
+      'audio (na palavra): URL de um áudio; sem ele, a pronúncia usa a voz do aparelho.',
+      'minutes (no dia): tempo previsto, impresso na folha semanal.',
     ],
     format: PACKAGE_FORMAT,
     week: weekStart,
@@ -462,6 +471,38 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
       examples: [
         { id: 'ex-where-do-you-work', en: 'Where do you work?', pt: 'Onde você trabalha?', context: 'trabalho' },
         { id: 'ex-i-work-at-home', en: 'I work at home.', pt: 'Eu trabalho em casa.', context: 'resposta' },
+      ],
+      expressions: [
+        {
+          id: 'where-do-you-work', text: 'Where do you work?', words: ['where', 'do', 'work'],
+          translation: 'Onde você trabalha?', context: 'conversa de apresentação',
+          meaning: 'Pergunta o lugar de trabalho.', pattern: 'pergunta-com-do',
+          examples: ['ex-where-do-you-work'],
+          copy: { lines: ['Where do you work? = Onde você trabalha?'] },
+        },
+      ],
+      patterns: [
+        {
+          id: 'pergunta-com-do', name: 'Pergunta com do', formula: 'Wh + do + subject + verb?',
+          slots: [{ name: 'Wh', options: ['where', 'what', 'how'] }, { name: 'subject', options: ['you', 'they'] }],
+          explanation: 'Com a maioria dos verbos, a pergunta usa do/does antes do sujeito.',
+          examples: ['ex-where-do-you-work'],
+        },
+      ],
+      grammar: [
+        {
+          id: 'ordem-da-pergunta', title: 'Ordem das palavras na pergunta',
+          explanation: 'Em inglês a pergunta troca a ordem: o auxiliar vem antes do sujeito.',
+          points: ['Wh + auxiliar + sujeito + verbo', 'O verbo principal fica no infinitivo'],
+          examples: ['ex-where-do-you-work'],
+        },
+      ],
+      topics: [
+        {
+          id: 'trabalho', title: 'Trabalho', description: 'Falar do que se faz.',
+          objective: 'Perguntar e dizer onde trabalha.',
+          refs: ['word:work', 'expression:where-do-you-work'],
+        },
       ],
       words: [
         {
