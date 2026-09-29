@@ -1153,13 +1153,51 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 
 /* ---------- conta ---------- */
 /* abas Entrar / Criar conta: as duas opções sempre à vista */
-.conta-abas { display: flex; gap: 6px; margin-bottom: 18px; max-width: 380px; }
-.conta-abas button {
-  flex: 1; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 12px;
-  border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-2); color: var(--ink-2);
+/* ---------- conta: entrar e criar ---------- */
+.entrar { display: flex; justify-content: center; padding: 18px 0 32px; }
+.entrar-card {
+  position: relative; width: 100%; max-width: 400px; padding: 26px 22px 24px;
+  border: 1px solid var(--rule); border-radius: 22px;
+  background:
+    radial-gradient(420px 220px at 100% -10%, var(--accent-soft), transparent 70%),
+    linear-gradient(180deg, var(--paper-2), var(--paper-3));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .45);
 }
-.conta-abas button.on { background: var(--accent); border-color: transparent; color: #06211f; }
-.conta-form { max-width: 380px; }
+.entrar-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+  border-top: 1px solid rgba(242, 239, 231, .06);
+}
+.entrar-cut {
+  position: absolute; top: -46px; right: 10px; width: 108px; height: auto;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .5)); pointer-events: none;
+}
+.entrar-titulo { font-size: 1.55rem; margin: 0 0 18px; padding-right: 92px; }
+.entrar-acao { width: 100%; min-height: 50px; font-size: 1rem; font-weight: 700; border-radius: 14px; }
+.entrar-card .form { gap: 14px; }
+.entrar-card input {
+  min-height: 48px; border-radius: 14px; background: rgba(13, 13, 13, .6);
+}
+.entrar-card input:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+.conta-resumo { margin-top: 14px; }
+@media (max-width: 420px) {
+  .entrar-cut { width: 88px; top: -36px; right: 4px; }
+  .entrar-titulo { padding-right: 76px; font-size: 1.35rem; }
+}
+
+.conta-abas {
+  display: flex; gap: 4px; margin-bottom: 20px; padding: 4px;
+  border: 1px solid var(--rule); border-radius: 999px; background: rgba(13, 13, 13, .5);
+}
+.conta-abas button {
+  flex: 1; font: inherit; font-weight: 600; font-size: .92rem; padding: 10px 12px; min-height: 42px;
+  border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--ink-2);
+  transition: background .18s ease, color .18s ease;
+}
+.conta-abas button.on {
+  background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 2px 10px rgba(78, 205, 196, .25);
+}
+.conta-form { max-width: 100%; }
 .aviso .link { color: inherit; text-decoration: underline; font-weight: 600; }
 .senha-campo { position: relative; display: block; }
 .senha-campo input { width: 100%; padding-right: 74px; }

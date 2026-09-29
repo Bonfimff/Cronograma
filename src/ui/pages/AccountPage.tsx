@@ -114,20 +114,16 @@ export function AccountPage() {
   }
 
   return (
-    <>
-      <section className="hero">
-        <p className="eyebrow">Conta</p>
-        <h1>{modo === 'entrar' ? 'Entrar' : 'Criar conta'} <Philosopher className="cut-title" width="74" /></h1>
-        <p className="lead">
-          A conta serve para continuar o estudo em outro aparelho. Sem ela, o aplicativo funciona
-          igual, só não sai daqui.
-        </p>
-      </section>
+    <section className="entrar">
+      <div className="entrar-card">
+        <Philosopher className="entrar-cut" width={108} />
 
-      <section>
-        <nav className="conta-abas">
-          <button className={modo === 'entrar' ? 'on' : ''} onClick={() => trocarModo('entrar')}>Entrar</button>
-          <button className={modo === 'criar' ? 'on' : ''} onClick={() => trocarModo('criar')}>Criar conta</button>
+        <p className="eyebrow">Conta</p>
+        <h1 className="entrar-titulo">{modo === 'entrar' ? 'Bem-vindo de volta' : 'Criar conta'}</h1>
+
+        <nav className="conta-abas" role="tablist">
+          <button role="tab" aria-selected={modo === 'entrar'} className={modo === 'entrar' ? 'on' : ''} onClick={() => trocarModo('entrar')}>Entrar</button>
+          <button role="tab" aria-selected={modo === 'criar'} className={modo === 'criar' ? 'on' : ''} onClick={() => trocarModo('criar')}>Criar conta</button>
         </nav>
 
         <form className="form conta-form" onSubmit={enviar}>
@@ -139,6 +135,7 @@ export function AccountPage() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               inputMode="email"
+              placeholder="nome@dominio.com"
               required
             />
           </label>
@@ -152,6 +149,7 @@ export function AccountPage() {
                 onChange={(e) => setSenha(e.target.value)}
                 autoComplete={modo === 'criar' ? 'new-password' : 'current-password'}
                 minLength={MIN_SENHA}
+                placeholder={'•'.repeat(MIN_SENHA)}
                 required
               />
               <button type="button" className="link" onClick={() => setVerSenha((v) => !v)}>
@@ -175,13 +173,11 @@ export function AccountPage() {
             </p>
           )}
 
-          <div className="actions left">
-            <button className="primary" type="submit" disabled={ocupado}>
-              {ocupado ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta'}
-            </button>
-          </div>
+          <button className="primary entrar-acao" type="submit" disabled={ocupado}>
+            {ocupado ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta'}
+          </button>
         </form>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
