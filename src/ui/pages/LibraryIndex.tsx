@@ -10,14 +10,15 @@ import { LaptopCut } from '../components/Cutouts';
 /** Duração da virada de folha. */
 const TURN_MS = 900;
 const NEW_TAB = 'nova';
+const CAPA = 'capa';
 
 type Tab = { key: string; label: ReactNode; count?: number };
 
 /**
- * Biblioteca como um caderno: cada sub-aba é uma folha (vocabulário,
- * expressões, padrões, gramática e as folhas criadas pelo usuário). Trocar de
- * aba vira a folha — a antiga continua por cima durante a virada e sai girando
- * pela borda, revelando a nova embaixo.
+ * Biblioteca como um caderno: a capa lista as folhas (vocabulário, expressões,
+ * padrões, gramática e as folhas criadas pelo usuário) e escolher uma vira a
+ * página. A folha antiga continua por cima durante a virada e sai girando pela
+ * borda, revelando a nova embaixo. Voltar desdobra no sentido contrário.
  */
 export function LibraryIndex() {
   const data = useData();
@@ -28,34 +29,52 @@ export function LibraryIndex() {
     { key: 'pattern', label: 'Padrões', count: content.patterns.length },
     { key: 'grammar', label: 'Gramática', count: content.grammar.length },
     ...custom.map((s) => ({ key: s.id, label: s.title, count: s.items.length })),
-    // em telas estreitas a aba encolhe para "+ folha" (a palavra some por CSS)
-    { key: NEW_TAB, label: <>+ <span className="lib-tab-long">nova </span>folha</> },
+    { key: NEW_TAB, label: '+ nova folha' },
   ];
 
-  const [tab, setTab] = useState('word');
+  const [tab, setTab] = useState(CAPA);
   const [turning, setTurning] = useState<{ from: string; dir: 1 | -1 } | null>(null);
   const timer = useRef<number | undefined>(undefined);
-  const current = tabs.some((t) => t.key === tab) ? tab : 'word'; // folha apagada volta pro vocabulário
-  const navRef = useRef<HTMLElement>(null);
+  const current = tab === CAPA || tabs.some((t) => t.key === tab) ? tab : CAPA; // folha apagada volta pra capa
 
-  // a faixa de abas rola de lado no celular: mantém a aba aberta à vista
-  useEffect(() => {
-    navRef.current?.querySelector('.on')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-  }, [current]);
+  // ordem do caderno: a capa e depois as folhas, na ordem das guias
+  const ordem = [CAPA, ...tabs.map((t) => t.key)];
 
   const open = (key: string) => {
     if (key === current) return;
-    const at = (k: string) => tabs.findIndex((t) => t.key === k);
     window.clearTimeout(timer.current);
-    const to = at(key); // folha recém-criada ainda não está na lista: ela entra no fim
-    setTurning({ from: current, dir: to === -1 || to > at(current) ? 1 : -1 });
+    const de = ordem.indexOf(current);
+    const para = ordem.indexOf(key); // folha recém-criada ainda não está na lista: entra no fim
+    setTurning({ from: current, dir: para === -1 || para > de ? 1 : -1 });
     setTab(key);
     timer.current = window.setTimeout(() => setTurning(null), TURN_MS);
+  };
+
+  /** Arrastar o dedo para o lado vira a folha, como num caderno. */
+  const toque = useRef<{ x: number; y: number } | null>(null);
+  const comecar = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    toque.current = { x: t.clientX, y: t.clientY };
+  };
+  const terminar = (e: React.TouchEvent) => {
+    const ini = toque.current;
+    toque.current = null;
+    if (!ini || turning) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - ini.x;
+    const dy = t.clientY - ini.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return; // rolagem, não virada
+    const i = ordem.indexOf(current);
+    const alvo = ordem[dx < 0 ? i + 1 : i - 1];
+    if (alvo) open(alvo);
   };
 
   return (
     <>
       <section className="hero">
+        {current !== CAPA && (
+          <button className="back" onClick={() => open(CAPA)}>‹ Biblioteca</button>
+        )}
         <p className="eyebrow">Conteúdo</p>
         <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
         <p className="lead">
@@ -64,29 +83,21 @@ export function LibraryIndex() {
         </p>
       </section>
 
-      <nav className="lib-tabs" aria-label="Folhas" ref={navRef}>
-        {tabs.map((t) => (
-          <button key={t.key} className={t.key === current ? 'on' : ''} onClick={() => open(t.key)}>
-            {t.label}{t.count !== undefined && <small>{t.count}</small>}
-          </button>
-        ))}
-      </nav>
-
       {/*
         Pra frente: a folha nova fica embaixo e a antiga vira por cima, dobrando.
         Pra trás: a antiga fica embaixo e a nova volta por cima, desdobrando
         (a mesma animação ao contrário) — como num caderno de verdade.
       */}
-      <div className="lib-book">
+      <div className="lib-book" onTouchStart={comecar} onTouchEnd={terminar}>
         {turning && turning.dir < 0 ? (
           <>
-            <Sheet key={turning.from} tabKey={turning.from} data={data} onCreated={open} />
-            <PageFold key={`volta-${current}`} tabKey={current} data={data} reverse />
+            <Sheet key={turning.from} tabKey={turning.from} data={data} onCreated={open} tabs={tabs} onOpen={open} />
+            <PageFold key={`volta-${current}`} tabKey={current} data={data} tabs={tabs} reverse />
           </>
         ) : (
           <>
-            <Sheet key={current} tabKey={current} data={data} onCreated={open} />
-            {turning && <PageFold key={`vira-${turning.from}`} tabKey={turning.from} data={data} />}
+            <Sheet key={current} tabKey={current} data={data} onCreated={open} tabs={tabs} onOpen={open} />
+            {turning && <PageFold key={`vira-${turning.from}`} tabKey={turning.from} data={data} tabs={tabs} />}
           </>
         )}
       </div>
@@ -94,10 +105,18 @@ export function LibraryIndex() {
   );
 }
 
-function Sheet({ tabKey, data, onCreated }: { tabKey: string; data: UserData; onCreated: (key: string) => void }) {
+type CorpoProps = {
+  tabKey: string;
+  data: UserData;
+  onCreated: (key: string) => void;
+  tabs: Tab[];
+  onOpen: (key: string) => void;
+};
+
+function Sheet({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   return (
     <article className="lib-sheet">
-      <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} />
+      <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} tabs={tabs} onOpen={onOpen} />
     </article>
   );
 }
@@ -114,7 +133,7 @@ const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 
  * `reverse` roda a mesma dobra de trás pra frente — a folha volta desdobrando.
  * A geometria é calculada a cada quadro (clip-path + matriz de reflexão).
  */
-function PageFold({ tabKey, data, reverse }: { tabKey: string; data: UserData; reverse?: boolean }) {
+function PageFold({ tabKey, data, tabs, reverse }: { tabKey: string; data: UserData; tabs: Tab[]; reverse?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const front = useRef<HTMLElement>(null);
   const flap = useRef<HTMLDivElement>(null);
@@ -175,7 +194,7 @@ function PageFold({ tabKey, data, reverse }: { tabKey: string; data: UserData; r
     <div className="fold" ref={wrap} aria-hidden>
       <div className="fold-shade" ref={shade} />
       <article className="lib-sheet fold-front" ref={front}>
-        <SheetBody tabKey={tabKey} data={data} onCreated={() => {}} />
+        <SheetBody tabKey={tabKey} data={data} onCreated={() => {}} tabs={tabs} onOpen={() => {}} />
       </article>
       <div className="fold-flap" ref={flap} />
       <div className="fold-shine" ref={shine} />
@@ -194,8 +213,27 @@ function Row({ href, main, side, state }: { href: string; main: ReactNode; side:
   );
 }
 
-function SheetBody({ tabKey, data, onCreated }: { tabKey: string; data: UserData; onCreated: (key: string) => void }) {
+function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   const st = (r: string) => reviewStatus(data, r as ContentRef)?.state;
+
+  // capa do caderno: o índice das folhas
+  if (tabKey === CAPA) {
+    return (
+      <>
+        <h2 className="lib-title">Folhas</h2>
+        <ul className="lib-list">
+          {tabs.map((t) => (
+            <li key={t.key}>
+              <button className={`lib-row ${t.key === NEW_TAB ? 'lib-nova' : ''}`} onClick={() => onOpen(t.key)}>
+                <span className="lib-main">{t.label}</span>
+                <span className="lib-side">{t.count !== undefined ? t.count : '›'}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  }
 
   if (tabKey === 'word') {
     return (

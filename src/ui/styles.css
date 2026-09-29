@@ -1404,3 +1404,18 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .jogo-bloco:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--paper-3); }
 .jogo-icone { color: var(--accent); display: block; }
 @media (min-width: 620px) { .jogo-grade { grid-template-columns: repeat(4, 1fr); } }
+
+/* a folha do caderno ocupa toda a largura da tela no celular */
+@media (max-width: 560px) {
+  .lib-book { margin-left: -16px; margin-right: -16px; }
+  .lib-sheet { border-radius: 0; padding-right: 14px; }
+}
+/* itens da capa: mesma linha das outras folhas, mas clicáveis como botão */
+button.lib-row {
+  width: 100%; font: inherit; text-align: left; background: none; border: 0; cursor: pointer;
+  border-bottom: 1px solid rgba(60, 110, 150, .18);
+}
+button.lib-row:hover .lib-main { text-decoration: underline; }
+button.lib-row .lib-side { font-variant-numeric: tabular-nums; }
+.lib-nova { font-weight: 700; color: #8a4a12; }
+button.back { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
