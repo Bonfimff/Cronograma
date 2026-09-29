@@ -68,22 +68,6 @@ export function AccountPage() {
     try { await session.signOutEverywhere(); } finally { setOcupado(false); }
   };
 
-  if (!api.configured) {
-    return (
-      <>
-        <section className="hero">
-          <p className="eyebrow">Conta</p>
-          <h1>Sem servidor configurado</h1>
-          <p className="lead">
-            Esta versão do aplicativo foi publicada sem endereço de servidor, então não há conta nem
-            sincronização. Seus dados continuam no aparelho; use <a href="#/dados">Backup dos dados</a> para
-            levá-los para outro lugar.
-          </p>
-        </section>
-      </>
-    );
-  }
-
   if (estado.tokens) {
     return (
       <>
@@ -93,21 +77,39 @@ export function AccountPage() {
           <p className="lead">{estado.email}</p>
         </section>
 
-        <section>
-          <h2>No servidor</h2>
-          {erro && <p className="aviso">{erro}</p>}
-          <dl className="facts">
-            <dt>Registros guardados</dt><dd>{conta ? conta.records : '…'}</dd>
-            <dt>Revisão do servidor</dt><dd>{conta ? conta.revision : '…'}</dd>
-            <dt>Já aplicado aqui</dt><dd>{estado.revision}</dd>
-          </dl>
-        </section>
+        {api.configured && (
+          <section>
+            <h2>No servidor</h2>
+            {erro && <p className="aviso">{erro}</p>}
+            <dl className="facts">
+              <dt>Registros guardados</dt><dd>{conta ? conta.records : '…'}</dd>
+              <dt>Revisão do servidor</dt><dd>{conta ? conta.revision : '…'}</dd>
+              <dt>Já aplicado aqui</dt><dd>{estado.revision}</dd>
+            </dl>
+          </section>
+        )}
 
         <section className="actions left">
-          <button className="ghost" onClick={() => session.signOut()}>Sair deste aparelho</button>
-          <button className="ghost" onClick={sairDeTodos} disabled={ocupado}>Sair de todos os aparelhos</button>
+          <button className="primary" onClick={() => session.signOut()}>Sair da conta</button>
+          {api.configured && (
+            <button className="ghost" onClick={sairDeTodos} disabled={ocupado}>Sair em todos os aparelhos</button>
+          )}
         </section>
       </>
+    );
+  }
+
+  if (!api.configured) {
+    return (
+      <section className="hero">
+        <p className="eyebrow">Conta</p>
+        <h1>Sem servidor configurado</h1>
+        <p className="lead">
+          Esta versão do aplicativo foi publicada sem endereço de servidor, então não há conta nem
+          sincronização. Seus dados continuam no aparelho; use <a href="#/dados">Backup dos dados</a> para
+          levá-los para outro lugar.
+        </p>
+      </section>
     );
   }
 
