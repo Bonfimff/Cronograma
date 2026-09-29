@@ -9,8 +9,8 @@ import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/d
 import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
-import { Bolt, Camera, Notebook, Praise, Sparkle, Swash } from '../components/Doodles';
-import { Capybara } from '../components/Cutouts';
+import { Bolt, Camera, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
+import { Capybara, CrowRaincoat } from '../components/Cutouts';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -101,6 +101,11 @@ export function Today() {
         <h2>Próximos dias</h2>
         {upcoming.length ? upcoming.map((s) => <SessionRow key={s.id} s={s} showDate />) : <Empty>Nenhuma sessão nos próximos 7 dias.</Empty>}
       </section>
+
+      <footer className="page-foot">
+        <Plane className="doodle mark" width="40" />
+        <CrowRaincoat className="cut-foot" width="76" />
+      </footer>
 
     </>
   );
