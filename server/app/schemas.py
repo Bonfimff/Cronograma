@@ -11,8 +11,11 @@ Kind = Literal["week", "session", "worksheet", "history", "sheet", "content", "g
 MIN_PASSWORD = 8
 
 
+MAX_EMAIL = 254  # RFC 5321 — o mesmo tamanho da coluna
+
+
 class Credentials(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(max_length=MAX_EMAIL)
     password: str = Field(min_length=MIN_PASSWORD, max_length=200)
 
     @field_validator("password")

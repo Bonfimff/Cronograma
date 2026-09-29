@@ -6,3 +6,6 @@ pydantic-settings==2.7.0
 pyjwt==2.10.1
 argon2-cffi==23.1.0
 email-validator==2.2.0
+# MySQL/MariaDB: driver em Python puro + cryptography para a autenticação do MySQL 8
+pymysql==1.1.1
+cryptography==44.0.0

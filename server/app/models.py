@@ -24,7 +24,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    # 254 é o tamanho máximo de um e-mail (RFC 5321); em utf8mb4 o índice único
+    # ocupa 1016 bytes, dentro do limite do InnoDB
+    email: Mapped[str] = mapped_column(String(254), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     # revisão atual dos dados deste usuário: cresce a cada gravação e guia a sincronização

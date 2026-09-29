@@ -63,9 +63,27 @@ outro domínio).
 
 ## Banco
 
-`sqlite` no desenvolvimento, sem instalar nada. Em produção, troque a `ENGLISH_DATABASE_URL` por
-um Postgres (`postgresql+psycopg://…`) e instale `psycopg[binary]`. As tabelas são criadas na
-subida; quando o modelo começar a mudar em produção, entra o Alembic.
+`sqlite` no desenvolvimento, sem instalar nada. Em produção, troque a `ENGLISH_DATABASE_URL`:
+
+```
+mysql+pymysql://ingles:SENHA@127.0.0.1:3306/ingles?charset=utf8mb4
+postgresql+psycopg://ingles:SENHA@127.0.0.1:5432/ingles
+```
+
+O driver do MySQL (`pymysql`) já vem nas dependências. O banco e o usuário se criam uma vez:
+
+```sql
+CREATE DATABASE ingles CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'ingles'@'localhost' IDENTIFIED BY 'SENHA';
+GRANT ALL PRIVILEGES ON ingles.* TO 'ingles'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Cuidados que já estão no código: `utf8mb4` na conexão (senão acentos e emoji se perdem),
+`pool_recycle` de 30 min (o MySQL derruba conexões ociosas e a primeira requisição do dia
+morreria) e o e-mail limitado a 254 caracteres, para o índice único caber com folga no InnoDB.
+
+As tabelas são criadas na subida; quando o modelo começar a mudar em produção, entra o Alembic.
 
 ## O que ainda falta
 
