@@ -91,13 +91,13 @@ export function LibraryIndex() {
       <div className="lib-book" onTouchStart={comecar} onTouchEnd={terminar}>
         {turning && turning.dir < 0 ? (
           <>
-            <Sheet key={turning.from} tabKey={turning.from} data={data} onCreated={open} tabs={tabs} onOpen={open} />
-            <PageFold key={`volta-${current}`} tabKey={current} data={data} tabs={tabs} reverse />
+            <Sheet key={turning.from} tabKey={turning.from} data={data} onCreated={open} tabs={tabs} onOpen={open} ordem={ordem} />
+            <PageFold key={`volta-${current}`} tabKey={current} data={data} tabs={tabs} ordem={ordem} reverse />
           </>
         ) : (
           <>
-            <Sheet key={current} tabKey={current} data={data} onCreated={open} tabs={tabs} onOpen={open} />
-            {turning && <PageFold key={`vira-${turning.from}`} tabKey={turning.from} data={data} tabs={tabs} />}
+            <Sheet key={current} tabKey={current} data={data} onCreated={open} tabs={tabs} onOpen={open} ordem={ordem} />
+            {turning && <PageFold key={`vira-${turning.from}`} tabKey={turning.from} data={data} tabs={tabs} ordem={ordem} />}
           </>
         )}
       </div>
@@ -113,10 +113,18 @@ type CorpoProps = {
   onOpen: (key: string) => void;
 };
 
-function Sheet({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
+/** Rodapé com o número da folha, como num caderno paginado. */
+function Numero({ tabKey, ordem }: { tabKey: string; ordem: string[] }) {
+  const i = ordem.indexOf(tabKey);
+  if (i < 0) return null;
+  return <p className="lib-pagina">{i + 1} / {ordem.length}</p>;
+}
+
+function Sheet({ tabKey, data, onCreated, tabs, onOpen, ordem }: CorpoProps & { ordem: string[] }) {
   return (
     <article className="lib-sheet">
       <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} tabs={tabs} onOpen={onOpen} />
+      <Numero tabKey={tabKey} ordem={ordem} />
     </article>
   );
 }
@@ -133,7 +141,7 @@ const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 
  * `reverse` roda a mesma dobra de trás pra frente — a folha volta desdobrando.
  * A geometria é calculada a cada quadro (clip-path + matriz de reflexão).
  */
-function PageFold({ tabKey, data, tabs, reverse }: { tabKey: string; data: UserData; tabs: Tab[]; reverse?: boolean }) {
+function PageFold({ tabKey, data, tabs, ordem, reverse }: { tabKey: string; data: UserData; tabs: Tab[]; ordem: string[]; reverse?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const front = useRef<HTMLElement>(null);
   const flap = useRef<HTMLDivElement>(null);
@@ -195,6 +203,7 @@ function PageFold({ tabKey, data, tabs, reverse }: { tabKey: string; data: UserD
       <div className="fold-shade" ref={shade} />
       <article className="lib-sheet fold-front" ref={front}>
         <SheetBody tabKey={tabKey} data={data} onCreated={() => {}} tabs={tabs} onOpen={() => {}} />
+        <Numero tabKey={tabKey} ordem={ordem} />
       </article>
       <div className="fold-flap" ref={flap} />
       <div className="fold-shine" ref={shine} />
