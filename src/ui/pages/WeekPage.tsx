@@ -27,11 +27,15 @@ export function WeekPage({ start }: { start?: string }) {
           <a href={`#/semana/${addDays(ws, 7)}`}>›</a>
           <CalendarDoodle className="doodle mark week-doodle" width="26" />
         </div>
-        <p className="flow">
-          {counts.map(([k, n], i) => (
-            <span key={k}>{i > 0 && <b>→</b>}<span className={`kind k-${k}`}>{KIND_LABEL[k]}</span> <em>{n}</em></span>
+        {/* a semana como uma trilha: uma conta por etapa, ligadas por um fio */}
+        <ol className="trilha">
+          {counts.map(([k, n]) => (
+            <li key={k} className={`k-${k} ${n ? 'tem' : ''}`}>
+              <span className="trilha-conta">{n}</span>
+              <small>{KIND_LABEL[k]}</small>
+            </li>
           ))}
-        </p>
+        </ol>
         <div className="chalk-row">
           <blockquote className="chalk mark">
             “Disciplina<br />também é liberdade.”

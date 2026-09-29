@@ -1495,3 +1495,34 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   border-bottom: 1px solid var(--rule); padding-bottom: 2px;
 }
 .atalhos a:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- trilha da semana: etapas ligadas por um fio ---------- */
+.trilha {
+  position: relative; list-style: none; display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 0; margin: 12px 0 14px; padding: 0;
+}
+/* o fio passa por trás, na altura do meio das contas */
+.trilha::before {
+  content: ''; position: absolute; top: 15px; left: 10%; right: 10%;
+  border-top: 2px dashed var(--rule);
+}
+.trilha li {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  text-align: center; color: var(--ink-3);
+}
+.trilha-conta {
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--rule); color: var(--ink-3);
+  font-weight: 700; font-size: .9rem;
+}
+.trilha li small { font-size: .62rem; text-transform: uppercase; letter-spacing: .06em; line-height: 1.2; }
+/* a etapa que tem sessão ganha a cor do seu tipo */
+.trilha li.tem .trilha-conta { background: currentColor; border-color: transparent; color: var(--paper); }
+.trilha li.tem { color: var(--ink); }
+.trilha li.k-new.tem .trilha-conta { background: var(--k-new); }
+.trilha li.k-practice.tem .trilha-conta { background: var(--k-practice); }
+.trilha li.k-review.tem .trilha-conta { background: var(--k-review); }
+.trilha li.k-reinforce.tem .trilha-conta { background: var(--k-reinforce); }
+.trilha li.k-consolidate.tem .trilha-conta { background: var(--k-consolidate); }
+.trilha li.tem .trilha-conta { color: #fff; }
+@media (max-width: 380px) { .trilha li small { font-size: .56rem; } }
