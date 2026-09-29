@@ -40,7 +40,7 @@ export class SessionStore {
   private state: SessionState;
   private listeners = new Set<Listener>();
 
-  constructor(private api: Api = defaultApi) {
+  constructor(readonly api: Api = defaultApi) {
     this.state = read();
   }
 

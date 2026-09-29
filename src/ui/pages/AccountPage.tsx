@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { api, ApiError, type Account } from '../../core/api/client';
 import { session } from '../../core/api/session';
+import { sincronizar } from '../../core/api/sync';
 import { GooseRider, Philosopher } from '../components/Cutouts';
 
 /**
@@ -62,6 +63,31 @@ export function AccountPage() {
     }
   };
 
+  const [sincronizando, setSincronizando] = useState(false);
+  const [recado, setRecado] = useState<string | null>(null);
+
+  // ao entrar, o aparelho já busca o que está no banco
+  useEffect(() => {
+    if (!estado.tokens || !api.configured) return;
+    sincronizar()
+      .then((r) => setRecado(`${r.baixados} do servidor, ${r.enviados} enviados.`))
+      .catch((e) => setRecado(e instanceof ApiError ? e.message : 'Não foi possível sincronizar.'));
+  }, [estado.tokens]);
+
+  const sincronizarAgora = async () => {
+    setSincronizando(true);
+    setRecado(null);
+    try {
+      const r = await sincronizar();
+      setRecado(`${r.baixados} do servidor, ${r.enviados} enviados.`);
+      setConta(await session.account());
+    } catch (e) {
+      setRecado(e instanceof ApiError ? e.message : 'Não foi possível sincronizar.');
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   const sairDeTodos = async () => {
     if (!confirm('Desconectar a conta de todos os aparelhos?')) return;
     setOcupado(true);
@@ -86,11 +112,15 @@ export function AccountPage() {
               <dt>Revisão do servidor</dt><dd>{conta ? conta.revision : '…'}</dd>
               <dt>Já aplicado aqui</dt><dd>{estado.revision}</dd>
             </dl>
+            {recado && <p className="muted">{recado}</p>}
           </section>
         )}
 
         <section className="actions left">
-          <button className="primary" onClick={() => session.signOut()}>Sair da conta</button>
+          <button className="primary" onClick={sincronizarAgora} disabled={sincronizando}>
+            {sincronizando ? 'Sincronizando…' : 'Sincronizar agora'}
+          </button>
+          <button className="ghost" onClick={() => session.signOut()}>Sair da conta</button>
           {api.configured && (
             <button className="ghost" onClick={sairDeTodos} disabled={ocupado}>Sair em todos os aparelhos</button>
           )}
