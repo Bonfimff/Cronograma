@@ -92,6 +92,15 @@ export function SettingsPage() {
           Voltar ao padrão
         </button>
       </section>
+
+      {/* as duas telas que saíram do menu continuam alcançáveis por aqui */}
+      <section>
+        <h2>Outros</h2>
+        <p className="atalhos">
+          <a href="#/imprimir">Imprimir folhas</a>
+          <a href="#/dados">Backup dos dados</a>
+        </p>
+      </section>
     </>
   );
 }
