@@ -283,8 +283,12 @@ export interface Piece {
   shape: Shape;
 }
 
-/** Histórico de acertos/erros por palavra (persistido pelo chamador), usado pra dosar a dificuldade. */
-export interface WordStats { [en: string]: { c: number; w: number } }
+/**
+ * Histórico por palavra (persistido pelo chamador), usado pra dosar a dificuldade:
+ * `c` certos, `w` errados, `f` data da estreia e `l` do último encontro (AAAA-MM-DD).
+ * As duas datas podem faltar nos placares antigos, gravados antes delas existirem.
+ */
+export interface WordStats { [en: string]: { c: number; w: number; f?: string; l?: string } }
 
 function familiarity(stats: WordStats, en: string): number | null {
   const s = stats[en];

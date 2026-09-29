@@ -19,13 +19,24 @@ export interface WordScore {
   errados: number;
   tentativas: number;
   taxa: number; // 0..1
+  estreia?: string; // primeira vez que a palavra apareceu (AAAA-MM-DD)
+  ultima?: string;  // último encontro
 }
 
 export function wordScores(stats: WordStats): WordScore[] {
   return Object.entries(stats).map(([en, s]) => {
     const tentativas = s.c + s.w;
-    return { en, certos: s.c, errados: s.w, tentativas, taxa: tentativas ? s.c / tentativas : 0 };
+    return {
+      en, certos: s.c, errados: s.w, tentativas,
+      taxa: tentativas ? s.c / tentativas : 0,
+      estreia: s.f, ultima: s.l,
+    };
   });
+}
+
+/** O placar inteiro, do pior para o melhor aproveitamento. */
+export function allWords(stats: WordStats): WordScore[] {
+  return wordScores(stats).sort((a, b) => a.taxa - b.taxa || b.tentativas - a.tentativas);
 }
 
 /** Palavras com melhor aproveitamento. Só conta quem já apareceu algumas vezes. */

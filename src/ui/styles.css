@@ -1280,3 +1280,12 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 }
 .grafico-rotulos span { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .com-anel { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+
+/* ---------- tabelas de palavras ---------- */
+.tabela-rolagem { overflow-x: auto; }
+.tabela { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.tabela th, .tabela td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.tabela th { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 600; }
+.tabela td { color: var(--ink-2); }
+.tabela td.en { color: var(--ink); }
+.tabela .num { text-align: right; font-variant-numeric: tabular-nums; }

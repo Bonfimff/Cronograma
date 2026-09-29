@@ -65,7 +65,16 @@ export function WordTetris() {
 
   const recordStat = (en: string, correct: boolean) => {
     const cur = statsRef.current![en] ?? { c: 0, w: 0 };
-    statsRef.current = { ...statsRef.current, [en]: correct ? { c: cur.c + 1, w: cur.w } : { c: cur.c, w: cur.w + 1 } };
+    const hoje = new Date().toISOString().slice(0, 10);
+    statsRef.current = {
+      ...statsRef.current,
+      [en]: {
+        c: cur.c + (correct ? 1 : 0),
+        w: cur.w + (correct ? 0 : 1),
+        f: cur.f ?? hoje,   // estreia: fica com a primeira data que aparecer
+        l: hoje,
+      },
+    };
     try { localStorage.setItem(STATS_KEY, JSON.stringify(statsRef.current)); } catch { /* sem storage disponível */ }
   };
 

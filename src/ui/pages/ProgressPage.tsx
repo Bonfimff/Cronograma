@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useData } from '../hooks';
 import { GAME_KEYS } from '../../core/storage/backup';
 import type { WordStats } from '../../core/games/wordTetris';
 import {
-  bestWords, byWeek, exerciseAccuracy, frequency, hardestWords, learningSpeed, type WordScore,
+  allWords, bestWords, byWeek, exerciseAccuracy, frequency, hardestWords, learningSpeed, type WordScore,
 } from '../../core/progress/progress';
 import { SketchBars, SketchDots, SketchLine, SketchRing } from '../components/Charts';
 import { refLabel } from '../../core/content/repository';
@@ -26,15 +27,30 @@ const pct = (v: number) => `${Math.round(v * 100)}%`;
 function Palavras({ lista, vazio }: { lista: WordScore[]; vazio: string }) {
   if (!lista.length) return <Empty>{vazio}</Empty>;
   return (
-    <ul className="placar">
-      {lista.map((p) => (
-        <li key={p.en}>
-          <span className="en">{p.en}</span>
-          <span className="placar-num">{pct(p.taxa)}</span>
-          <small className="muted">{p.certos} de {p.tentativas}</small>
-        </li>
-      ))}
-    </ul>
+    <div className="tabela-rolagem">
+      <table className="tabela">
+        <thead>
+          <tr>
+            <th>Palavra</th>
+            <th className="num">Acertos</th>
+            <th className="num">Erros</th>
+            <th className="num">Acerto</th>
+            <th>Estreia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lista.map((p) => (
+            <tr key={p.en}>
+              <td className="en">{p.en}</td>
+              <td className="num">{p.certos}</td>
+              <td className="num">{p.errados}</td>
+              <td className="num">{pct(p.taxa)}</td>
+              <td>{p.estreia ? fmtShort(p.estreia) : 'sem data'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -49,6 +65,8 @@ export function ProgressPage() {
   const semanas = 12;
   const ultimos = freq.dias.slice(-semanas * 7);
   const semanasEstudo = byWeek(freq);
+  const todas = allWords(stats);
+  const [completo, setCompleto] = useState(false);
 
   return (
     <>
@@ -125,6 +143,18 @@ export function ProgressPage() {
         <div className="grafico-rotulos">{dificeis.map((p) => <span key={p.en} className="en">{p.en}</span>)}</div>
         <Palavras lista={dificeis} vazio="Nada errado por aqui ainda." />
       </section>
+
+      {todas.length > 0 && (
+        <section>
+          <h2>
+            Todas as palavras <small>{todas.length}</small>
+            <button className="more" onClick={() => setCompleto((v) => !v)}>
+              {completo ? 'esconder' : 'ver completo'}
+            </button>
+          </h2>
+          {completo && <Palavras lista={todas} vazio="" />}
+        </section>
+      )}
     </>
   );
 }
