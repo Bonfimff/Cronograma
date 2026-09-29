@@ -484,7 +484,6 @@ function BotaoVoz({ falas }: { falas: Fala[] }) {
         <div className="voz-fundo" onClick={() => setPainel(false)}>
           <div className="voz-painel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Reproduzir folha">
             <h3>Reproduzir a folha</h3>
-            <p className="voz-nota">Lê a folha inteira em voz alta, do começo ao fim.</p>
 
             <label className="voz-linha">
               <span>Incluir tradução</span>

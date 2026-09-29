@@ -1592,8 +1592,7 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   font: 16px/1.5 var(--sans); font-weight: 400; letter-spacing: normal; text-align: left;
   box-shadow: 0 22px 50px rgba(0, 0, 0, .45);
 }
-.voz-painel h3 { margin: 0 0 4px; font-size: 1.15rem; }
-.voz-nota { color: var(--ink-3); font-size: .84rem; margin: 0 0 14px; }
+.voz-painel h3 { margin: 0 0 10px; font-size: 1.15rem; }
 .voz-linha {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; color: var(--ink);
