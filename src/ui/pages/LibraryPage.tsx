@@ -1,4 +1,7 @@
+import { useRef, useState } from 'react';
 import { useData } from '../hooks';
+import { store } from '../../core/storage/store';
+import { adicionarExemplo } from '../../core/content/completar';
 import type { ContentRef, Expression, Grammar, Pattern, Word } from '../../core/types';
 import { examplesFor, getExamples, KIND_LABEL, parseRef, refLabel, resolve } from '../../core/content/repository';
 import { entriesFor, EVENT_LABEL } from '../../core/history/history';
@@ -70,34 +73,73 @@ function Detail({ r }: { r: ContentRef }) {
         return <section><p>{g.explanation}</p><ul>{g.points.map((p) => <li key={p}>{p}</li>)}</ul></section>;
       })()}
 
-      <section>
-        <h2>Exemplos</h2>
-        <ul className="examples">
-          {examplesFor(r).map((x) => (
-            <li key={x.id}><p className="en">{x.en} <button className="say" onClick={() => speak(x.en)}>▶</button></p><p className="pt">{x.pt}</p></li>
-          ))}
-        </ul>
-      </section>
+        {(() => {
+          const exemplos = examplesFor(r);
+          return (
+            <section>
+              {exemplos.length > 0 && (
+                <>
+                  <h2>Exemplos</h2>
+                  <ul className="examples">
+                    {exemplos.map((x) => (
+                      <li key={x.id}><p className="en">{x.en} <button className="say" onClick={() => speak(x.en)}>▶</button></p><p className="pt">{x.pt}</p></li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <NovoExemplo r={r} />
+            </section>
+          );
+        })()}
 
-        <section className="verbete-historico">
-          <h2>Histórico</h2>
-          {hist.length ? (
+        {hist.length > 0 && (
+          <section className="verbete-historico">
+            <h2>Histórico</h2>
             <ul className="history">
               {hist.map((h) => <li key={h.id}><span className="mono">{fmtShort(h.date)}</span>: {EVENT_LABEL[h.event]} <a href={`#/sessao/${h.sessionId}`} className="muted mono">{h.sessionId}</a></li>)}
             </ul>
-          ) : <Empty>Ainda não estudado.</Empty>}
-        </section>
+          </section>
+        )}
       </article>
     </>
+  );
+}
+
+/** Anotar um exemplo no verbete: é assim que uma palavra criada na correria vai ganhando corpo. */
+function NovoExemplo({ r }: { r: ContentRef }) {
+  const [en, setEn] = useState('');
+  const [pt, setPt] = useState('');
+  const enRef = useRef<HTMLInputElement>(null);
+  return (
+    <form
+      className="lib-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        let ok = false;
+        store.update((d) => { ok = adicionarExemplo(d, r, en, pt); });
+        if (ok) { setEn(''); setPt(''); enRef.current?.focus(); }
+      }}
+    >
+      <input ref={enRef} value={en} onChange={(e) => setEn(e.target.value)} placeholder="Exemplo em inglês" lang="en" />
+      <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder="Tradução" />
+      <button className="primary" disabled={!en.trim()}>Anotar exemplo</button>
+    </form>
   );
 }
 
 function WordTree({ w }: { w: Word }) {
   return (
     <section className="tree">
-      <p className="pron">{w.pronunciation.ipa} {w.pronunciation.respelling && `· ${w.pronunciation.respelling}`} · <em>{w.type}</em></p>
+      {(w.pronunciation.ipa || w.pronunciation.respelling || w.type) && (
+        <p className="pron">
+          {w.pronunciation.ipa} {w.pronunciation.respelling && `· ${w.pronunciation.respelling}`}
+          {(w.pronunciation.ipa || w.pronunciation.respelling) && w.type ? ' · ' : ''}
+          <em>{w.type}</em>
+        </p>
+      )}
       <p><strong>{w.translations.map((t) => t.text).join(' · ')}</strong></p>
-      <p>{w.core_meaning}</p>
+      {w.core_meaning && w.core_meaning !== w.translations.map((t) => t.text).join(' · ') && <p>{w.core_meaning}</p>}
+      {(w.uses.length > 0 || w.variations.length > 0) && (
       <ul className="branches">
         {w.uses.map((u) => (
           <li key={u.id}>
@@ -113,6 +155,7 @@ function WordTree({ w }: { w: Word }) {
           </li>
         ))}
       </ul>
+      )}
       {w.related_words.length > 0 && (
         <p className="muted">Relacionadas: {w.related_words.map((x) => <a key={x} href={`#/conteudo/word:${x}`} className="en">{x} </a>)}</p>
       )}
