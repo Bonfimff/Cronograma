@@ -11,7 +11,6 @@ command -v nginx >/dev/null || { apt-get update && apt-get install -y nginx; }
 
 cp "$ORIGEM" "$ALVO"
 ln -sf "$ALVO" /etc/nginx/sites-enabled/ingles-api
-rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
 
