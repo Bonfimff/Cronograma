@@ -1532,14 +1532,18 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   font-family: var(--sans); font-weight: 800; line-height: 1.05; text-align: center; overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
 }
-.placa b { font-size: 7.5cqw; }
+.placa b { font-size: 6.6cqw; }
 .placa small { font-size: 5cqw; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; opacity: .75; }
 /* a plaquinha comprida da direita, um pouco torta como no recorte */
-.placa-datas { left: 53%; top: 43.5%; width: 41%; height: 6.5%; transform: rotate(-3.5deg); }
-.placa-contagem { left: 53%; top: 50.5%; width: 41%; height: 6.5%; transform: rotate(-3.5deg); flex-direction: row; gap: 4%; }
+/* medidas tiradas do próprio recorte: as placas brancas foram detectadas por análise da imagem */
+.placa-datas { left: 57%; top: 46.4%; width: 30%; height: 6.6%; transform: rotate(-4deg); }
+.placa-contagem { left: 58%; top: 53.6%; width: 28%; height: 4.2%; transform: rotate(-4deg); flex-direction: row; gap: 5%; }
 .placa-contagem b { font-size: 8cqw; }
 /* a placa quadrada de baixo, à esquerda */
-.placa-proxima { left: 26%; top: 64.8%; width: 28%; height: 13%; }
+.placa-proxima { left: 28.8%; top: 67.4%; width: 19.4%; height: 11.6%; }
+.placa-proxima small { font-size: 3.9cqw; }
 /* a placa de baixo, à direita (onde ficava o aviso de multa) */
-.placa-feitas { left: 55.5%; top: 71.5%; width: 25%; height: 18%; gap: 2%; }
-.placa-feitas b { font-size: 9cqw; }
+.placa-feitas { left: 56.5%; top: 78.5%; width: 22.5%; height: 13.5%; gap: 1%; }
+.placa-feitas b { font-size: 8cqw; }
+.placa-feitas small { font-size: 4.2cqw; }
+.placa-contagem small { font-size: 4.6cqw; }
