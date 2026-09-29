@@ -1172,7 +1172,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
 .goose-rider i {
   position: absolute; top: 0; left: 0; height: 100%; width: 2400%;
   background-repeat: no-repeat; background-size: 100% 100%;
-  animation: goose-voo 3.6s steps(24) infinite;
+  animation: goose-voo 6.5s steps(24) infinite;
 }
 @keyframes goose-voo { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 @media (prefers-reduced-motion: reduce) { .goose-rider i { animation: none; } }
