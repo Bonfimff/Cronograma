@@ -1524,26 +1524,38 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .trilha li.k-reinforce.tem .trilha-conta { background: var(--k-reinforce); }
 .trilha li.k-consolidate.tem .trilha-conta { background: var(--k-consolidate); }
 
-/* ---------- placas da semana escritas por cima do recorte ---------- */
+/* ---------- placas da semana escritas por cima do recorte ----------
+   O recorte é uma foto: cada letreiro está numa inclinação diferente. Os quatro
+   cantos de cada um foram medidos na própria imagem, então cada plaquinha é
+   recortada exatamente naquele quadrilátero (em porcentagem, logo acompanha
+   qualquer tamanho) e o texto vai girado no mesmo ângulo do letreiro. */
 .signpost { container-type: inline-size; }
 .placa {
-  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: #f7f3e8; border: 1.5px solid #1b1a19; border-radius: 2px; color: #14130f;
-  font-family: var(--sans); font-weight: 800; line-height: 1.05; text-align: center; overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+  position: absolute; inset: 0; background: #f7f3e8;
+  filter: drop-shadow(0 0 .7px #14130f) drop-shadow(0 0 .7px #14130f);
 }
-.placa b { font-size: 6.6cqw; }
-.placa small { font-size: 5cqw; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; opacity: .75; }
-/* a plaquinha comprida da direita, um pouco torta como no recorte */
-/* medidas tiradas do próprio recorte: as placas brancas foram detectadas por análise da imagem */
-.placa-datas { left: 57%; top: 46.4%; width: 30%; height: 6.6%; transform: rotate(-4deg); }
-.placa-contagem { left: 58%; top: 53.6%; width: 28%; height: 4.2%; transform: rotate(-4deg); flex-direction: row; gap: 5%; }
-.placa-contagem b { font-size: 8cqw; }
-/* a placa quadrada de baixo, à esquerda */
-.placa-proxima { left: 28.8%; top: 67.4%; width: 19.4%; height: 11.6%; }
-.placa-proxima small { font-size: 3.9cqw; }
-/* a placa de baixo, à direita (onde ficava o aviso de multa) */
-.placa-feitas { left: 56.5%; top: 78.5%; width: 22.5%; height: 13.5%; gap: 1%; }
+.placa > span {
+  position: absolute; translate: -50% -50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #14130f; font-family: var(--sans); font-weight: 800; line-height: 1.05;
+  text-align: center; white-space: nowrap;
+}
+.placa b { font-size: 6.4cqw; }
+.placa small { font-size: 4.2cqw; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; opacity: .75; }
+
+.placa-datas { clip-path: polygon(56.21% 45.09%, 85.68% 46.71%, 86.71% 53.17%, 55.98% 51.66%); }
+.placa-datas > span { left: 71.15%; top: 49.16%; rotate: 7deg; }
+.placa-datas b { font-size: 5.1cqw; letter-spacing: -.01em; }
+
+.placa-contagem { clip-path: polygon(55.96% 52.36%, 86.82% 53.86%, 87.38% 57.32%, 55.84% 55.88%); }
+.placa-contagem > span { left: 71.5%; top: 54.86%; rotate: 7deg; flex-direction: row; gap: 4%; align-items: baseline; }
+.placa-contagem b { font-size: 5.4cqw; }
+.placa-contagem small { font-size: 3.8cqw; }
+
+.placa-proxima { clip-path: polygon(29.84% 68.27%, 47.52% 67.68%, 47.49% 78%, 29.02% 78.22%); }
+.placa-proxima > span { left: 38.46%; top: 73.05%; rotate: -4.4deg; }
+.placa-proxima small { font-size: 3.8cqw; }
+
+.placa-feitas { clip-path: polygon(55.09% 78.48%, 80.01% 78.01%, 80.39% 91.18%, 54.71% 92.34%); }
+.placa-feitas > span { left: 67.55%; top: 85%; rotate: -2.1deg; }
 .placa-feitas b { font-size: 8cqw; }
-.placa-feitas small { font-size: 4.2cqw; }
-.placa-contagem small { font-size: 4.6cqw; }

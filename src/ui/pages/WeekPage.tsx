@@ -46,20 +46,26 @@ export function WeekPage({ start }: { start?: string }) {
               frases de trânsito em inglês do recorte original */}
           <SignpostLive className="semana-placa" width={160}>
             <span className="placa placa-datas">
-              <b>{fmtShort(ws)} a {fmtShort(addDays(ws, 6))}</b>
+              <span><b>{fmtShort(ws)} a {fmtShort(addDays(ws, 6))}</b></span>
             </span>
             <span className="placa placa-contagem">
-              <b>{weekSessions.length}</b>
-              <small>{weekSessions.length === 1 ? 'sessão' : 'sessões'}</small>
+              <span>
+                <b>{weekSessions.length}</b>
+                <small>{weekSessions.length === 1 ? 'sessão' : 'sessões'}</small>
+              </span>
             </span>
             <span className="placa placa-feitas">
-              <small>feitas</small>
-              <b>{feitas}</b>
-              <small>de {weekSessions.length}</small>
+              <span>
+                <small>feitas</small>
+                <b>{feitas}</b>
+                <small>de {weekSessions.length}</small>
+              </span>
             </span>
             <span className="placa placa-proxima">
-              <small>{proxima ? 'próxima' : 'semana'}</small>
-              <b>{proxima ? weekdayShort(proxima.date) : 'livre'}</b>
+              <span>
+                <small>{proxima ? 'próxima' : 'semana'}</small>
+                <b>{proxima ? weekdayShort(proxima.date) : 'livre'}</b>
+              </span>
             </span>
           </SignpostLive>
         </div>
