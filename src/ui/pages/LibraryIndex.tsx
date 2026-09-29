@@ -69,12 +69,36 @@ export function LibraryIndex() {
     if (alvo) open(alvo);
   };
 
+  // o caderno ocupa da sua posição até a barra de baixo, para todas as folhas
+  // terem a mesma altura (e, por isso, o mesmo número de linhas)
+  const livro = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const medir = () => {
+      const el = livro.current;
+      if (!el) return;
+      const barra = document.querySelector('.nav') as HTMLElement | null;
+      const debaixo = barra && getComputedStyle(barra).position === 'fixed' ? barra.offsetHeight : 0;
+      const topo = el.getBoundingClientRect().top + window.scrollY - window.scrollY;
+      el.style.height = `${Math.max(320, window.innerHeight - topo - debaixo - 12)}px`;
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
+  }, [current]);
+
   return (
     <>
       <section className="hero">
-        {current !== CAPA && (
-          <button className="back" onClick={() => open(CAPA)}>‹ Biblioteca</button>
-        )}
+        {/* o voltar fica sempre no lugar (invisível na capa) para o caderno não
+            mudar de altura e todas as folhas terem as mesmas linhas */}
+        <button
+          className={`back ${current === CAPA ? 'oculto' : ''}`}
+          onClick={() => open(CAPA)}
+          tabIndex={current === CAPA ? -1 : 0}
+          aria-hidden={current === CAPA}
+        >
+          ‹ Biblioteca
+        </button>
         <p className="eyebrow">Conteúdo</p>
         <h1>Biblioteca <LaptopCut className="cut-title" width="86" /></h1>
       </section>
@@ -84,7 +108,7 @@ export function LibraryIndex() {
         Pra trás: a antiga fica embaixo e a nova volta por cima, desdobrando
         (a mesma animação ao contrário) — como num caderno de verdade.
       */}
-      <div className="lib-book" onTouchStart={comecar} onTouchEnd={terminar}>
+      <div className="lib-book" ref={livro} onTouchStart={comecar} onTouchEnd={terminar}>
         {turning && turning.dir < 0 ? (
           <>
             <Sheet key={turning.from} tabKey={turning.from} data={data} onCreated={open} tabs={tabs} onOpen={open} ordem={ordem} />
@@ -117,9 +141,35 @@ function Numero({ tabKey, ordem }: { tabKey: string; ordem: string[] }) {
 }
 
 function Sheet({ tabKey, data, onCreated, tabs, onOpen, ordem }: CorpoProps & { ordem: string[] }) {
+  const folha = useRef<HTMLElement>(null);
+  const corpo = useRef<HTMLDivElement>(null);
+  const [vazias, setVazias] = useState(0);
+
+  // sobrando espaço no pé da folha, a pauta segue em branco até o fim
+  useLayoutEffect(() => {
+    const medir = () => {
+      const f = folha.current;
+      const c = corpo.current;
+      if (!f || !c) return;
+      const estilo = getComputedStyle(f);
+      const pauta = parseFloat(estilo.getPropertyValue('--pauta')) || 34;
+      const util = f.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom);
+      // o número da folha ocupa duas linhas no pé
+      setVazias(Math.max(0, Math.floor((util - c.offsetHeight) / pauta) - 2));
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    if (folha.current) ro.observe(folha.current);
+    if (corpo.current) ro.observe(corpo.current);
+    return () => ro.disconnect();
+  }, [tabKey, data]);
+
   return (
-    <article className="lib-sheet">
-      <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} tabs={tabs} onOpen={onOpen} />
+    <article className="lib-sheet" ref={folha}>
+      <div ref={corpo}>
+        <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} tabs={tabs} onOpen={onOpen} />
+      </div>
+      {Array.from({ length: vazias }, (_, i) => <div key={i} className="lib-vazia" aria-hidden />)}
       <Numero tabKey={tabKey} ordem={ordem} />
     </article>
   );

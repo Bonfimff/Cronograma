@@ -828,7 +828,7 @@ h3 { font-size: .95rem; }
   .lib-tab-long { display: none; }
 }
 
-.lib-book { position: relative; perspective: 1600px; margin-bottom: 24px; }
+.lib-book { position: relative; perspective: 1600px; margin-bottom: 16px; }
 /* folha de caderno: pautada, com margem vermelha à esquerda */
 /*
  * A pauta é o compasso da folha: todo texto daqui usa altura de linha igual a
@@ -837,7 +837,8 @@ h3 { font-size: .95rem; }
  */
 .lib-sheet {
   --pauta: 34px;
-  position: relative; min-height: calc(var(--pauta) * 10); padding: 0 16px calc(var(--pauta) / 2) 46px;
+  position: relative; height: 100%; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 16px calc(var(--pauta) / 2) 46px;
   color: #221f19; border-radius: 0 6px 8px 6px;
   background-color: #f3ecdc;
   /* a pauta é desenhada linha a linha, embaixo de cada texto: assim a escrita
@@ -1442,3 +1443,7 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   height: calc(var(--pauta) * 2); line-height: calc(var(--pauta) * 2);
   font-family: var(--hand); font-size: 1.05rem; letter-spacing: .04em;
 }
+
+/* linhas em branco que completam a folha até o fim do papel */
+.lib-vazia { height: var(--pauta); border-bottom: 1px solid rgba(60, 110, 150, .3); }
+.oculto { visibility: hidden; }
