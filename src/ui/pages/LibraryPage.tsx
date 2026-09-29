@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
-import { adicionarExemplo } from '../../core/content/completar';
+import { adicionarExemplo, adicionarUso, atualizarItem } from '../../core/content/completar';
 import type { ContentRef, Expression, Grammar, Pattern, Word } from '../../core/types';
 import { examplesFor, getExamples, KIND_LABEL, parseRef, refLabel, resolve } from '../../core/content/repository';
 import { entriesFor, EVENT_LABEL } from '../../core/history/history';
@@ -42,7 +42,7 @@ function Detail({ r }: { r: ContentRef }) {
         </h2>
         {st && <p className="verbete-estado">{STATE_LABEL[st.state]}</p>}
 
-      {kind === 'word' && <WordTree w={it as Word} />}
+      {kind === 'word' && <WordTree w={it as Word} r={r} />}
       {kind === 'expression' && (() => {
         const e = it as Expression;
         return (
@@ -105,6 +105,86 @@ function Detail({ r }: { r: ContentRef }) {
   );
 }
 
+/**
+ * Campo do verbete que fica à espera: vazio, mostra o nome do que falta e um
+ * tracejado; tocado, vira um campo de escrita. Enter ou sair do campo guarda.
+ */
+function Campo({
+  r, nome, valor, campo, textoLongo, converter,
+}: {
+  r: ContentRef;
+  nome: string;
+  valor: string;
+  campo: string;
+  textoLongo?: boolean;
+  converter?: (v: string) => unknown;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [texto, setTexto] = useState(valor);
+
+  const guardar = () => {
+    setEditando(false);
+    if (texto.trim() === valor.trim()) return;
+    store.update((d) => { atualizarItem(d, r, { [campo]: converter ? converter(texto) : texto.trim() }); });
+  };
+
+  if (editando) {
+    const comum = {
+      value: texto,
+      autoFocus: true,
+      onBlur: guardar,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setTexto(e.target.value),
+      placeholder: nome,
+      'aria-label': nome,
+    };
+    return textoLongo
+      ? <textarea className="campo-verbete" rows={3} {...comum} />
+      : (
+        <input
+          className="campo-verbete"
+          {...comum}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); guardar(); }
+            if (e.key === 'Escape') { setTexto(valor); setEditando(false); }
+          }}
+        />
+      );
+  }
+
+  return (
+    <button className={`campo-valor ${valor.trim() ? '' : 'vazio'}`} onClick={() => { setTexto(valor); setEditando(true); }}>
+      {valor.trim() || `anotar ${nome.toLowerCase()}`}
+    </button>
+  );
+}
+
+/** Anotar um uso novo da palavra. */
+function NovoUso({ r }: { r: ContentRef }) {
+  const [aberto, setAberto] = useState(false);
+  const [label, setLabel] = useState('');
+  const [meaning, setMeaning] = useState('');
+  const [explanation, setExplanation] = useState('');
+
+  if (!aberto) return <button className="link campo-mais" onClick={() => setAberto(true)}>+ anotar um uso</button>;
+  return (
+    <form
+      className="lib-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        let ok = false;
+        store.update((d) => { ok = adicionarUso(d, r, label, meaning, explanation); });
+        if (ok) { setLabel(''); setMeaning(''); setExplanation(''); setAberto(false); }
+      }}
+    >
+      <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Nome do uso (ex.: estado)" autoFocus />
+      <input value={meaning} onChange={(e) => setMeaning(e.target.value)} placeholder="Em português (ex.: como está)" />
+      <input value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explicação curta" />
+      <button className="primary" disabled={!label.trim()}>Anotar uso</button>
+      <button type="button" className="link" onClick={() => setAberto(false)}>cancelar</button>
+    </form>
+  );
+}
+
 /** Anotar um exemplo no verbete: é assim que uma palavra criada na correria vai ganhando corpo. */
 function NovoExemplo({ r }: { r: ContentRef }) {
   const [en, setEn] = useState('');
@@ -127,24 +207,44 @@ function NovoExemplo({ r }: { r: ContentRef }) {
   );
 }
 
-function WordTree({ w }: { w: Word }) {
+function WordTree({ w, r }: { w: Word; r: ContentRef }) {
+  const traducoes = w.translations.map((t) => t.text).join(', ');
   return (
     <section className="tree">
-      {(w.pronunciation.ipa || w.pronunciation.respelling || w.type) && (
-        <p className="pron">
-          {w.pronunciation.ipa} {w.pronunciation.respelling && `· ${w.pronunciation.respelling}`}
-          {(w.pronunciation.ipa || w.pronunciation.respelling) && w.type ? ' · ' : ''}
-          <em>{w.type}</em>
-        </p>
-      )}
-      <p><strong>{w.translations.map((t) => t.text).join(' · ')}</strong></p>
-      {w.core_meaning && w.core_meaning !== w.translations.map((t) => t.text).join(' · ') && <p>{w.core_meaning}</p>}
-      {(w.uses.length > 0 || w.variations.length > 0) && (
+      {/* os campos ficam à vista mesmo vazios: é só tocar e escrever */}
+      <dl className="campos">
+        <dt>Tipo</dt>
+        <dd><Campo r={r} nome="Tipo" campo="type" valor={w.type} /></dd>
+        <dt>Pronúncia</dt>
+        <dd>
+          <Campo
+            r={r} nome="Pronúncia (IPA)" campo="pronunciation" valor={w.pronunciation.ipa}
+            converter={(v) => ({ ...w.pronunciation, ipa: v.trim() })}
+          />
+        </dd>
+        <dt>Como soa</dt>
+        <dd>
+          <Campo
+            r={r} nome="Como soa em português" campo="pronunciation" valor={w.pronunciation.respelling ?? ''}
+            converter={(v) => ({ ...w.pronunciation, respelling: v.trim() })}
+          />
+        </dd>
+        <dt>Tradução</dt>
+        <dd>
+          <Campo
+            r={r} nome="Tradução" campo="translations" valor={traducoes}
+            converter={(v) => v.split(',').map((x) => ({ text: x.trim() })).filter((x) => x.text)}
+          />
+        </dd>
+        <dt>Significado</dt>
+        <dd><Campo r={r} nome="Significado" campo="core_meaning" valor={w.core_meaning} textoLongo /></dd>
+      </dl>
+
       <ul className="branches">
         {w.uses.map((u) => (
           <li key={u.id}>
             <span className="branch">uso: {u.label}</span> {u.meaning}
-            <p className="muted">{u.explanation}</p>
+            {u.explanation && <p className="muted">{u.explanation}</p>}
             {getExamples(u.examples).map((x) => <p key={x.id} className="ex-inline"><span className="en">{x.en}</span> {x.pt}</p>)}
           </li>
         ))}
@@ -155,7 +255,8 @@ function WordTree({ w }: { w: Word }) {
           </li>
         ))}
       </ul>
-      )}
+      <NovoUso r={r} />
+
       {w.related_words.length > 0 && (
         <p className="muted">Relacionadas: {w.related_words.map((x) => <a key={x} href={`#/conteudo/word:${x}`} className="en">{x} </a>)}</p>
       )}

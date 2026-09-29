@@ -30,3 +30,32 @@ export function adicionarExemplo(draft: UserData, ref: ContentRef, en: string, p
 
   return true;
 }
+
+/** Guarda uma mudança feita à mão no verbete (o item vira conteúdo do usuário). */
+export function atualizarItem(draft: UserData, ref: ContentRef, mudanca: Record<string, unknown>): boolean {
+  const item = resolve(ref);
+  if (!item) return false;
+  const novo = { ...(item as object), ...mudanca } as { id: string };
+  const { kind } = parseRef(ref);
+  if (kind === 'word') saveUserContent(draft, { words: [novo as Word] });
+  else if (kind === 'expression') saveUserContent(draft, { expressions: [novo as Expression] });
+  else if (kind === 'pattern') saveUserContent(draft, { patterns: [novo as Pattern] });
+  else if (kind === 'grammar') saveUserContent(draft, { grammar: [novo as Grammar] });
+  else return false;
+  return true;
+}
+
+/** Acrescenta um uso ("uso: estado", "uso: maneira") a uma palavra. */
+export function adicionarUso(draft: UserData, ref: ContentRef, label: string, meaning: string, explanation: string): boolean {
+  const w = resolve(ref) as Word | undefined;
+  if (!w || parseRef(ref).kind !== 'word' || !label.trim()) return false;
+  const uso = {
+    id: slug(label),
+    label: label.trim(),
+    meaning: meaning.trim(),
+    explanation: explanation.trim(),
+    examples: [] as string[],
+  };
+  saveUserContent(draft, { words: [{ ...w, uses: [...w.uses, uso] }] });
+  return true;
+}
