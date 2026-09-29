@@ -78,12 +78,26 @@ export function LibraryIndex() {
       if (!el) return;
       const barra = document.querySelector('.nav') as HTMLElement | null;
       const debaixo = barra && getComputedStyle(barra).position === 'fixed' ? barra.offsetHeight : 0;
-      const topo = el.getBoundingClientRect().top + window.scrollY - window.scrollY;
-      el.style.height = `${Math.max(320, window.innerHeight - topo - debaixo - 12)}px`;
+      const topo = el.getBoundingClientRect().top - (el.offsetHeight ? 0 : 0);
+      let altura = Math.max(240, window.innerHeight - topo - debaixo - 12);
+      el.style.height = `${altura}px`;
+      // a rolagem tem de acontecer dentro da folha, nunca na página: se ainda
+      // sobrar algo rolando (recuos, barra estática no computador), encolhe o
+      // caderno até a página caber inteira na tela
+      for (let i = 0; i < 4; i++) {
+        const sobra = document.documentElement.scrollHeight - window.innerHeight;
+        if (sobra <= 0 || altura <= 240) break;
+        altura = Math.max(240, altura - sobra);
+        el.style.height = `${altura}px`;
+      }
     };
     medir();
+    const depois = requestAnimationFrame(medir); // depois de a folha se acomodar
     window.addEventListener('resize', medir);
-    return () => window.removeEventListener('resize', medir);
+    return () => {
+      cancelAnimationFrame(depois);
+      window.removeEventListener('resize', medir);
+    };
   }, [current]);
 
   return (
@@ -120,6 +134,8 @@ export function LibraryIndex() {
             {turning && <PageFold key={`vira-${turning.from}`} tabKey={turning.from} data={data} tabs={tabs} ordem={ordem} />}
           </>
         )}
+        {/* o rodapé fica preso ao caderno, não à folha: assim não rola junto */}
+        <Numero tabKey={current} ordem={ordem} onOpen={open} />
       </div>
     </>
   );
@@ -176,7 +192,6 @@ function Sheet({ tabKey, data, onCreated, tabs, onOpen, ordem }: CorpoProps & { 
         <SheetBody tabKey={tabKey} data={data} onCreated={onCreated} tabs={tabs} onOpen={onOpen} />
       </div>
       {Array.from({ length: vazias }, (_, i) => <div key={i} className="lib-vazia" aria-hidden />)}
-      <Numero tabKey={tabKey} ordem={ordem} onOpen={onOpen} />
     </article>
   );
 }
@@ -255,7 +270,6 @@ function PageFold({ tabKey, data, tabs, ordem, reverse }: { tabKey: string; data
       <div className="fold-shade" ref={shade} />
       <article className="lib-sheet fold-front" ref={front}>
         <SheetBody tabKey={tabKey} data={data} onCreated={() => {}} tabs={tabs} onOpen={() => {}} />
-        <Numero tabKey={tabKey} ordem={ordem} />
       </article>
       <div className="fold-flap" ref={flap} />
       <div className="fold-shine" ref={shine} />
