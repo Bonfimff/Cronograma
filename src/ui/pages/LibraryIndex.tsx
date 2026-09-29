@@ -301,7 +301,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'word') {
     return (
       <>
-        <h2 className="lib-title">Vocabulário</h2>
+        <Titulo chave="word">Vocabulário</Titulo>
         <ul className="lib-list">
           {content.words.map((w) => (
             <Row
@@ -319,7 +319,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'expression') {
     return (
       <>
-        <h2 className="lib-title">Expressões</h2>
+        <Titulo chave="expression">Expressões</Titulo>
         <ul className="lib-list">
           {content.expressions.map((e) => (
             <Row
@@ -337,7 +337,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'pattern') {
     return (
       <>
-        <h2 className="lib-title">Padrões</h2>
+        <Titulo chave="pattern">Padrões</Titulo>
         <ul className="lib-list">
           {content.patterns.map((p) => (
             <Row key={p.id} href={`#/conteudo/pattern:${p.id}`} state={st(`pattern:${p.id}`)} main={<b className="en">{p.formula}</b>} side={p.name} />
@@ -349,7 +349,7 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   if (tabKey === 'grammar') {
     return (
       <>
-        <h2 className="lib-title">Gramática</h2>
+        <Titulo chave="grammar">Gramática</Titulo>
         <ul className="lib-list">
           {content.grammar.map((g) => (
             <Row key={g.id} href={`#/conteudo/grammar:${g.id}`} state={st(`grammar:${g.id}`)} main={<b>{g.title}</b>} side="" />
@@ -363,6 +363,16 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
   const sheet = sheetsOf(data).find((s) => s.id === tabKey);
   if (!sheet) return null;
   return <CustomSheet id={sheet.id} />;
+}
+
+/** Título da folha com a estrela ao lado. */
+function Titulo({ chave, children }: { chave?: string; children: ReactNode }) {
+  return (
+    <h2 className="lib-title">
+      <span>{children}</span>
+      {chave && <Estrela chave={chave} />}
+    </h2>
+  );
 }
 
 /** Estrela que marca a folha para ela aparecer na página Hoje. */
@@ -426,12 +436,11 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
       ) : (
         <ul className="lib-list">
           {tabs.map((t) => (
-            <li key={t.key} className="lib-linha">
+            <li key={t.key}>
               <button className={`lib-row ${t.key === NEW_TAB ? 'lib-nova' : ''}`} onClick={() => onOpen(t.key)}>
                 <span className="lib-main">{t.label}</span>
                 <span className="lib-side">{t.count !== undefined ? t.count : '›'}</span>
               </button>
-              {t.key !== NEW_TAB && <Estrela chave={t.key} />}
             </li>
           ))}
         </ul>
@@ -472,7 +481,7 @@ function CustomSheet({ id }: { id: string }) {
 
   return (
     <>
-      <h2 className="lib-title">{sheet.title}</h2>
+      <Titulo chave={sheet.id}>{sheet.title}</Titulo>
       {sheet.items.length ? (
         <ul className="lib-list">
           {sheet.items.map((it, i) => (
