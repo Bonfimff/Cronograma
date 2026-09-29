@@ -70,14 +70,15 @@ mysql+pymysql://ingles:SENHA@127.0.0.1:3306/ingles?charset=utf8mb4
 postgresql+psycopg://ingles:SENHA@127.0.0.1:5432/ingles
 ```
 
-O driver do MySQL (`pymysql`) já vem nas dependências. O banco e o usuário se criam uma vez:
+O driver do MySQL (`pymysql`) já vem nas dependências. Para preparar o banco, use o script — ele
+pergunta as senhas na hora (nada vai parar no histórico do terminal), cria banco e usuário, grava a
+URL no `.env` e só termina depois de conectar de verdade:
 
-```sql
-CREATE DATABASE ingles CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'ingles'@'localhost' IDENTIFIED BY 'SENHA';
-GRANT ALL PRIVILEGES ON ingles.* TO 'ingles'@'localhost';
-FLUSH PRIVILEGES;
+```bash
+bash deploy/preparar-mysql.sh            # ou: bash deploy/preparar-mysql.sh <banco> <usuario>
 ```
+
+Se o root do MySQL entra pelo socket (`sudo mysql`), ele usa isso; senão, pede a senha do root.
 
 Cuidados que já estão no código: `utf8mb4` na conexão (senão acentos e emoji se perdem),
 `pool_recycle` de 30 min (o MySQL derruba conexões ociosas e a primeira requisição do dia
@@ -91,3 +92,17 @@ As tabelas são criadas na subida; quando o modelo começar a mudar em produçã
 - Recuperação de senha por e-mail.
 - Limite de tentativas de login.
 - Migrações (Alembic) e implantação.
+
+## Publicar uma versão nova
+
+Na sua máquina (PowerShell), empacote e envie:
+
+```powershell
+tar -czf $env:TEMP\ingles-server.tgz -C E:\Cronograma --exclude=.venv --exclude=__pycache__ --exclude=.pytest_cache --exclude=*.db --exclude=.env server
+scp -i $HOME\Downloads\chave.key $env:TEMP\ingles-server.tgz ubuntu@SERVIDOR:/tmp/
+ssh -i $HOME\Downloads\chave.key ubuntu@SERVIDOR 'tar -xzf /tmp/ingles-server.tgz -C ~/ingles && bash ~/ingles/server/deploy/atualizar.sh'
+```
+
+O `.env` do servidor fica de fora do pacote, então as senhas de lá não são sobrescritas.
+Escreva os comandos remotos **entre aspas simples**: o PowerShell come as aspas duplas antes de
+o servidor vê-las.
