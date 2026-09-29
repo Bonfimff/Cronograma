@@ -269,7 +269,7 @@ function NewSheetForm({ onCreated }: { onCreated: (key: string) => void }) {
   return (
     <>
       <h2 className="lib-title">Nova folha</h2>
-      <p className="lib-note">Dê um nome à folha — por exemplo "Trabalho", "Viagem" ou "Palavras do filme" — e depois vá anotando as palavras e expressões nela.</p>
+      <p className="lib-note">Dê um nome à folha (por exemplo "Trabalho", "Viagem" ou "Palavras do filme") e depois vá anotando as palavras e expressões nela.</p>
       <form
         className="lib-form"
         onSubmit={(e) => {

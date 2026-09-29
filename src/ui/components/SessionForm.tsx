@@ -128,7 +128,7 @@ export function SessionForm({
       <label>
         Tema
         <select value={v.topicId ?? ''} onChange={(e) => pickTopic(e.target.value)}>
-          <option value="">— livre —</option>
+          <option value="">(livre)</option>
           {content.topics.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
         </select>
       </label>
@@ -144,7 +144,7 @@ export function SessionForm({
       </label>
 
       <label>
-        Quando usar? <small>(resumo da folha — vazio = automático)</small>
+        Quando usar? <small>(resumo da folha; vazio = automático)</small>
         <textarea rows={2} value={v.whenToUse} onChange={(e) => set({ whenToUse: e.target.value })} />
       </label>
 
@@ -186,7 +186,7 @@ export function SessionForm({
             <textarea rows={4} value={txt.quiz} onChange={(e) => setT({ quiz: e.target.value })} />
           </label>
           <label>
-            Minha prática — atividade escrita
+            Minha prática: atividade escrita
             <input value={txt.practice} onChange={(e) => setT({ practice: e.target.value })} placeholder="Ex.: Escreva 5 perguntas com How" />
           </label>
         </div>

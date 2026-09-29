@@ -65,7 +65,7 @@ export function LessonPage({ id }: { id: string }) {
 
       {step === 0 && s.sheet?.copy?.length ? (
         <div className="copybox">
-          <p className="copy-mark">✎ COPIE na folha — Conceito principal</p>
+          <p className="copy-mark">✎ COPIE na folha: conceito principal</p>
           {s.sheet.copy.slice(0, 3).map((l) => <p key={l}>{l}</p>)}
         </div>
       ) : null}
@@ -110,7 +110,7 @@ export function LessonPage({ id }: { id: string }) {
                   <th className="en">{r.head}</th>
                   <td>
                     <strong>{r.body}</strong>
-                    {r.note && <span className="muted"> — {r.note}</span>}
+                    {r.note && <span className="muted">: {r.note}</span>}
                     {r.examples.map((x) => <span key={x.id} className="ex-inline"><span className="en">{x.en}</span> {x.pt}</span>)}
                   </td>
                 </tr>

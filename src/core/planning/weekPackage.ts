@@ -190,7 +190,7 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
     if (!text(w.word) || !tr.some((t) => isObj(t) && text(t.text)) || !text(w.core_meaning)) {
       err(`${where}: precisa de word, translations (com text) e core_meaning.`);
     }
-    if (!isObj(w.pronunciation) || !text(w.pronunciation.ipa)) warn(`${where}: sem pronunciation.ipa — o flashcard e o verbete ficam sem a pronúncia.`);
+    if (!isObj(w.pronunciation) || !text(w.pronunciation.ipa)) warn(`${where}: sem pronunciation.ipa, então o flashcard e o verbete ficam sem a pronúncia.`);
     exampleRefs(where, w.examples);
     listOf<Record<string, unknown>>(w.uses, `${where}: uses`, err).filter(isObj).forEach((u) => exampleRefs(`${where}, uso "${u.id}"`, u.examples));
     listOf<Record<string, unknown>>(w.variations, `${where}: variations`, err).filter(isObj).forEach((v) => {
@@ -251,8 +251,8 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
           if (idsInFile.has(s.id)) err(`${w}: código "${s.id}" repetido no arquivo.`);
           idsInFile.add(s.id);
           const cur = byId.get(s.id);
-          if (!cur) warn(`${w}: o código ${s.id} não existe aqui — a sessão será criada com código novo.`);
-          else if (cur.status !== 'planned') warn(`${w}: ${s.id} já foi ${cur.status === 'done' ? 'feita' : 'iniciada'} — fica como está.`);
+          if (!cur) warn(`${w}: o código ${s.id} não existe aqui, então a sessão será criada com código novo.`);
+          else if (cur.status !== 'planned') warn(`${w}: ${s.id} já foi ${cur.status === 'done' ? 'feita' : 'iniciada'}, fica como está.`);
           else if (cur.weekStart !== ws) warn(`${w}: ${s.id} muda da semana ${cur.weekStart} para esta.`);
         }
       }
@@ -445,15 +445,15 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
     $leia_me: [
       'Pacote semanal do Inglês Híbrido. Campos que começam com $ são ignorados.',
       'content: conteúdo NOVO da semana (mesmo formato dos arquivos em /content). Pode referenciar o conteúdo que já existe.',
-      'refs: conteúdos estudados na sessão — "word:id", "expression:id", "pattern:id", "grammar:id".',
+      'refs: conteúdos estudados na sessão: "word:id", "expression:id", "pattern:id", "grammar:id".',
       'sheet: o que vai para a FOLHA (copy = Conceito principal, até 3 linhas; quiz = Tente sem consultar, até 6; practice = instrução da Minha prática).',
       'app: o que fica SÓ NO APLICATIVO (intro, context, tips). A explicação completa, os exemplos e as variações vêm do conteúdo em refs.',
       'exercises: ids de exercícios existentes ou exercícios completos (type: translate, fill, choice, match, build, qa, produce).',
       'expected: o resultado que o aluno deve conseguir ao final (result + criteria). Aparece na aula e na avaliação.',
-      'kind: new (novo conteúdo), practice, review, reinforce, consolidate — nessa ordem ao longo da semana.',
+      'kind: new (novo conteúdo), practice, review, reinforce, consolidate, nessa ordem ao longo da semana.',
       'id (na sessão): código da sessão, vem na semana exportada. Reimportando, a sessão de mesmo código é atualizada no lugar (a folha impressa continua valendo); sem id = sessão nova.',
       'sheets: folhas da Biblioteca (title + items com en/pt). Mesmo título soma na folha que já existe.',
-      'goals: objetivos da semana — saem no campo de anotações da folha semanal impressa.',
+      'goals: objetivos da semana; saem no campo de anotações da folha semanal impressa.',
     ],
     format: PACKAGE_FORMAT,
     week: weekStart,
@@ -473,7 +473,7 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
           related_words: ['where', 'do'],
           examples: ['ex-where-do-you-work'],
           pronunciation: { ipa: '/wɜːrk/', respelling: 'uârk' },
-          copy: { lines: ['work = trabalhar / trabalho', 'Where do you work? — Onde você trabalha?'] },
+          copy: { lines: ['work = trabalhar / trabalho', 'Where do you work? = Onde você trabalha?'] },
         },
       ],
     },
@@ -489,7 +489,7 @@ export function templatePackage(weekStart: string): WeekPackage & { $leia_me: st
             refs: ['word:how', 'expression:how-are-you', 'pattern:how-be-subject'],
             whenToUse: 'Use how para perguntar como alguém está ou como algo é feito.',
             sheet: {
-              copy: ['How = como', 'How + are/is + sujeito?', 'How are you? — Como você está?'],
+              copy: ['How = como', 'How + are/is + sujeito?', 'How are you? = Como você está?'],
               quiz: ['Como você está? →', 'Como eles estão? →', 'Como ela está? →', 'Estou bem, obrigado. →', 'Quanto custa? →', 'Como se diz isso em inglês? →'],
               practice: 'Escreva 5 perguntas com How para pessoas da sua família.',
             },

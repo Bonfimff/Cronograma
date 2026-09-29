@@ -111,7 +111,7 @@ export function ReadingPage({ id }: { id: string }) {
                     <th className="en">{r.head}</th>
                     <td>
                       <strong>{r.body}</strong>
-                      {r.note && <span className="muted"> — {r.note}</span>}
+                      {r.note && <span className="muted">: {r.note}</span>}
                       {r.examples.map((x) => <span key={x.id} className="ex-inline"><span className="en">{x.en}</span> {x.pt}</span>)}
                     </td>
                   </tr>

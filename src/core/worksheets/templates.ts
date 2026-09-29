@@ -284,15 +284,15 @@ const guide: El[] = [
   { t: 'icon', name: 'target', x: 195, y: 1398, size: 66, color: 'sage' },
   { t: 'line', x1: 270, y1: 1360, x2: 270, y2: 1442, color: 'muted' },
   { t: 'text', x: 312, y: 1375, text: 'Diretriz', size: 21, weight: 700 },
-  { t: 'text', x: 312, y: 1412, text: 'Aprender, praticar, revisar e consolidar —', size: 19.5 },
+  { t: 'text', x: 312, y: 1412, text: 'Aprender, praticar, revisar e consolidar.', size: 19.5 },
   { t: 'text', x: 312, y: 1447, text: 'sem acumular conteúdo sem revisar.', size: 19.5 },
 ];
 
 export const PAGES: Record<PageKind, PageTemplate> = {
-  'study-front': { id: 'study-front', name: 'Dia de Estudo — frente', hasQR: true, hasMarkers: true, elements: studyFront },
-  'study-back': { id: 'study-back', name: 'Dia de Estudo — verso', hasQR: true, hasMarkers: true, elements: studyBack },
-  'week-plan': { id: 'week-plan', name: 'Plano de Estudos — semanal', hasQR: false, hasMarkers: false, elements: weekPlan },
-  guide: { id: 'guide', name: 'Plano de Estudos — orientações', hasQR: false, hasMarkers: false, elements: guide },
+  'study-front': { id: 'study-front', name: 'Dia de Estudo: frente', hasQR: true, hasMarkers: true, elements: studyFront },
+  'study-back': { id: 'study-back', name: 'Dia de Estudo: verso', hasQR: true, hasMarkers: true, elements: studyBack },
+  'week-plan': { id: 'week-plan', name: 'Plano de Estudos: semanal', hasQR: false, hasMarkers: false, elements: weekPlan },
+  guide: { id: 'guide', name: 'Plano de Estudos: orientações', hasQR: false, hasMarkers: false, elements: guide },
 };
 
 /** Folha de estudo = frente + verso. */

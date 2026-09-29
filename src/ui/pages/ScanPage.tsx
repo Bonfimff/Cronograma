@@ -186,7 +186,7 @@ export function ScanPage({ code: initialCode, autoCam, autoManual }: { code?: st
                 {understood?.selected && <> · Entendi: <strong>{UNDERSTOOD_LABEL[understood.selected]}</strong></>}
                 {usage?.selected && <> · Utilizou: <strong>{USAGE_LABEL[usage.selected]}</strong></>}
               </p>
-              {mastery && !mastery.confident && mastery.selected && <p className="warn">Leitura com pouca certeza — confira.</p>}
+              {mastery && !mastery.confident && mastery.selected && <p className="warn">Leitura com pouca certeza, confira.</p>}
               <div className="actions left">
                 <button className="primary" disabled={!mastery?.selected} onClick={() => {
                   store.update((d) => finishSession(d, look.session.id, {

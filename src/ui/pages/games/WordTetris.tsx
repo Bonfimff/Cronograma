@@ -91,7 +91,7 @@ export function WordTetris() {
     recordStat(piece.en, correct);
     setToast({
       ok: correct,
-      text: correct ? `✓ ${piece.pt} = ${piece.en}` : `${piece.pt} = ${piece.en} — a peça caiu torta.`,
+      text: correct ? `✓ ${piece.pt} = ${piece.en}` : `${piece.pt} = ${piece.en}. A peça caiu torta.`,
     });
     setFalling({ piece, col: targetCol, row: placed.row, color, dropping: true });
     window.setTimeout(() => {

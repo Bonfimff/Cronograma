@@ -45,7 +45,7 @@ const MESSAGES: Record<number, string> = {
 /** Erro de validação do FastAPI: diz qual campo está errado, em vez de culpar os dois. */
 function fieldMessage(detail: { loc?: unknown[]; msg?: string }[]): string {
   const campo = String(detail[0]?.loc?.[1] ?? '');
-  if (campo === 'email') return 'E-mail inválido — confira o endereço (exemplo: nome@dominio.com).';
+  if (campo === 'email') return 'E-mail inválido. Confira o endereço (exemplo: nome@dominio.com).';
   if (campo === 'password') return 'A senha precisa de pelo menos 8 caracteres.';
   return MESSAGES[422];
 }

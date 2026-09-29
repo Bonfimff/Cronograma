@@ -77,7 +77,7 @@ function Detail({ r }: { r: ContentRef }) {
         <h2>Histórico</h2>
         {hist.length ? (
           <ul className="history">
-            {hist.map((h) => <li key={h.id}><span className="mono">{fmtShort(h.date)}</span> — {EVENT_LABEL[h.event]} <a href={`#/sessao/${h.sessionId}`} className="muted mono">{h.sessionId}</a></li>)}
+            {hist.map((h) => <li key={h.id}><span className="mono">{fmtShort(h.date)}</span>: {EVENT_LABEL[h.event]} <a href={`#/sessao/${h.sessionId}`} className="muted mono">{h.sessionId}</a></li>)}
           </ul>
         ) : <Empty>Ainda não estudado.</Empty>}
       </section>
@@ -94,14 +94,14 @@ function WordTree({ w }: { w: Word }) {
       <ul className="branches">
         {w.uses.map((u) => (
           <li key={u.id}>
-            <span className="branch">uso: {u.label}</span> — {u.meaning}
+            <span className="branch">uso: {u.label}</span> {u.meaning}
             <p className="muted">{u.explanation}</p>
             {getExamples(u.examples).map((x) => <p key={x.id} className="ex-inline"><span className="en">{x.en}</span> {x.pt}</p>)}
           </li>
         ))}
         {w.variations.map((v) => (
           <li key={v.form}>
-            <span className="branch en">{v.ref ? <a href={`#/conteudo/${v.ref}`}>{v.form}</a> : v.form}</span> — {v.meaning}
+            <span className="branch en">{v.ref ? <a href={`#/conteudo/${v.ref}`}>{v.form}</a> : v.form}</span> {v.meaning}
             {v.note && <span className="muted"> ({v.note})</span>}
           </li>
         ))}

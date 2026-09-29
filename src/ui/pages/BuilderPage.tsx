@@ -101,7 +101,7 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
           <>
             {check.errors.length > 0 && (
               <div>
-                <h3>Erros ({check.errors.length}) — corrija antes de importar</h3>
+                <h3>Erros ({check.errors.length}): corrija antes de importar</h3>
                 <ul className="check-list err">{check.errors.map((m, i) => <li key={i}>{m}</li>)}</ul>
               </div>
             )}

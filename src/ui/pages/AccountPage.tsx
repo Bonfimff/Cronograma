@@ -76,7 +76,7 @@ export function AccountPage() {
           <h1>Sem servidor configurado</h1>
           <p className="lead">
             Esta versão do aplicativo foi publicada sem endereço de servidor, então não há conta nem
-            sincronização. Seus dados continuam no aparelho — use <a href="#/dados">Backup dos dados</a> para
+            sincronização. Seus dados continuam no aparelho; use <a href="#/dados">Backup dos dados</a> para
             levá-los para outro lugar.
           </p>
         </section>
@@ -97,8 +97,8 @@ export function AccountPage() {
           <h2>No servidor</h2>
           {erro && <p className="aviso">{erro}</p>}
           <dl className="facts">
-            <dt>Registros guardados</dt><dd>{conta ? conta.records : '—'}</dd>
-            <dt>Revisão do servidor</dt><dd>{conta ? conta.revision : '—'}</dd>
+            <dt>Registros guardados</dt><dd>{conta ? conta.records : '…'}</dd>
+            <dt>Revisão do servidor</dt><dd>{conta ? conta.revision : '…'}</dd>
             <dt>Já aplicado aqui</dt><dd>{estado.revision}</dd>
           </dl>
         </section>
@@ -118,7 +118,7 @@ export function AccountPage() {
         <h1>{modo === 'entrar' ? 'Entrar' : 'Criar conta'} <Philosopher className="cut-title" width="74" /></h1>
         <p className="lead">
           A conta serve para continuar o estudo em outro aparelho. Sem ela, o aplicativo funciona
-          igual — só não sai daqui.
+          igual, só não sai daqui.
         </p>
       </section>
 

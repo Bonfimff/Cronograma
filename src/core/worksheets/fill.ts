@@ -100,7 +100,7 @@ export function weekSheetValues(data: UserData, weekStart: string): FieldValues 
     const d = dmy(date);
     v[`day${i}Date`] = `${d.d}/${d.m}/${d.y}`;
     const parts = [day?.theme, ...sessionsOn(data, date).map((s) => s.title)].filter(Boolean);
-    const text = [...new Set(parts)].join(' · ') + (day?.objective ? ` — ${day.objective}` : '');
+    const text = [...new Set(parts)].join(' · ') + (day?.objective ? `: ${day.objective}` : '');
     v[`day${i}Text`] = text;
     if (day?.minutes) v[`day${i}Min`] = String(day.minutes);
   }

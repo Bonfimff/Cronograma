@@ -99,7 +99,7 @@ export function SessionPage({ id }: { id: string }) {
       {topic && (
         <section>
           <h2>Tema</h2>
-          <p><strong>{topic.title}</strong> — {topic.description}</p>
+          <p><strong>{topic.title}</strong>: {topic.description}</p>
           {topic.objective && <p className="muted">{topic.objective}</p>}
         </section>
       )}
@@ -125,7 +125,7 @@ export function SessionPage({ id }: { id: string }) {
           <h2>Na folha</h2>
           {s.sheet?.copy?.length ? (
             <div className="copybox">
-              <p className="copy-mark">✎ COPIE — conceito principal</p>
+              <p className="copy-mark">✎ COPIE: conceito principal</p>
               {s.sheet.copy.map((l) => <p key={l}>{l}</p>)}
             </div>
           ) : null}

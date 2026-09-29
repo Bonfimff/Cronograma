@@ -53,7 +53,7 @@ export function readBackup(text: string): { data: UserData; games: Record<string
   if (!isObj(raw)) return 'O arquivo não é um backup do Inglês Híbrido.';
   if (raw.format !== undefined && raw.format !== BACKUP_FORMAT) {
     return raw.format === 'ingles-hibrido/semana@1'
-      ? 'Este arquivo é um pacote semanal — importe em Semana → Montar semana (JSON).'
+      ? 'Este arquivo é um pacote semanal. Importe em Semana → Montar semana (JSON).'
       : `Formato "${String(raw.format)}" desconhecido.`;
   }
   if (raw.version !== 1 || !Array.isArray(raw.sessions)) return 'O arquivo não é um backup do Inglês Híbrido (falta version 1 ou sessions).';
