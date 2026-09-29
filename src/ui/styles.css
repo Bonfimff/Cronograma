@@ -1660,3 +1660,7 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .uso-acoes { display: flex; gap: 14px; margin: 4px 0 0; font-size: .82rem; }
 .uso-acoes .link { color: #8a4a12; }
 .uso-acoes .lib-del { color: #a14b42; }
+/* no verbete os botões ficam junto da palavra, não na beirada */
+.verbete .lib-title { gap: 6px; }
+.verbete .lib-title .lib-voz { margin-left: 0; }
+.verbete .lib-title .lib-voz:first-of-type { margin-left: 10px; }
