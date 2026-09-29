@@ -10,6 +10,7 @@ import { ReviewPage } from './pages/ReviewPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { DataPage } from './pages/DataPage';
 import { AccountPage } from './pages/AccountPage';
+import { ProgressPage } from './pages/ProgressPage';
 import { BuilderPage } from './pages/BuilderPage';
 import { GamesPage } from './pages/GamesPage';
 import { WordTetris } from './pages/games/WordTetris';
@@ -61,6 +62,7 @@ export function App() {
     case 'conteudo': page = <LibraryPage refId={rest[0]} />; break;
     case 'dados': page = <DataPage />; break;
     case 'conta': page = <AccountPage />; break;
+    case 'progresso': page = <ProgressPage />; break;
     case 'montar': page = <BuilderPage week={route.query.get('semana') ?? undefined} />; break;
     case 'jogos': page = rest[0] === 'tetris' ? <WordTetris /> : rest[0] === 'flashcards' ? <Flashcards /> : rest[0] === 'palavras' ? <WordMatch /> : rest[0] === 'cruzadas' ? <Crossword /> : <GamesPage />; break;
     default: page = <Today />;

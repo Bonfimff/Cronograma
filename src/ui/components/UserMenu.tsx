@@ -51,7 +51,7 @@ export function UserMenu() {
             <>
               <p className="usuario-email">{estado.email}</p>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
-              <a href="#/dados" role="menuitem" onClick={() => setAberto(false)}>Backup dos dados</a>
+              <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
               <button
                 role="menuitem"
                 className="usuario-sair"
@@ -64,7 +64,7 @@ export function UserMenu() {
             <>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Entrar</a>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Criar conta</a>
-              <a href="#/dados" role="menuitem" onClick={() => setAberto(false)}>Backup dos dados</a>
+              <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
             </>
           )}
         </div>
