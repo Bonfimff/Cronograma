@@ -7,6 +7,8 @@
  * repete a lista quantas vezes o usuário pediu.
  */
 
+import { prepararFala } from './vozes';
+
 export interface Fala {
   texto: string;
   idioma: 'en' | 'pt';
@@ -26,7 +28,7 @@ export interface OpcoesVoz {
 
 export const OPCOES_PADRAO: OpcoesVoz = { traducao: true, velocidade: 1, pausa: 0.6, vezes: 1, semParar: false };
 
-const VOZES: Record<Fala['idioma'], string> = { en: 'en-US', pt: 'pt-BR' };
+
 const OPCOES_KEY = 'ingles-hibrido:voz';
 
 export function lerOpcoes(): OpcoesVoz {
@@ -65,9 +67,9 @@ export function pararLeitura(): void {
 
 function falar(f: Fala, velocidade: number): Promise<void> {
   return new Promise((pronto) => {
-    const u = new SpeechSynthesisUtterance(f.texto);
-    u.lang = VOZES[f.idioma];
-    u.rate = Math.max(0.5, Math.min(2, velocidade * (f.idioma === 'en' ? 0.95 : 1)));
+    // a voz e o ritmo de cada língua vêm dos ajustes; aqui só entra o fator
+    // escolhido no painel de reprodução
+    const u = prepararFala(f.texto, f.idioma, velocidade);
     u.onend = () => pronto();
     u.onerror = () => pronto();
     speechSynthesis.speak(u);

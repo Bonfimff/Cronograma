@@ -9,8 +9,8 @@ import { fmtShort, today, weekdayName, weekStartOf, addDays } from '../../core/d
 import { reviewBoard } from '../../core/reviews/reviews';
 import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
-import { Bolt, Camera, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
-import { Capybara, CrowRaincoat, Philosopher } from '../components/Cutouts';
+import { Bolt, Camera, Notebook, Praise, Sparkle, Swash } from '../components/Doodles';
+import { Capybara } from '../components/Cutouts';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -44,13 +44,8 @@ export function Today() {
   return (
     <>
       <section className="hero">
-        <div className="hero-row">
-          <div>
-            <p className="eyebrow">{weekdayName(d)} · {fmtShort(d)}</p>
-            <h1>{plan?.theme || 'Hoje'}</h1>
-          </div>
-          <Philosopher className="cut-hero" width="104" />
-        </div>
+        <p className="eyebrow">{weekdayName(d)} · {fmtShort(d)}</p>
+        <h1>{plan?.theme || 'Hoje'}</h1>
         {plan?.objective && <p className="lead">{plan.objective}</p>}
         <blockquote className="chalk">
           “{en}”
@@ -107,18 +102,6 @@ export function Today() {
         {upcoming.length ? upcoming.map((s) => <SessionRow key={s.id} s={s} showDate />) : <Empty>Nenhuma sessão nos próximos 7 dias.</Empty>}
       </section>
 
-      <section className="actions left">
-        <a className="ghost small" href="#/imprimir">Imprimir folhas</a>
-        <a className="ghost small" href="#/dados">Backup dos dados</a>
-        <a className="ghost small" href="#/conta">Conta</a>
-        <a className="ghost small" href="#/jogos">Jogar</a>
-      </section>
-
-      <footer className="page-foot">
-        <span className="foot-line">Inglês no seu ritmo.</span>
-        <Plane className="doodle mark" width="40" />
-        <CrowRaincoat className="cut-foot" width="76" />
-      </footer>
     </>
   );
 }

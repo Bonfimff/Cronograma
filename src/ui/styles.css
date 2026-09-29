@@ -1664,3 +1664,9 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .verbete .lib-title { gap: 6px; }
 .verbete .lib-title .lib-voz { margin-left: 0; }
 .verbete .lib-title .lib-voz:first-of-type { margin-left: 10px; }
+
+/* linhas de ajuste: rótulo de um lado, controle do outro */
+.form-linha { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 14px; font-size: .92rem; color: var(--ink-2); font-weight: 600; }
+.form-linha.coluna { flex-direction: column; align-items: stretch; gap: 6px; }
+.form-linha select { flex: 1; max-width: 62%; }
+.form-linha input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 0; border: 0; background: none; padding: 0; }

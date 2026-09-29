@@ -62,6 +62,9 @@ export function UserMenu() {
               <p className="usuario-email">{estado.email}</p>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
+              <a href="#/ajustes" role="menuitem" onClick={() => setAberto(false)}>Ajustes</a>
+              <a href="#/imprimir" role="menuitem" onClick={() => setAberto(false)}>Imprimir folhas</a>
+              <a href="#/dados" role="menuitem" onClick={() => setAberto(false)}>Backup dos dados</a>
               <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
               <button
                 role="menuitem"
@@ -76,6 +79,9 @@ export function UserMenu() {
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Entrar</a>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Criar conta</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
+              <a href="#/ajustes" role="menuitem" onClick={() => setAberto(false)}>Ajustes</a>
+              <a href="#/imprimir" role="menuitem" onClick={() => setAberto(false)}>Imprimir folhas</a>
+              <a href="#/dados" role="menuitem" onClick={() => setAberto(false)}>Backup dos dados</a>
               <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
             </>
           )}
