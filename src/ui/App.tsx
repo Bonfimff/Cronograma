@@ -16,6 +16,7 @@ import { WordTetris } from './pages/games/WordTetris';
 import { Flashcards } from './pages/games/Flashcards';
 import { WordMatch } from './pages/games/WordMatch';
 import { Crossword } from './pages/games/Crossword';
+import { UserMenu } from './components/UserMenu';
 import { DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
 
 const NAV = [
@@ -79,6 +80,7 @@ export function App() {
             </a>
           ))}
         </nav>
+        <UserMenu />
       </header>
       <main className="main">{page}</main>
     </div>

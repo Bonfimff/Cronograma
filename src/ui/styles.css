@@ -1220,3 +1220,29 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   margin: 0; padding: 10px 12px; border-radius: 10px; font-size: .9rem;
   background: rgba(240, 179, 172, .14); border: 1px solid rgba(240, 179, 172, .5); color: #f0b3ac;
 }
+
+/* ---------- botão da conta, no alto à direita ---------- */
+.usuario { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 12px; z-index: 20; }
+.usuario-bt {
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--rule); background: rgba(13, 13, 13, .72); color: var(--ink-2);
+  backdrop-filter: blur(6px); font-weight: 700; font-size: .95rem;
+}
+.usuario-bt.dentro { border-color: var(--accent); color: var(--accent); }
+.usuario-bt:hover { color: var(--ink); }
+.usuario-menu {
+  position: absolute; top: 48px; right: 0; min-width: 208px; padding: 6px;
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .55); display: flex; flex-direction: column;
+}
+.usuario-menu a, .usuario-menu button {
+  text-align: left; text-decoration: none; color: var(--ink); font: inherit; font-size: .92rem;
+  padding: 10px 12px; border: 0; border-radius: 10px; background: none; min-height: 42px;
+}
+.usuario-menu a:hover, .usuario-menu button:hover { background: var(--paper-3); }
+.usuario-email {
+  margin: 4px 12px 6px; padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+  font-size: .8rem; color: var(--ink-3); overflow-wrap: anywhere;
+}
+.usuario-sair { color: var(--bad) !important; font-weight: 600; }
+@media print { .usuario { display: none; } }
