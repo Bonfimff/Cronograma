@@ -124,6 +124,10 @@ function pendentes(locais: SyncRecord[], visto: Record<string, string>): SyncRec
 
 let rodando: Promise<ResultadoSync> | null = null;
 
+/** Verdadeiro enquanto a sincronização mexe nos dados, para quem ouve o store
+ * não confundir isso com uma alteração do usuário. */
+export const sincronizando = () => rodando !== null;
+
 /**
  * Traz o que mudou no servidor e manda o que este aparelho tem.
  *
