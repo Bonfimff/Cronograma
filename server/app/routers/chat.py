@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..db import db_session
 from ..deps import current_user
+from ..idioma import parece_portugues
 from ..marcacao import limpar, marcar
 from ..models import User
 from ..schemas import ChatIn, ChatOut
@@ -33,33 +34,62 @@ router = APIRouter(prefix="/chat", tags=["conversa"])
 
 FILA = asyncio.Lock()
 
-AMIGO = """Você é um amigo brasileiro conversando por mensagens. Converse em
-português, de forma leve e curta: no máximo três frases, e termine com uma
-pergunta para o assunto continuar.
+# A instrução vai em inglês de propósito: um modelo pequeno obedece melhor a
+# comandos em inglês, mesmo quando o que se pede é uma resposta em português.
+AMIGO = """You are a Brazilian friend chatting by text message.
 
-No meio da conversa, troque por inglês as palavras da lista abaixo, mas só
-quando couberem com naturalidade na frase, do jeito que a gente fala ("Hi, bom
-dia!", "preciso de um break"). Se nenhuma couber, converse sem nenhuma palavra
-em inglês: é melhor assim do que enfiar palavra à força. Nunca escreva a
-tradução ao lado, nunca explique a palavra e nunca dê aula.
+RULE 1, above everything else: write every reply in Brazilian Portuguese. Even
+when the other person writes in English, you answer in Portuguese.
 
-Não corrija o português nem o inglês de quem fala com você. Se não entender
-alguma coisa, pergunte o que a pessoa quis dizer, como qualquer amigo faria."""
+RULE 2: keep it short. Two or three sentences, like a text message, ending with
+one question.
+
+RULE 3: never teach, never correct the other person, never explain a word.
+
+RULE 4: never repeat a question you already asked in this conversation."""
+
+# Uma palavra por vez, e opcional. Testado contra o modelo: com uma lista, ele
+# trata as palavras como tarefa e deforma a frase ("Workou bastante", "(work)
+# break(res)?"); com uma só, oferecida como possibilidade, sai natural
+# ("Preciso de um break agora mesmo").
+OFERTA = """
+
+There is one English word you MAY use in this reply: "{en}" ({pt}). Use it only
+if it falls naturally into your Portuguese sentence, the way Brazilians really
+talk ("preciso de um break", "foi um perrengue no work"). If it does not fit,
+do not use it at all: most replies carry no English, and that is correct. Never
+bend a Portuguese word into English, never write the word by itself, never put
+it in parentheses."""
+
+SEM_OFERTA = """
+
+Write in Portuguese only, with no English words."""
+
+INSISTIR = """
+
+Your previous reply was in English and was rejected. Write in Portuguese."""
 
 FORA_DO_AR = HTTPException(
     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
     detail="O modelo está fora do ar agora. Tente de novo mais tarde.",
 )
 
-# quantas palavras do vocabulário vão na instrução (as mais urgentes)
-NA_INSTRUCAO = 12
+
+def _escolher(palavras: list[Palavra], conversa: list[dict]) -> Palavra | None:
+    """
+    A palavra da vez: a mais urgente que ainda não apareceu há pouco. Repetir a
+    mesma palavra em respostas seguidas cansa e não ensina.
+    """
+    recente = " ".join(m["content"] for m in conversa[-6:]).lower()
+    for p in palavras:
+        if p.en.lower() not in recente:
+            return p
+    return None
 
 
-def _instrucao(palavras: list[Palavra]) -> str:
-    if not palavras:
-        return AMIGO + "\n\nA pessoa ainda não estudou nenhuma palavra: converse só em português."
-    lista = ", ".join(f"{p.en} ({p.pt})" for p in palavras[:NA_INSTRUCAO])
-    return f"{AMIGO}\n\nPalavras disponíveis hoje: {lista}."
+def _instrucao(palavra: Palavra | None, insistir: bool = False) -> str:
+    corpo = AMIGO + (OFERTA.format(en=palavra.en, pt=palavra.pt) if palavra else SEM_OFERTA)
+    return corpo + INSISTIR if insistir else corpo
 
 
 def _pedir(mensagens: list[dict], limite: int) -> str:
@@ -70,7 +100,12 @@ def _pedir(mensagens: list[dict], limite: int) -> str:
             "model": cfg.ollama_model,
             "messages": mensagens,
             "stream": False,
-            "options": {"num_predict": limite},
+            "options": {
+                "num_predict": limite,
+                # castiga a repetição: o modelo estava refazendo a mesma pergunta
+                "repeat_penalty": 1.25,
+                "temperature": 0.85,
+            },
         }
     ).encode()
     req = urllib.request.Request(
@@ -90,13 +125,15 @@ async def conversar(
     db: Session = Depends(db_session),
 ) -> ChatOut:
     vocabulario = carregar(db, user)
-    mensagens = [{"role": "system", "content": _instrucao(vocabulario)}]
     # o histórico volta sem as marcas: elas são enfeite nosso, o modelo não precisa vê-las
-    mensagens += [{"role": m.role, "content": limpar(m.content)} for m in entrada.messages]
+    conversa = [{"role": m.role, "content": limpar(m.content)} for m in entrada.messages]
 
-    async with FILA:
+    palavra = _escolher(vocabulario, conversa)
+
+    async def gerar(insistir: bool) -> str:
+        mensagens = [{"role": "system", "content": _instrucao(palavra, insistir)}] + conversa
         try:
-            texto = await asyncio.to_thread(_pedir, mensagens, entrada.limit)
+            return await asyncio.to_thread(_pedir, mensagens, entrada.limit)
         except (urllib.error.URLError, TimeoutError, OSError):
             raise FORA_DO_AR from None
         except json.JSONDecodeError:
@@ -105,8 +142,19 @@ async def conversar(
                 detail="O modelo respondeu de um jeito que não entendi.",
             ) from None
 
+    async with FILA:
+        texto = await gerar(False)
+        # escapou para o inglês: uma segunda chance, dizendo isso na cara dele
+        if texto and not parece_portugues(texto):
+            texto = await gerar(True) or texto
+
     if not texto:
         raise FORA_DO_AR
+
+    # se mesmo assim veio em inglês, entregamos sem marcar: marcar palavra dentro
+    # de uma frase inglesa não ensina nada, só suja a tela
+    if not parece_portugues(texto):
+        return ChatOut(reply=limpar(texto), glossary=[])
 
     # a marcação é nossa, não do modelo: comparamos com o vocabulário do banco
     marcado, glossario = marcar(texto, vocabulario)

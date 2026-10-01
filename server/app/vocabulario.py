@@ -23,6 +23,28 @@ from .models import Record, User
 # eventos que dizem "esta palavra escorregou"
 TROPECOS = {"review_needed", "reinforce_needed"}
 
+# Palavras que não cabem soltas numa frase em português. "Preciso de um break"
+# funciona; "Como está o your trabalho?" não funciona, e foi exatamente o que o
+# modelo tentou fazer quando elas entraram na lista. Elas continuam no
+# vocabulário e no estudo: só não são oferecidas para a conversa.
+TIPOS_DE_FUNCAO = {"question word", "pronoun", "preposition", "article",
+                   "auxiliary", "conjunction", "determiner"}
+FUNCAO = {
+    "a", "an", "the", "i", "you", "he", "she", "it", "we", "they", "me", "him",
+    "her", "us", "them", "my", "your", "his", "its", "our", "their", "this",
+    "that", "these", "those", "am", "is", "are", "was", "were", "be", "been",
+    "do", "does", "did", "have", "has", "had", "will", "would", "can", "could",
+    "should", "may", "might", "must", "of", "to", "in", "on", "at", "for",
+    "with", "from", "by", "as", "and", "or", "but", "if", "than", "then",
+    "how", "what", "when", "where", "who", "why", "which", "not", "no", "yes",
+    "so", "very", "too", "there", "here",
+}
+
+
+def _cabe_na_conversa(en: str, tipo: str) -> bool:
+    """A palavra pode aparecer sozinha dentro de uma frase em português?"""
+    return en.lower() not in FUNCAO and tipo.lower() not in TIPOS_DE_FUNCAO
+
 
 @dataclass(frozen=True)
 class Palavra:
@@ -99,6 +121,8 @@ def carregar(db: Session, user: User, limite: int = 60) -> list[Palavra]:
         pt = _traducao(dados)
         if not en or not pt:
             continue  # sem tradução não dá para mostrar o balão
+        if not _cabe_na_conversa(en, str(dados.get("type") or "")):
+            continue
         ref = "word:" + linha.record_id.split(":", 1)[1]
         peso = min(_dias(visto.get(ref)), 365) + (500 if ref in tropecou else 0)
         palavras.append(Palavra(id=linha.record_id, en=en, pt=pt, peso=float(peso)))

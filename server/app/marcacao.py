@@ -30,11 +30,16 @@ def _chave(palavra: str) -> str:
     return "".join(c for c in sem_acento if unicodedata.category(c) != "Mn").lower()
 
 
-def marcar(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
+# quantas marcas cabem numa resposta. Mais do que isso vira confete: a conversa
+# some atrás do destaque e nenhuma palavra recebe atenção de verdade.
+MAXIMO = 3
+
+
+def marcar(texto: str, vocabulario: list[Palavra], maximo: int = MAXIMO) -> tuple[str, list[dict]]:
     """
     Devolve o texto com as palavras do vocabulário marcadas e o glossário com a
     tradução de cada uma. Expressões de várias palavras vêm primeiro, para
-    "take off" não virar "take" solto.
+    "take off" não virar "take" solto, e só as primeiras marcas ficam.
     """
     cru = limpar(texto)
     if not cru or not vocabulario:
@@ -63,6 +68,17 @@ def marcar(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
         return cru, []
 
     pedacos.sort()
+    # a mesma palavra marcada três vezes na frase não ajuda: fica a primeira
+    vistas: set[str] = set()
+    unicos: list[tuple[int, int, str]] = []
+    for inicio, fim, achado in pedacos:
+        chave = _chave(achado)
+        if chave in vistas:
+            continue
+        vistas.add(chave)
+        unicos.append((inicio, fim, achado))
+    pedacos = unicos[:maximo]
+    encontradas = {k: v for k, v in encontradas.items() if k in {_chave(p[2]) for p in pedacos}}
     saida: list[str] = []
     fim_anterior = 0
     for inicio, fim, achado in pedacos:
