@@ -22,7 +22,14 @@ export interface ChatMessage {
   content: string;
 }
 
-export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game';
+/** Uma palavra marcada na resposta: o que mostrar no balão ao tocar nela. */
+export interface GlossaryItem {
+  en: string;
+  pt: string;
+  id: string;
+}
+
+export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat';
 
 export interface SyncRecord {
   kind: SyncKind;
@@ -140,7 +147,7 @@ export class Api {
   }
 
   /** Conversa com o modelo. O histórico vai inteiro: ele não guarda memória. */
-  chat(token: string, messages: ChatMessage[], limit?: number): Promise<{ reply: string }> {
+  chat(token: string, messages: ChatMessage[], limit?: number): Promise<{ reply: string; glossary: GlossaryItem[] }> {
     return this.call('/chat', { method: 'POST', body: JSON.stringify({ messages, ...(limit ? { limit } : {}) }) }, token);
   }
 

@@ -1686,7 +1686,7 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .conversa-inicio { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .conversa-sugestao {
   background: none; border: 1px dashed rgba(var(--accent-rgb), .55);
-  color: var(--tinta); border-radius: 14px; padding: 7px 12px;
+  color: var(--ink); border-radius: 14px; padding: 7px 12px;
   font: inherit; font-size: .92rem; cursor: pointer; text-align: left;
 }
 .conversa-sugestao:hover { border-style: solid; background: rgba(var(--accent-rgb), .1); }
@@ -1701,8 +1701,8 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   border: 1px solid rgba(var(--accent-rgb), .4); border-bottom-right-radius: 5px;
 }
 .conversa-fala.assistant {
-  align-self: flex-start; background: var(--campo, rgba(255, 255, 255, .05));
-  border: 1px solid var(--borda, rgba(255, 255, 255, .12)); border-bottom-left-radius: 5px;
+  align-self: flex-start; background: var(--paper-2);
+  border: 1px solid var(--rule); border-bottom-left-radius: 5px;
 }
 
 .conversa-ouvir {
@@ -1725,9 +1725,9 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .conversa-escrever textarea {
   flex: 1; resize: none; min-height: 44px; max-height: 160px;
   padding: 11px 14px; border-radius: 14px;
-  background: var(--campo, rgba(255, 255, 255, .05));
-  border: 1px solid var(--borda, rgba(255, 255, 255, .14));
-  color: var(--tinta); font: inherit; line-height: 1.4;
+  background: var(--campo);
+  border: 1px solid var(--rule);
+  color: var(--ink); font: inherit; line-height: 1.4;
 }
 .conversa-escrever textarea:focus { outline: none; border-color: rgba(var(--accent-rgb), .7); }
 .conversa-limpar { margin: 0; text-align: center; }
@@ -1736,3 +1736,29 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   .conversa-fala { max-width: 92%; }
   .conversa-escrever textarea { min-height: 42px; }
 }
+
+/* PALAVRA VIVA — a palavra em inglês no meio da conversa em português.
+   Sublinhado pontilhado para convidar ao toque sem gritar; o balão aparece
+   acima e some ao tocar em qualquer outro lugar. */
+.viva { position: relative; display: inline-block; }
+.viva > button {
+  background: none; border: 0; padding: 0; font: inherit; color: var(--accent);
+  cursor: pointer; border-bottom: 2px dotted currentColor; line-height: 1.25;
+}
+.viva > button:hover { background: rgba(var(--accent-rgb), .14); }
+
+.viva-balao {
+  position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+  z-index: 5; display: flex; flex-direction: column; gap: 3px; align-items: center;
+  white-space: nowrap; padding: 7px 11px; border-radius: 11px;
+  background: var(--paper-3); color: var(--ink);
+  border: 1px solid rgba(var(--accent-rgb), .5);
+  box-shadow: 0 6px 18px var(--sombra); font-size: .88rem;
+}
+.viva-balao::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: rgba(var(--accent-rgb), .5);
+}
+.viva-balao a { font-size: .78rem; opacity: .85; }
+
+.conversa-limpar { display: flex; gap: 16px; justify-content: center; }

@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from .models import KINDS
 
-Kind = Literal["week", "session", "worksheet", "history", "sheet", "content", "game"]
+Kind = Literal["week", "session", "worksheet", "history", "sheet", "content", "game", "chat"]
 
 MIN_PASSWORD = 8
 
@@ -94,5 +94,15 @@ class ChatIn(BaseModel):
     limit: int = Field(default=200, ge=16, le=600, description="tamanho máximo da resposta")
 
 
+class GlossaryItem(BaseModel):
+    """Uma palavra marcada na resposta, com a tradução vinda da ficha do usuário."""
+
+    en: str
+    pt: str
+    id: str
+
+
 class ChatOut(BaseModel):
+    # o texto vem com as palavras em inglês entre [[colchetes duplos]]
     reply: str
+    glossary: list[GlossaryItem] = Field(default_factory=list)

@@ -218,6 +218,16 @@ export interface HistoryEntry {
   sessionId: string;
 }
 
+/** Uma fala da conversa com o amigo de treino. */
+export interface ChatTurn {
+  id: string;
+  role: 'user' | 'assistant';
+  /** o texto como veio, com as palavras em inglês entre [[colchetes duplos]] */
+  content: string;
+  at: string;
+  glossary?: { en: string; pt: string; id: string }[];
+}
+
 export interface UserData {
   version: 1;
   counter: Record<string, number>; // por ano
@@ -229,6 +239,8 @@ export interface UserData {
   content?: Partial<ContentBundle>;
   /** Folhas criadas pelo usuário na Biblioteca: listas livres de inglês → português. */
   sheets?: LibrarySheet[];
+  /** A conversa com o amigo de treino, em ordem de tempo. */
+  chat?: ChatTurn[];
 }
 
 export interface SheetItem {
