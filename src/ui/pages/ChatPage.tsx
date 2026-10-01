@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ApiError, api, type GlossaryItem } from '../../core/api/client';
 import { session } from '../../core/api/session';
 import { acrescentar, apagarConversa, lerConversa, paraOModelo } from '../../core/chat/conversa';
-import { recortar, semMarcas } from '../../core/chat/marcas';
+import { recortar } from '../../core/chat/marcas';
+import { lerFala, pararLeitura } from '../../core/chat/leitura';
 import { useData } from '../hooks';
 import { prepararFala } from '../../core/lessons/vozes';
 import type { ChatTurn } from '../../core/types';
@@ -57,6 +58,12 @@ function Fala({ turno }: { turno: ChatTurn }) {
           return <Palavra key={i} texto={p.texto} pt={g?.pt} ficha={g?.id} />;
         })}
       </p>
+      <button className="conversa-ouvir" onClick={() => lerFala(turno.content)} aria-label="Ouvir a mensagem">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M4 9.5h3.2L12 5.5v13L7.2 14.5H4z" strokeLinejoin="round" />
+          <path d="M15.6 9.2a4 4 0 0 1 0 5.6" strokeLinecap="round" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -117,6 +124,14 @@ export function ChatPage() {
       <section className="hero conversa-topo">
         <p className="eyebrow">Conversa</p>
         <h1>Amigo de treino</h1>
+        {falas.length > 0 && (
+          <button
+            className="conversa-apagar"
+            onClick={() => confirm('Apagar todas as mensagens? Elas somem também nos outros aparelhos.') && (pararLeitura(), apagarConversa())}
+          >
+            Limpar histórico
+          </button>
+        )}
       </section>
 
       <div className="conversa-fluxo">
@@ -147,19 +162,6 @@ export function ChatPage() {
         <button className="primary" type="submit" disabled={pensando || !texto.trim()}>Enviar</button>
       </form>
 
-      {falas.length > 0 && (
-        <p className="conversa-limpar">
-          <button
-            className="link"
-            onClick={() => confirm('Apagar o histórico da conversa? Ele some também nos outros aparelhos.') && apagarConversa()}
-          >
-            Apagar histórico
-          </button>
-          <button className="link" onClick={() => falar(semMarcas(falas[falas.length - 1].content))}>
-            Ouvir a última
-          </button>
-        </p>
-      )}
     </div>
   );
 }

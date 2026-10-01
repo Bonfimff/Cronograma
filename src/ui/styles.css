@@ -1706,9 +1706,11 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 
 .conversa-ouvir {
-  margin-top: 6px; background: none; border: 0; padding: 0;
-  color: var(--accent); cursor: pointer; opacity: .8;
+  margin-top: 5px; background: none; border: 0; padding: 0;
+  color: var(--ink-2); cursor: pointer;
 }
+.conversa-ouvir:hover { color: var(--accent); }
+.conversa-fala.user .conversa-ouvir { float: right; }
 .conversa-ouvir:hover { opacity: 1; }
 
 /* três pontinhos enquanto o modelo pensa */
@@ -1730,7 +1732,6 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   color: var(--ink); font: inherit; line-height: 1.4;
 }
 .conversa-escrever textarea:focus { outline: none; border-color: rgba(var(--accent-rgb), .7); }
-.conversa-limpar { margin: 0; text-align: center; }
 
 @media (max-width: 640px) {
   .conversa-fala { max-width: 92%; }
@@ -1761,4 +1762,11 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .viva-balao a { font-size: .78rem; opacity: .85; }
 
-.conversa-limpar { display: flex; gap: 16px; justify-content: center; }
+.conversa-topo { position: relative; }
+.conversa-apagar {
+  position: absolute; top: 2px; right: 0;
+  background: none; border: 0; padding: 4px 2px; cursor: pointer;
+  color: var(--ink-2); font: inherit; font-size: .82rem;
+  border-bottom: 1px dotted currentColor;
+}
+.conversa-apagar:hover { color: var(--accent); }
