@@ -80,3 +80,19 @@ class PushOut(BaseModel):
 class PullOut(BaseModel):
     revision: int
     items: list[RecordOut]
+
+
+class ChatMessage(BaseModel):
+    """Uma fala da conversa. O modelo não guarda memória: o histórico vem junto."""
+
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class ChatIn(BaseModel):
+    messages: list[ChatMessage] = Field(min_length=1, max_length=40)
+    limit: int = Field(default=200, ge=16, le=600, description="tamanho máximo da resposta")
+
+
+class ChatOut(BaseModel):
+    reply: str

@@ -61,6 +61,7 @@ export function UserMenu() {
             <>
               <p className="usuario-email">{estado.email}</p>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
+              <a href="#/conversa" role="menuitem" onClick={() => setAberto(false)}>Conversa</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
               <a href="#/ajustes" role="menuitem" onClick={() => setAberto(false)}>Ajustes</a>
               <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>

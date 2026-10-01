@@ -17,6 +17,11 @@ export interface Account {
   records: number;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game';
 
 export interface SyncRecord {
@@ -132,6 +137,16 @@ export class Api {
     device?: string,
   ): Promise<{ revision: number; saved: number; ignored: number; items: SyncRecord[] }> {
     return this.call('/sync/push', { method: 'POST', body: JSON.stringify({ since, items, device }) }, token);
+  }
+
+  /** Conversa com o modelo. O histórico vai inteiro: ele não guarda memória. */
+  chat(token: string, messages: ChatMessage[], limit?: number): Promise<{ reply: string }> {
+    return this.call('/chat', { method: 'POST', body: JSON.stringify({ messages, ...(limit ? { limit } : {}) }) }, token);
+  }
+
+  /** O modelo está alcançável agora? */
+  chatSaude(token: string): Promise<{ ok: boolean }> {
+    return this.call('/chat/saude', {}, token);
   }
 }
 
