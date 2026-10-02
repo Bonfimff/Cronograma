@@ -1,4 +1,4 @@
-import { IconCards, IconGrid, IconLink, IconTetris, Praise } from '../components/Doodles';
+import { IconCards, IconGrid, IconLink, IconMic, IconTetris, Praise } from '../components/Doodles';
 import { CatTeacher, Raccoon } from '../components/Cutouts';
 
 /** Lista de jogos: ícone e nome, sem mais nada. A explicação aparece dentro de cada jogo. */
@@ -7,7 +7,7 @@ const JOGOS = [
   { to: 'palavras', nome: 'Ligar palavras', Icon: IconLink },
   { to: 'cruzadas', nome: 'Cruzadas', Icon: IconGrid },
   { to: 'flashcards', nome: 'Flashcards', Icon: IconCards },
-  { to: 'fala', nome: 'Fala-Rápida', Icon: IconLink },
+  { to: 'fala', nome: 'Fala-Rápida', Icon: IconMic },
 ];
 
 export function GamesPage() {

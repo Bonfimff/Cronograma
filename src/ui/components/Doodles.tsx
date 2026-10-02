@@ -201,6 +201,19 @@ export function IconLink({ className, width }: P) {
   );
 }
 
+/** Microfone com ondas de voz. */
+export function IconMic({ className, width }: P) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
+      <g {...stroke}>
+        <rect x="12" y="3" width="8" height="15" rx="4" />
+        <path d="M7 15a9 9 0 0 0 18 0" />
+        <path d="M16 24v4M12 28h8" />
+        <path d="M2.5 11v5M29.5 11v5" strokeWidth={1.6} opacity=".6" />
+      </g>
+    </svg>
+  );
+}
 /** Grade com uma casa marcada. */
 export function IconGrid({ className, width }: P) {
   return (

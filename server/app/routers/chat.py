@@ -17,11 +17,14 @@ import asyncio
 import json
 import urllib.error
 import urllib.request
+from functools import partial
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from ..chat_slot import responder
 from ..config import settings
+from ..conhecimento import contexto_do_app, pergunta_sobre_o_app, pergunta_sobre_vocabulario, resposta_direta
 from ..db import db_session
 from ..deps import current_user
 from ..idioma import parece_portugues
@@ -118,16 +121,62 @@ def _pedir(mensagens: list[dict], limite: int) -> str:
     return (resposta.get("message") or {}).get("content", "").strip()
 
 
+async def _conversar_slot(
+    limite: int, conversa: list[dict], vocabulario: list[Palavra], sobre_o_app: str
+) -> ChatOut:
+    """
+    O modelo escreve em português e marca as palavras que ficariam naturais em inglês; o
+    servidor faz a troca (ver chat_slot.py). A conferência de idioma, de lista recitada e de
+    pergunta repetida fica lá dentro.
+    """
+    cfg = settings()
+    async with FILA:
+        try:
+            resposta = await asyncio.to_thread(
+                partial(
+                    responder, cfg.ollama_url, cfg.ollama_model, conversa, vocabulario, limite, cfg.ollama_timeout,
+                    sobre_o_app=sobre_o_app, minimo_trocas=cfg.chat_trocas_minimo, maximo_trocas=cfg.chat_trocas_maximo,
+                )
+            )
+            texto = resposta["texto"]
+        except (urllib.error.URLError, TimeoutError, OSError):
+            raise FORA_DO_AR from None
+        except (json.JSONDecodeError, KeyError):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="O modelo respondeu de um jeito que não entendi.",
+            ) from None
+
+    if not texto:
+        raise FORA_DO_AR
+    # se mesmo depois de pedir de novo veio em inglês, entrega sem marcar (como no modo livre)
+    if not parece_portugues(texto):
+        return ChatOut(reply=limpar(texto), glossary=[])
+    marcado, glossario = marcar(texto, vocabulario)
+    return ChatOut(reply=marcado, glossary=glossario)
+
+
 @router.post("", response_model=ChatOut)
 async def conversar(
     entrada: ChatIn,
     user: User = Depends(current_user),
     db: Session = Depends(db_session),
 ) -> ChatOut:
-    vocabulario = carregar(db, user)
+    vocabulario = carregar(db, user, 400)  # o vocabulário todo: a troca consulta todas as fichas
     # o histórico volta sem as marcas: elas são enfeite nosso, o modelo não precisa vê-las
     conversa = [{"role": m.role, "content": limpar(m.content)} for m in entrada.messages]
 
+    if settings().chat_modo == "slot":
+        # perguntas sobre o app, a conta e os dados da pessoa têm resposta pronta: sem modelo, sem erro
+        direta = resposta_direta(db, user, conversa)
+        if direta:
+            marcado, glossario = marcar(direta, vocabulario)
+            return ChatOut(reply=marcado, glossary=glossario)
+        # o guia do app só entra quando a pessoa pergunta do app: em toda conversa, ele atrapalha
+        sobre = contexto_do_app(db, user, pergunta_sobre_vocabulario(conversa)) if pergunta_sobre_o_app(conversa) else ""
+        return await _conversar_slot(entrada.limit, conversa, vocabulario, sobre)
+
+    # modo "livre": o modelo escreve o inglês sozinho, uma palavra por vez
     palavra = _escolher(vocabulario, conversa)
 
     async def gerar(insistir: bool) -> str:

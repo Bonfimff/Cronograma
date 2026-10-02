@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3b-opt"
     ollama_timeout: int = 300
+    # como o chat pede o inglês ao modelo: "slot" (o modelo marca a palavra e o servidor troca)
+    # ou "livre" (o modelo escreve o inglês sozinho, como antes). Voltar é só mudar esta variável.
+    chat_modo: str = "slot"
+    # quantas palavras do vocabulário, no mínimo, cada resposta do modo "slot" troca por inglês.
+    # 0 = só as que o modelo marcar; 1 = se ele não marcar nenhuma, o servidor troca uma palavra do dia
+    # que já esteja no texto (pedido de quem usa: "sempre use as palavras do meu vocabulário").
+    chat_trocas_minimo: int = 1
+    # teto de trocas por resposta, somando as marcadas pelo modelo e as achadas no vocabulário todo; 0 desliga
+    chat_trocas_maximo: int = 3
 
     @property
     def origins(self) -> list[str]:
