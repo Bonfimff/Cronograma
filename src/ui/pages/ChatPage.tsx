@@ -157,6 +157,7 @@ export function ChatPage() {
             className="conversa-apagar"
             onClick={() => confirm('Apagar todas as mensagens? Elas somem também nos outros aparelhos.') && (pararLeitura(), apagarConversa())}
           >
+            <IconeKit nome="lixeira" width={18} />
             Limpar histórico
           </button>
         )}
@@ -198,7 +199,7 @@ export function ChatPage() {
             <IconeKit nome="microfone" width={28} />
           </button>
         )}
-        <button className="primary" type="submit" disabled={pensando || !texto.trim()}>Enviar</button>
+        <button className="primary" type="submit" disabled={pensando || !texto.trim()}><IconeKit nome="enviar" width={22} />Enviar</button>
       </form>
 
     </div>

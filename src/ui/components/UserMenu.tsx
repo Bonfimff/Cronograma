@@ -65,13 +65,13 @@ export function UserMenu() {
               <a href="#/conversa" role="menuitem" onClick={() => setAberto(false)}>Conversa</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
               <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
-              <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
+              <button role="menuitem" className="com-icone" onClick={trocarTema}><IconeKit nome={tema === 'claro' ? 'tema-escuro' : 'tema-claro'} width={20} />{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
               <button
                 role="menuitem"
                 className="usuario-sair"
                 onClick={() => { setAberto(false); session.signOut(); }}
               >
-                Sair da conta
+                <IconeKit nome="sair" width={20} />Sair da conta
               </button>
             </>
           ) : (
@@ -80,7 +80,7 @@ export function UserMenu() {
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Criar conta</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
               <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
-              <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
+              <button role="menuitem" className="com-icone" onClick={trocarTema}><IconeKit nome={tema === 'claro' ? 'tema-escuro' : 'tema-claro'} width={20} />{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
             </>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { IconeKit } from '../components/Doodles';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { api, ApiError, type Account } from '../../core/api/client';
 import { session } from '../../core/api/session';
@@ -120,7 +121,7 @@ export function AccountPage() {
           <button className="primary" onClick={sincronizarAgora} disabled={sincronizando}>
             {sincronizando ? 'Sincronizando…' : 'Sincronizar agora'}
           </button>
-          <button className="ghost" onClick={() => session.signOut()}>Sair da conta</button>
+          <button className="ghost" onClick={() => session.signOut()}><IconeKit nome="sair" width={20} />Sair da conta</button>
           {api.configured && (
             <button className="ghost" onClick={sairDeTodos} disabled={ocupado}>Sair em todos os aparelhos</button>
           )}

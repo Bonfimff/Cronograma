@@ -1,3 +1,4 @@
+import { IconeKit } from '../components/Doodles';
 import { useState } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
@@ -149,7 +150,7 @@ export function SessionPage({ id }: { id: string }) {
       <section className="danger">
         <button className="link" onClick={() => {
           if (confirm(`Excluir a sessão ${s.id}?`)) { store.update((d) => deleteSession(d, s.id)); go('/semana'); }
-        }}>Excluir sessão</button>
+        }}><IconeKit nome="lixeira" width={18} />Excluir sessão</button>
       </section>
     </>
   );

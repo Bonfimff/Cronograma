@@ -215,7 +215,7 @@ function Uso({ r, u }: { r: ContentRef; u: WordUse }) {
         >
           <input value={en} onChange={(e) => setEn(e.target.value)} placeholder="Exemplo em inglês" lang="en" autoFocus />
           <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder="Tradução" />
-          <button className="primary" disabled={!en.trim()}>Anotar</button>
+          <button className="primary" disabled={!en.trim()}><IconeKit nome="adicionar" width={18} />Anotar</button>
           <button type="button" className="link" onClick={() => setNovo(false)}>cancelar</button>
         </form>
       ) : lapis ? (
@@ -296,7 +296,7 @@ function NovoUso({ r }: { r: ContentRef }) {
       <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Nome do uso (ex.: estado)" autoFocus />
       <input value={meaning} onChange={(e) => setMeaning(e.target.value)} placeholder="Em português (ex.: como está)" />
       <input value={explanation} onChange={(e) => setExplanation(e.target.value)} placeholder="Explicação curta" />
-      <button className="primary" disabled={!label.trim()}>Anotar uso</button>
+      <button className="primary" disabled={!label.trim()}><IconeKit nome="adicionar" width={18} />Anotar uso</button>
       <button type="button" className="link" onClick={() => setAberto(false)}>cancelar</button>
     </form>
   );
@@ -321,7 +321,7 @@ function NovoExemplo({ r }: { r: ContentRef }) {
     >
       <input ref={enRef} value={en} onChange={(e) => setEn(e.target.value)} placeholder="Exemplo em inglês" lang="en" />
       <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder="Tradução" />
-      <button className="primary" disabled={!en.trim()}>Anotar exemplo</button>
+      <button className="primary" disabled={!en.trim()}><IconeKit nome="adicionar" width={18} />Anotar exemplo</button>
     </form>
   );
 }

@@ -1867,3 +1867,8 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 /* respostas em lista (uma palavra por linha) mantêm as quebras */
 .conversa-fala p { white-space: pre-line; }
+
+/* botões com ícone do kit ao lado do texto */
+button.primary:has(> img[aria-hidden]), button.ghost:has(> img[aria-hidden]), button.link:has(> img[aria-hidden]),
+label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.usuario-menu .com-icone { display: flex; align-items: center; gap: 8px; }

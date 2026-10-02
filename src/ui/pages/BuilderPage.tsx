@@ -1,3 +1,4 @@
+import { IconeKit } from '../components/Doodles';
 import { useMemo, useState } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
@@ -167,7 +168,7 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
               </span>
             </label>
             <div className="actions">
-              <button className="primary" disabled={!check.ok} onClick={apply}>Importar semana</button>
+              <button className="primary" disabled={!check.ok} onClick={apply}><IconeKit nome="upload" width={20} />Importar semana</button>
             </div>
           </>
         )}

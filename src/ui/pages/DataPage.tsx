@@ -1,3 +1,4 @@
+import { IconeKit } from '../components/Doodles';
 import { useData } from '../hooks';
 import { store, emptyData } from '../../core/storage/store';
 import { makeBackup, readBackup, restoreGames } from '../../core/storage/backup';
@@ -40,9 +41,9 @@ export function DataPage() {
         </p>
       </section>
       <section className="actions left">
-        <button className="primary" onClick={exportJson}>Exportar JSON</button>
-        <label className="ghost file">Importar JSON<input type="file" accept="application/json" onChange={(e) => { importJson(e.target.files?.[0]); e.target.value = ''; }} /></label>
-        <button className="link" onClick={() => confirm('Apagar todos os dados locais?') && store.replace(emptyData())}>Apagar tudo</button>
+        <button className="primary" onClick={exportJson}><IconeKit nome="baixar" width={20} />Exportar JSON</button>
+        <label className="ghost file"><IconeKit nome="upload" width={20} />Importar JSON<input type="file" accept="application/json" onChange={(e) => { importJson(e.target.files?.[0]); e.target.value = ''; }} /></label>
+        <button className="link" onClick={() => confirm('Apagar todos os dados locais?') && store.replace(emptyData())}><IconeKit nome="lixeira" width={18} />Apagar tudo</button>
       </section>
     </>
   );

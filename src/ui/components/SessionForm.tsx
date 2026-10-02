@@ -1,3 +1,4 @@
+import { IconeKit } from './Doodles';
 import { useState } from 'react';
 import type { ContentBundle, ContentRef, Exercise, ExerciseType, ExpectedResult, SessionApp, SessionKind, SessionSheet } from '../../core/types';
 import { allRefs, content, copyBlock, getTopic, KIND_LABEL as CONTENT_KIND, parseRef, refLabel } from '../../core/content/repository';
@@ -360,7 +361,7 @@ export function SessionForm({
 
       <div className="actions">
         {onCancel && <button type="button" className="ghost" onClick={onCancel}>Cancelar</button>}
-        <button className="primary">{submitLabel}</button>
+        <button className="primary">{submitLabel === 'Salvar' && <IconeKit nome="salvar" width={20} />}{submitLabel}</button>
       </div>
     </form>
   );

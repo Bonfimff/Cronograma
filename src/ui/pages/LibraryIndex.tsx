@@ -720,7 +720,7 @@ function AnotarNaFolha({ tipo }: { tipo: 'word' | 'expression' | 'pattern' | 'gr
     <form className="lib-form" onSubmit={anotar}>
       <input ref={enRef} value={en} onChange={(e) => setEn(e.target.value)} placeholder={rotuloEn} lang={tipo === 'grammar' ? 'pt' : 'en'} />
       <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder={rotuloPt} />
-      <button className="primary" disabled={!en.trim()}>Anotar</button>
+      <button className="primary" disabled={!en.trim()}><IconeKit nome="adicionar" width={18} />Anotar</button>
     </form>
   );
 }
@@ -786,7 +786,7 @@ function CustomSheet({ id }: { id: string }) {
       >
         <input ref={enRef} value={en} onChange={(e) => setEn(e.target.value)} placeholder="Inglês" lang="en" />
         <input value={pt} onChange={(e) => setPt(e.target.value)} placeholder="Português" />
-        <button className="primary" disabled={!en.trim() || !pt.trim()}>Anotar</button>
+        <button className="primary" disabled={!en.trim() || !pt.trim()}><IconeKit nome="adicionar" width={18} />Anotar</button>
       </form>
       <button
         className="link lib-remove"
