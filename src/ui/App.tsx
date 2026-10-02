@@ -21,7 +21,7 @@ import { WordMatch } from './pages/games/WordMatch';
 import { FastSpeech } from './pages/games/FastSpeech';
 import { Crossword } from './pages/games/Crossword';
 import { UserMenu } from './components/UserMenu';
-import { DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
+import { DoodleDefs, IconChat, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
 
 const NAV = [
   { to: '', label: 'Hoje', Icon: IconHome },
@@ -29,6 +29,7 @@ const NAV = [
   { to: 'revisao', label: 'Revisão', Icon: IconReview },
   { to: 'conteudo', label: 'Conteúdo', Icon: IconContent },
   { to: 'jogos', label: 'Jogos', Icon: IconGames },
+  { to: 'conversa', label: 'Conversa', Icon: IconChat },
 ];
 
 export function App() {

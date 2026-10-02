@@ -113,7 +113,8 @@ export function SettingsPage() {
                 {emUso ? (
                   <span className="voz-uso">Em uso</span>
                 ) : (
-                  <button className="small" disabled={!!baixando} onClick={() => escolher(lingua, v.id)}>
+                  <button className="primary small voz-baixar" disabled={!!baixando} onClick={() => escolher(lingua, v.id)}>
+                    {!carregando && !baixadas.has(v.id) && <IconeKit nome="baixar" width={20} />}
                     {carregando ? `${Math.round((baixando?.fracao ?? 0) * 100)}%` : baixadas.has(v.id) ? 'Usar' : 'Baixar e usar'}
                   </button>
                 )}

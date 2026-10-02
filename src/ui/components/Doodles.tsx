@@ -237,13 +237,7 @@ export function IconGames({ className, width }: P) {
 
 /** Camerazinha, pro botão de escanear a folha. */
 export function Camera({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 26 22" className={className} width={width} aria-hidden>
-      <path d="M2.6 6.8h4.6l1.8-3.2h7.8l1.8 3.2h4.8c.6 0 1 .5 1 1v10.4c0 .6-.4 1-1 1H2.6c-.6 0-1-.4-1-1V7.8c0-.5.4-1 1-1z" {...stroke} strokeWidth={1.8} />
-      <circle cx="13" cy="12.6" r="4.2" {...stroke} strokeWidth={1.8} />
-      <circle cx="21" cy="9.4" r=".9" fill="currentColor" />
-    </svg>
-  );
+  return <IconeKit nome="camera" className={className} width={width} />;
 }
 
 /** Caderninho de espiral. */
@@ -300,4 +294,8 @@ export function KindIcon({ kind, className, width }: P & { kind: string }) {
     case 'reinforce': return <Bolt className={className} width={width} />;
     default: return <IconeKit nome="tetris" className={className} width={width} />;
   }
+}
+
+export function IconChat({ className, width }: P) {
+  return <IconeKit nome="conversa" className={className} width={width} />;
 }
