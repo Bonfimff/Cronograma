@@ -155,6 +155,16 @@ export class Api {
   chatSaude(token: string): Promise<{ ok: boolean }> {
     return this.call('/chat/saude', {}, token);
   }
-}
+
+  /** O reconhecedor de voz do servidor está alcançável agora? */
+  falaSaude(token: string): Promise<{ ok: boolean }> {
+    return this.call('/fala/saude', {}, token);
+  }
+
+  /** Reconhece um trecho de áudio (PCM float32, 16 kHz, mono) no servidor. */
+  transcrever(token: string, samples: Float32Array): Promise<{ text: string }> {
+    const body = samples.buffer.slice(samples.byteOffset, samples.byteOffset + samples.byteLength) as ArrayBuffer;
+    return this.call('/fala/transcrever', { method: 'POST', body, headers: { 'content-type': 'application/octet-stream' } }, token);
+  }}
 
 export const api = new Api({ baseUrl: import.meta.env.VITE_API_URL ?? '' });

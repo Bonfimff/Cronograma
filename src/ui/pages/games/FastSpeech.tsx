@@ -84,7 +84,7 @@ export function FastSpeech() {
     try {
       setLoadingMsg('Pedindo acesso ao microfone…');
       await mic.current.open(); // dentro do toque, senão o navegador nega
-      setLoadingMsg('Baixando o reconhecedor de voz (só na primeira vez)…');
+      setLoadingMsg('Preparando o reconhecedor de voz…');
       await prepare(setProgress);
       setLoadingMsg('Fique em silêncio um instante…');
       await mic.current.calibrate();
@@ -211,7 +211,7 @@ export function FastSpeech() {
         <section className="fs-center">
           <p className="fs-lead">A palavra aparece em português. Diga em inglês, em voz alta.</p>
           <p className="fc-tip">
-            Usa o microfone e roda no seu aparelho. Na primeira vez baixa o reconhecedor de voz (cerca de 80 MB); depois fica guardado.
+            Usa o microfone. Com conta, a voz é reconhecida no servidor, rápido em qualquer celular; sem conta, no seu aparelho, que na primeira vez baixa o reconhecedor (cerca de 80 MB).
             Pronúncia aproximada vale.
           </p>
           {error && <p className="fs-error" role="alert">{error}</p>}

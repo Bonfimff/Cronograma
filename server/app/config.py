@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     chat_trocas_minimo: int = 1
     # teto de trocas por resposta, somando as marcadas pelo modelo e as achadas no vocabulário todo; 0 desliga
     chat_trocas_maximo: int = 3
+    # reconhecimento de voz do Fala-Rápida: também no computador de casa, pelo mesmo túnel
+    whisper_url: str = "http://127.0.0.1:11435"
+    whisper_timeout: int = 20
 
     @property
     def origins(self) -> list[str]:

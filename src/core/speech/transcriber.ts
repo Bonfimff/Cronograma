@@ -1,9 +1,15 @@
 /**
- * Ponte entre o jogo e o Whisper (que mora num Worker).
+ * Ponte entre o jogo e o Whisper. Com conta, reconhece no servidor (rápido em qualquer celular);
+ * sem conta, ou se o servidor falhar, no próprio aparelho (num Worker).
  * `prepare` baixa e carrega o modelo uma vez; `transcribe` devolve o texto de um trecho de áudio.
  */
 
+import { api } from '../api/client';
+import { session } from '../api/session';
+
 let worker: Worker | undefined;
+/** O servidor reconhece? Decidido no prepare; vira false na primeira falha. */
+let remote = false;
 let ready: Promise<void> | undefined;
 let nextId = 1;
 let loadFail: ((e: Error) => void) | undefined;
@@ -29,7 +35,23 @@ function start(): Worker {
 }
 
 /** Baixa e prepara o modelo. Chamar de novo reaproveita o que já carregou. */
-export function prepare(onProgress?: (fraction: number) => void): Promise<void> {
+export async function prepare(onProgress?: (fraction: number) => void): Promise<void> {
+  if (!remote && session.signedIn && api.configured) {
+    try {
+      const r = await Promise.race([
+        session.withToken((t) => api.falaSaude(t)),
+        new Promise<{ ok: boolean }>((ok) => setTimeout(() => ok({ ok: false }), 4000)),
+      ]);
+      remote = !!r?.ok;
+    } catch {
+      remote = false;
+    }
+  }
+  if (remote) return; // nada a baixar
+  return prepareLocal(onProgress);
+}
+
+function prepareLocal(onProgress?: (fraction: number) => void): Promise<void> {
   if (onProgress) progressListeners.add(onProgress);
   ready ??= new Promise<void>((ok, fail) => {
     const w = start();
@@ -44,7 +66,14 @@ export function prepare(onProgress?: (fraction: number) => void): Promise<void> 
 }
 
 export async function transcribe(samples: Float32Array): Promise<string> {
-  await prepare();
+  if (remote) {
+    try {
+      return (await session.withToken((t) => api.transcrever(t, samples))).text;
+    } catch {
+      remote = false; // servidor caiu no meio do jogo: segue no aparelho
+    }
+  }
+  await prepareLocal();
   const id = nextId++;
   return new Promise<string>((ok, fail) => {
     pending.set(id, { ok, fail });
