@@ -14,6 +14,7 @@ export const GAME_KEYS = {
   tetrisBest: 'word-tetris-best',
   tetrisWordStats: 'word-tetris-word-stats',
   matchBestStreak: 'word-match-best-streak',
+  fastSpeechBest: 'fast-speech-best',
 } as const;
 
 export interface BackupFile extends UserData {

@@ -7,6 +7,7 @@ const JOGOS = [
   { to: 'palavras', nome: 'Ligar palavras', Icon: IconLink },
   { to: 'cruzadas', nome: 'Cruzadas', Icon: IconGrid },
   { to: 'flashcards', nome: 'Flashcards', Icon: IconCards },
+  { to: 'fala', nome: 'Fala-Rápida', Icon: IconLink },
 ];
 
 export function GamesPage() {

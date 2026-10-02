@@ -1770,3 +1770,35 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   border-bottom: 1px dotted currentColor;
 }
 .conversa-apagar:hover { color: var(--accent); }
+
+/* ---------- Desafio Fala-Rápida ---------- */
+.fs-center { text-align: center; display: grid; gap: 14px; justify-items: center; padding: 12px 0; }
+.fs-lead { font-size: 1.05rem; margin: 0; }
+.fs-error { color: #e07a7a; margin: 0; font-size: .9rem; }
+.fs-count { text-align: center; color: var(--ink-3); margin: 4px 0 10px; font-size: .85rem; }
+.fs-card {
+  background: #1f3a5c; color: #bcd9fb; border-radius: 28px; padding: 30px 18px 26px;
+  text-align: center; margin: 8px 0 14px; transition: background .2s ease, transform .2s ease;
+}
+.fs-card.good { background: #1f5c3d; color: #c9f2d9; transform: scale(1.02); }
+.fs-card.miss { background: #5c2a2f; color: #f6c9cd; }
+.fs-word { font-size: 2.6rem; line-height: 1.1; margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.fs-en { font-size: 1.4rem; margin: 8px 0 0; font-weight: 600; }
+.fs-sub { margin: 8px 0 0; font-size: 1.05rem; opacity: .9; }
+.fs-timer, .fs-bar, .fs-level { height: 6px; border-radius: 99px; background: #4a2a4c; overflow: hidden; }
+.fs-bar { width: 100%; max-width: 320px; background: var(--paper-2); }
+.fs-timer span, .fs-bar span, .fs-level span {
+  display: block; height: 100%; width: 100%; transform-origin: left; background: #5ba4f0;
+  transition: transform .2s linear;
+}
+.fs-level { height: 4px; max-width: 160px; margin: 10px auto 0; background: var(--paper-2); }
+.fs-level span { background: #79d3a0; transition: transform .05s linear; transform: scaleX(0); }
+.fs-time { text-align: center; color: var(--ink-3); margin: 8px 0 0; font-size: .9rem; }
+.fs-status { text-align: center; min-height: 1.6em; margin: 14px 0 6px; font-size: 1.05rem; color: #5ba4f0; }
+.fs-status.ok { color: #79d3a0; }
+.fs-status.bad { color: #e07a7a; }
+.fs-status.unclear, .fs-status.silence { color: #e0b46a; }
+.fs-actions { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+.fs-big { font-size: 3rem; font-weight: 700; margin: 0; }
+.fs-big small { font-size: 1.1rem; opacity: .6; font-weight: 400; }
+@media (prefers-reduced-motion: reduce) { .fs-card, .fs-timer span { transition: none; } }

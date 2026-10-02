@@ -9,4 +9,6 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 export default defineConfig(({ mode }) => ({
   base: './',
   plugins: [react(), ...(mode === 'https' ? [basicSsl()] : [])],
+  // o worker do Whisper importa módulos dinamicamente: precisa de formato ES
+  worker: { format: 'es' },
 }));

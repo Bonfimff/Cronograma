@@ -1,11 +1,12 @@
 /** Abas dos jogos (Tetris / Palavras / Flashcards). */
-export function GameTabs({ on }: { on: 'tetris' | 'palavras' | 'cruzadas' | 'flashcards' }) {
+export function GameTabs({ on }: { on: 'tetris' | 'palavras' | 'cruzadas' | 'flashcards' | 'fala' }) {
   return (
     <div className="wt-tabs">
       <a href="#/jogos/tetris" className={on === 'tetris' ? 'on' : ''}>Tetris</a>
       <a href="#/jogos/palavras" className={on === 'palavras' ? 'on' : ''}>Palavras</a>
       <a href="#/jogos/cruzadas" className={on === 'cruzadas' ? 'on' : ''}>Cruzadas</a>
       <a href="#/jogos/flashcards" className={on === 'flashcards' ? 'on' : ''}>Flashcards</a>
+      <a href="#/jogos/fala" className={on === 'fala' ? 'on' : ''}>Fala</a>
     </div>
   );
 }

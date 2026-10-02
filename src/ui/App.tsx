@@ -18,6 +18,7 @@ import { GamesPage } from './pages/GamesPage';
 import { WordTetris } from './pages/games/WordTetris';
 import { Flashcards } from './pages/games/Flashcards';
 import { WordMatch } from './pages/games/WordMatch';
+import { FastSpeech } from './pages/games/FastSpeech';
 import { Crossword } from './pages/games/Crossword';
 import { UserMenu } from './components/UserMenu';
 import { DoodleDefs, IconContent, IconGames, IconHome, IconReview, IconWeek } from './components/Doodles';
@@ -68,7 +69,7 @@ export function App() {
     case 'ajustes': page = <SettingsPage />; break;
     case 'conversa': page = <ChatPage />; break;
     case 'montar': page = <BuilderPage week={route.query.get('semana') ?? undefined} />; break;
-    case 'jogos': page = rest[0] === 'tetris' ? <WordTetris /> : rest[0] === 'flashcards' ? <Flashcards /> : rest[0] === 'palavras' ? <WordMatch /> : rest[0] === 'cruzadas' ? <Crossword /> : <GamesPage />; break;
+    case 'jogos': page = rest[0] === 'tetris' ? <WordTetris /> : rest[0] === 'flashcards' ? <Flashcards /> : rest[0] === 'palavras' ? <WordMatch /> : rest[0] === 'cruzadas' ? <Crossword /> : rest[0] === 'fala' ? <FastSpeech /> : <GamesPage />; break;
     default: page = <Today />;
   }
 
