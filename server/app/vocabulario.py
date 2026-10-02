@@ -78,10 +78,11 @@ def _dias(desde: str | None) -> int:
         return 9999
 
 
-def carregar(db: Session, user: User, limite: int = 60) -> list[Palavra]:
+def carregar(db: Session, user: User, limite: int = 60, todas: bool = False) -> list[Palavra]:
     """
     O vocabulário em ordem de prioridade: quem tropeçou primeiro, depois quem
-    está sumido há mais tempo.
+    está sumido há mais tempo. 	odas inclui as palavras de função (you, how,
+    to...), que a conversa deixa de fora mas a lista da pessoa precisa mostrar.
     """
     linhas = db.scalars(
         select(Record).where(
@@ -121,7 +122,7 @@ def carregar(db: Session, user: User, limite: int = 60) -> list[Palavra]:
         pt = _traducao(dados)
         if not en or not pt:
             continue  # sem tradução não dá para mostrar o balão
-        if not _cabe_na_conversa(en, str(dados.get("type") or "")):
+        if not todas and not _cabe_na_conversa(en, str(dados.get("type") or "")):
             continue
         ref = "word:" + linha.record_id.split(":", 1)[1]
         peso = min(_dias(visto.get(ref)), 365) + (500 if ref in tropecou else 0)

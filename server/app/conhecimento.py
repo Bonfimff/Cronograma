@@ -126,7 +126,7 @@ def _recordes(db: Session, user: User) -> list[str]:
 
 def resumo(db: Session, user: User, listar_vocabulario: bool = False) -> str:
     """Uma linha sobre a pessoa: o que ela estuda e como vai. Vazia se não houver nada a dizer."""
-    palavras = carregar(db, user, limite=100000)
+    palavras = carregar(db, user, limite=100000, todas=True)
     partes: list[str] = []
     if palavras:
         # carregar() soma 500 ao peso de quem tropeçou; sem tropeço o peso nunca passa de 365
@@ -205,11 +205,13 @@ def resposta_direta(db: Session, user: User, conversa: list[dict]) -> str | None
             partes.append("Sessões de hoje: " + "; ".join(sessoes) + ".")
         return " ".join(partes)
     if LISTA.search(fala):
-        palavras = carregar(db, user, limite=100000)
+        palavras = carregar(db, user, limite=100000, todas=True)
         if not palavras:
             return "Você ainda não tem palavras no vocabulário."
-        topo = "; ".join(f"{p.en} ({p.pt})" for p in palavras[:10])
-        return f"Você tem {len(palavras)} palavras no vocabulário. As mais urgentes: {topo}."
+        lista = "; ".join(f"{p.en} ({p.pt})" for p in palavras[:30])
+        if len(palavras) <= 30:
+            return f"Você tem {len(palavras)} palavras no vocabulário: {lista}."
+        return f"Você tem {len(palavras)} palavras no vocabulário. As 30 que mais pedem atenção: {lista}."
     if RECORDE.search(fala):
         recordes = _recordes(db, user)
         return ("Seus recordes: " + "; ".join(recordes) + ".") if recordes else "Ainda não achei recordes seus nos jogos."

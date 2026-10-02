@@ -301,12 +301,15 @@ def test_sem_plano_de_hoje_ele_diz_que_nao_achou(client, conta, monkeypatch):
 
 def test_a_lista_de_vocabulario_vem_do_banco_com_as_palavras_marcadas(client, conta, monkeypatch):
     a = conta()
-    a.push([PALAVRA, {"kind": "content", "id": "words:work", "data": {"word": "work", "translations": [{"text": "trabalhar"}]}}])
+    a.push([PALAVRA, {"kind": "content", "id": "words:work", "data": {"word": "work", "translations": [{"text": "trabalhar"}]}},
+            # palavra de função: fica fora da conversa, mas a lista da pessoa tem de mostrá-la
+            {"kind": "content", "id": "words:you", "data": {"word": "you", "type": "pronoun", "translations": [{"text": "você"}]}}])
     monkeypatch.setattr(chat, "responder", _nao_deveria)
     r = client.post("/chat", json={"messages": [{"role": "user", "content": "qual é a minha  lista de vocabulario ?"}]}, headers=a.headers)
     assert r.status_code == 200
     resposta = r.json()["reply"]
-    assert "Você tem 2 palavras no vocabulário." in resposta
+    assert resposta.startswith("Você tem 3 palavras no vocabulário:")
+    assert "(você)" in resposta
     assert "[[rest]]" in resposta and "[[work]]" in resposta  # as palavras viram palavras vivas na tela
 
 
