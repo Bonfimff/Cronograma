@@ -24,6 +24,8 @@ export interface ListenOptions {
   onLevel?: (level: number) => void;
   /** a voz começou */
   onStart?: () => void;
+  /** duração máxima da fala (ms); frases inteiras precisam de mais que uma palavra */
+  maxMs?: number;
 }
 
 const FRAME_MS = 30;
@@ -129,7 +131,7 @@ export class Mic {
     const per = Math.round((this.rate * FRAME_MS) / 1000);
     const preFrames = Math.ceil(PREROLL_MS / FRAME_MS);
     const endFrames = Math.ceil(END_SILENCE_MS / FRAME_MS);
-    const maxFrames = Math.ceil(MAX_SPEECH_MS / FRAME_MS);
+    const maxFrames = Math.ceil((opts.maxMs ?? MAX_SPEECH_MS) / FRAME_MS);
     const low = this.threshold * 0.6; // histerese: pra continuar "falando" basta menos que pra começar
 
     let cancel = () => {};

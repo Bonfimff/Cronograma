@@ -2,8 +2,7 @@ import { useRoute } from './hooks';
 import { Today } from './pages/Today';
 import { WeekPage } from './pages/WeekPage';
 import { SessionPage } from './pages/SessionPage';
-import { LessonPage } from './pages/LessonPage';
-import { ReadingPage } from './pages/ReadingPage';
+import { AulaPage } from './pages/AulaPage';
 import { ScanPage } from './pages/ScanPage';
 import { PrintPage } from './pages/PrintPage';
 import { ReviewPage } from './pages/ReviewPage';
@@ -41,8 +40,8 @@ export function App() {
   switch (section) {
     case 'semana': page = <WeekPage start={rest[0]} />; break;
     case 'sessao': page = <SessionPage id={rest[0]} />; break;
-    case 'aula': page = <LessonPage id={rest[0]} />; break;
-    case 'leitura': page = <ReadingPage id={rest[0]} />; break;
+    case 'aula': page = <AulaPage key={`aula-${rest[0]}`} id={rest[0]} />; break;
+    case 'leitura': page = <AulaPage key={`leitura-${rest[0]}`} id={rest[0]} modo="leitura" />; break;
     case 'scan':
       page = (
         <ScanPage

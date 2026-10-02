@@ -178,7 +178,10 @@ function falarNoAparelho(p: Parte, fator: number, minha: number): Promise<void> 
  * escolhida quando ela já está baixada; senão, a do aparelho. Termina quando acaba de
  * falar ou quando outra fala começa.
  */
-export async function falar(partes: Parte | Parte[], fator = 1, chave?: string): Promise<void> {
+export async function falar(
+  partes: Parte | Parte[], fator = 1, chave?: string,
+  opcoes: { aoParte?: (parte: Parte | null) => void } = {},
+): Promise<void> {
   const lista = (Array.isArray(partes) ? partes : [partes]).filter((p) => p.texto.trim());
   const ocupado = !!fonte || (typeof speechSynthesis !== 'undefined' && (speechSynthesis.speaking || speechSynthesis.pending));
   pararFala();
@@ -210,10 +213,11 @@ export async function falar(partes: Parte | Parte[], fator = 1, chave?: string):
     seguinte = i + 1 < lista.length ? gerar(lista[i + 1]) : Promise.resolve(null);
     const audio = await esta;
     if (minha !== geracao) return;
+    opcoes.aoParte?.(lista[i]);
     if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha);
     else await falarNoAparelho(lista[i], fator, minha);
   }
-  if (minha === geracao) marcarFala(null);
+  if (minha === geracao) { marcarFala(null); opcoes.aoParte?.(null); }
 }
 // Carregar o modelo na memória leva alguns segundos: com o app aberto e parado, já
 // deixa pronta a voz natural escolhida, para a primeira fala não esperar.

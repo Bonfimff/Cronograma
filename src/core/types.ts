@@ -158,6 +158,8 @@ export interface Session {
   startedAt?: string;
   finishedAt?: string;
   result?: SessionResult;
+  /** cartão da aula em que a pessoa parou (para retomar) */
+  lessonStep?: number;
   createdAt: string;
 }
 

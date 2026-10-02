@@ -2,7 +2,7 @@ import type { ContentRef, Example, Exercise, Session, UserData } from '../types'
 import { content, examplesFor, getExercise, getWord, parseRef } from '../content/repository';
 
 // ---------- aleatoriedade estável (mesma sessão → mesmos exercícios) ----------
-function seeded(seed: string) {
+export function seeded(seed: string) {
   let h = 2166136261;
   for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
   return () => {
@@ -43,7 +43,7 @@ export function checkAnswer(ex: Exercise, given: string): boolean {
 }
 
 // ---------- geração ----------
-function wordsInSession(refs: ContentRef[]): string[] {
+export function wordsInSession(refs: ContentRef[]): string[] {
   const ids = new Set<string>();
   refs.forEach((r) => {
     const { kind, id } = parseRef(r);
@@ -52,7 +52,7 @@ function wordsInSession(refs: ContentRef[]): string[] {
   return [...ids].map((id) => getWord(id)!.word).filter(Boolean);
 }
 
-function fromExample(ex: Example, i: number, sessionWords: string[], rnd: () => number, refs: ContentRef[]): Exercise | null {
+export function fromExample(ex: Example, i: number, sessionWords: string[], rnd: () => number, refs: ContentRef[]): Exercise | null {
   const base = { id: `g-${ex.id}-${i % 3}`, refs, generated: true };
   const tokens = ex.en.replace(/[?.!,]/g, '').split(' ');
   switch (i % 3) {
@@ -114,3 +114,6 @@ export function buildExercises(data: UserData, session: Session, max = 10): Exer
   return [...authored, ...generated.slice(0, Math.max(0, max - authored.length)), ...recycledEx]
     .sort((a, b) => order[a.type] - order[b.type]);
 }
+
+/** Exercícios do banco pelos ids, na ordem pedida, sem os que sumiram. */
+export const getExerciseList = (ids: string[]): Exercise[] => ids.map(getExercise).filter(Boolean) as Exercise[];
