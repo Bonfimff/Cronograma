@@ -108,6 +108,22 @@ export interface Parte {
 }
 
 let geracao = 0; // cada fala nova invalida as anteriores
+
+// Qual fala está tocando agora (uma chave escolhida por quem pediu), para a tela animar o botão.
+let chaveAtual: string | null = null;
+const ouvintesFala = new Set<() => void>();
+function marcarFala(chave: string | null) {
+  if (chave === chaveAtual) return;
+  chaveAtual = chave;
+  ouvintesFala.forEach((o) => o());
+}
+export const falaAtual = {
+  get: () => chaveAtual,
+  subscribe(o: () => void) {
+    ouvintesFala.add(o);
+    return () => { ouvintesFala.delete(o); };
+  },
+};
 let fonte: AudioBufferSourceNode | undefined;
 let contexto: AudioContext | undefined;
 
@@ -125,6 +141,7 @@ export function pararFala(): void {
   try { fonte?.stop(); } catch { /* já tinha parado */ }
   fonte = undefined;
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  marcarFala(null);
 }
 
 function tocarAmostras(amostras: Float32Array, taxa: number, minha: number): Promise<void> {
@@ -161,12 +178,13 @@ function falarNoAparelho(p: Parte, fator: number, minha: number): Promise<void> 
  * escolhida quando ela já está baixada; senão, a do aparelho. Termina quando acaba de
  * falar ou quando outra fala começa.
  */
-export async function falar(partes: Parte | Parte[], fator = 1): Promise<void> {
+export async function falar(partes: Parte | Parte[], fator = 1, chave?: string): Promise<void> {
   const lista = (Array.isArray(partes) ? partes : [partes]).filter((p) => p.texto.trim());
   const ocupado = !!fonte || (typeof speechSynthesis !== 'undefined' && (speechSynthesis.speaking || speechSynthesis.pending));
   pararFala();
   const minha = geracao;
   if (!lista.length) return;
+  marcarFala(chave ?? null);
   if (lista.some((p) => vozNatural(p.lingua))) {
     // criado e acordado aqui, ainda dentro do toque: o iPhone não deixa tocar som de outro jeito
     contexto ??= new AudioContext();
@@ -195,6 +213,7 @@ export async function falar(partes: Parte | Parte[], fator = 1): Promise<void> {
     if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha);
     else await falarNoAparelho(lista[i], fator, minha);
   }
+  if (minha === geracao) marcarFala(null);
 }
 // Carregar o modelo na memória leva alguns segundos: com o app aberto e parado, já
 // deixa pronta a voz natural escolhida, para a primeira fala não esperar.

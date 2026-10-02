@@ -1832,3 +1832,20 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .check input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .usuario-menu .com-icone { display: flex; align-items: center; gap: 8px; }
 .voz-baixar { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* Alto-falante da conversa: enquanto lê, balança e solta ondas */
+.conversa-ouvir { position: relative; }
+.conversa-ouvir.tocando img { animation: falante-pulso .9s ease-in-out infinite; transform-origin: 30% 50%; }
+.conversa-ouvir.tocando::before,
+.conversa-ouvir.tocando::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+  border-radius: 50%; border: 2px solid var(--accent); opacity: 0; pointer-events: none;
+  animation: falante-onda 1.4s ease-out infinite;
+}
+.conversa-ouvir.tocando::after { animation-delay: .7s; }
+@keyframes falante-pulso { 0%, 100% { transform: scale(1) rotate(0); } 25% { transform: scale(1.14) rotate(-6deg); } 60% { transform: scale(1.06) rotate(4deg); } }
+@keyframes falante-onda { 0% { transform: scale(.6); opacity: .7; } 100% { transform: scale(2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .conversa-ouvir.tocando img, .conversa-ouvir.tocando::before, .conversa-ouvir.tocando::after { animation: none; }
+  .conversa-ouvir.tocando::before { opacity: .6; transform: scale(1.3); }
+}

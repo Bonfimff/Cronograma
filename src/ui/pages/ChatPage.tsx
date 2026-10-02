@@ -5,7 +5,7 @@ import { acrescentar, apagarConversa, lerConversa, paraOModelo } from '../../cor
 import { recortar } from '../../core/chat/marcas';
 import { lerFala, pararLeitura } from '../../core/chat/leitura';
 import { useData } from '../hooks';
-import { falar as falarVoz } from '../../core/lessons/vozes';
+import { falaAtual, falar as falarVoz } from '../../core/lessons/vozes';
 import { ditadoDisponivel, ditar, type Ditado } from '../../core/speech/ditado';
 import { IconeKit } from '../components/Doodles';
 import type { ChatTurn } from '../../core/types';
@@ -49,6 +49,7 @@ function Palavra({ texto, pt, ficha }: { texto: string; pt?: string; ficha?: str
 function Fala({ turno }: { turno: ChatTurn }) {
   const glossario = new Map((turno.glossary ?? []).map((g: GlossaryItem) => [g.en.toLowerCase(), g]));
   const pedacos = recortar(turno.content);
+  const tocando = useSyncExternalStore(falaAtual.subscribe, falaAtual.get) === turno.id;
 
   return (
     <div className={`conversa-fala ${turno.role}`}>
@@ -59,7 +60,12 @@ function Fala({ turno }: { turno: ChatTurn }) {
           return <Palavra key={i} texto={p.texto} pt={g?.pt} ficha={g?.id} />;
         })}
       </p>
-      <button className="conversa-ouvir" onClick={() => lerFala(turno.content)} aria-label="Ouvir a mensagem">
+      <button
+        className={`conversa-ouvir${tocando ? ' tocando' : ''}`}
+        onClick={() => (tocando ? pararLeitura() : lerFala(turno.content, turno.id))}
+        aria-label={tocando ? 'Parar a leitura' : 'Ouvir a mensagem'}
+        aria-pressed={tocando}
+      >
         <IconeKit nome="ouvir" width={20} />
       </button>
     </div>
