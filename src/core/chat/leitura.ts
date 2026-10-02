@@ -7,15 +7,11 @@
  * sua língua, um atrás do outro.
  */
 
-import { prepararFala } from '../lessons/vozes';
+import { falar, pararFala } from '../lessons/vozes';
 import { recortar } from './marcas';
 
 export function lerFala(texto: string): void {
-  const voz = window.speechSynthesis;
-  voz.cancel();
-  recortar(texto)
-    .filter((p) => p.texto.trim())
-    .forEach((p) => voz.speak(prepararFala(p.texto, p.palavra ? 'en' : 'pt')));
+  void falar(recortar(texto).map((p) => ({ texto: p.texto, lingua: p.palavra ? 'en' : 'pt' })));
 }
 
-export const pararLeitura = () => window.speechSynthesis.cancel();
+export const pararLeitura = () => pararFala();

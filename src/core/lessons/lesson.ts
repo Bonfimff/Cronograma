@@ -1,5 +1,5 @@
 import type { ContentRef, Example, Expression, Grammar, Pattern, Word } from '../types';
-import { prepararFala } from './vozes';
+import { falar } from './vozes';
 import { examplesFor, getExamples, parseRef, resolve } from '../content/repository';
 
 /**
@@ -90,8 +90,5 @@ export function speak(text: string, audioUrl?: string): void {
     new Audio(audioUrl).play().catch(() => speak(text));
     return;
   }
-  if (typeof speechSynthesis === 'undefined') return;
-  const u = prepararFala(text, 'en');
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
+  void falar({ texto: text, lingua: 'en' });
 }

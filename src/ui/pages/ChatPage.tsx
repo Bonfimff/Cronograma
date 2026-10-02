@@ -5,12 +5,12 @@ import { acrescentar, apagarConversa, lerConversa, paraOModelo } from '../../cor
 import { recortar } from '../../core/chat/marcas';
 import { lerFala, pararLeitura } from '../../core/chat/leitura';
 import { useData } from '../hooks';
-import { prepararFala } from '../../core/lessons/vozes';
+import { falar as falarVoz } from '../../core/lessons/vozes';
+import { ditadoDisponivel, ditar, type Ditado } from '../../core/speech/ditado';
 import type { ChatTurn } from '../../core/types';
 
 const falar = (texto: string) => {
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(prepararFala(texto, 'en'));
+  void falarVoz({ texto, lingua: 'en' });
 };
 
 /**
@@ -86,12 +86,36 @@ export function ChatPage() {
   const [pensando, setPensando] = useState(false);
   const [erro, setErro] = useState('');
   const fim = useRef<HTMLDivElement>(null);
+  const ditado = useRef<Ditado | null>(null);
+  const [ouvindo, setOuvindo] = useState(false);
+
+  useEffect(() => () => ditado.current?.parar(), []);
+
+  const pararDitado = () => { ditado.current?.parar(); ditado.current = null; };
+
+  /** Microfone: o que a pessoa fala vai aparecendo na caixa, depois do que já estava escrito. */
+  const alternarDitado = () => {
+    if (ditado.current) { pararDitado(); return; }
+    setErro('');
+    const antes = texto.trim() ? texto.trimEnd() + ' ' : '';
+    try {
+      ditado.current = ditar(
+        'pt-BR',
+        (falado) => setTexto(antes + falado),
+        (problema) => { ditado.current = null; setOuvindo(false); if (problema) setErro(problema); },
+      );
+      setOuvindo(true);
+    } catch {
+      setErro('Este navegador não deixou usar o microfone.');
+    }
+  };
 
   useEffect(() => { fim.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, [falas.length, pensando]);
 
   const enviar = async (conteudo: string) => {
     const limpo = conteudo.trim();
     if (!limpo || pensando) return;
+    pararDitado();
     acrescentar({ role: 'user', content: limpo });
     setTexto('');
     setErro('');
@@ -156,9 +180,23 @@ export function ChatPage() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(texto); }
           }}
-          placeholder="Escreva aqui"
+          placeholder={ouvindo ? 'Pode falar…' : 'Escreva ou toque no microfone'}
           rows={1}
         />
+        {ditadoDisponivel && (
+          <button
+            type="button"
+            className={`conversa-mic${ouvindo ? ' ouvindo' : ''}`}
+            onClick={alternarDitado}
+            aria-label={ouvindo ? 'Parar de ouvir' : 'Falar a mensagem'}
+            aria-pressed={ouvindo}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+            </svg>
+          </button>
+        )}
         <button className="primary" type="submit" disabled={pensando || !texto.trim()}>Enviar</button>
       </form>
 

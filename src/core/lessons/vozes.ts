@@ -8,10 +8,12 @@
  * aparelho, porque uma voz que existe num telefone pode não existir em outro.
  */
 
+import { baixarVoz, PREFIXO_NATURAL, sintetizar, vozBaixada } from '../speech/piper';
+
 export type Lingua = 'en' | 'pt';
 
 export interface AjustesVoz {
-  /** Nome da voz escolhida, como o navegador a chama. Vazio = a do sistema. */
+  /** Voz escolhida: "natural:<id>" (Piper, no navegador), o nome de uma voz do aparelho, ou vazio = a do sistema. */
   voz: Record<Lingua, string>;
   /** 0,5x a 1,5x, por língua. */
   velocidade: Record<Lingua, number>;
@@ -98,4 +100,109 @@ export function prepararFala(texto: string, lingua: Lingua, fator = 1): SpeechSy
   }
   u.rate = Math.max(0.5, Math.min(2, atual.velocidade[lingua] * fator));
   return u;
+}
+
+export interface Parte {
+  texto: string;
+  lingua: Lingua;
+}
+
+let geracao = 0; // cada fala nova invalida as anteriores
+let fonte: AudioBufferSourceNode | undefined;
+let contexto: AudioContext | undefined;
+
+const esperar = (ms: number) => new Promise<void>((ok) => window.setTimeout(ok, ms));
+
+/** A voz natural escolhida para a língua, se houver. */
+export function vozNatural(lingua: Lingua): string | undefined {
+  const v = atual.voz[lingua];
+  return v.startsWith(PREFIXO_NATURAL) ? v.slice(PREFIXO_NATURAL.length) : undefined;
+}
+
+/** Interrompe qualquer fala, natural ou do aparelho. */
+export function pararFala(): void {
+  geracao++;
+  try { fonte?.stop(); } catch { /* já tinha parado */ }
+  fonte = undefined;
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+}
+
+function tocarAmostras(amostras: Float32Array, taxa: number, minha: number): Promise<void> {
+  const ctx = (contexto ??= new AudioContext());
+  // um respiro de silêncio antes: alguns aparelhos (e o Bluetooth) engolem o começo do som
+  const folga = Math.round(taxa * 0.12);
+  const buffer = ctx.createBuffer(1, amostras.length + folga, taxa);
+  buffer.getChannelData(0).set(amostras, folga);
+  return new Promise((ok) => {
+    if (minha !== geracao) { ok(); return; }
+    const s = ctx.createBufferSource();
+    s.buffer = buffer;
+    s.connect(ctx.destination);
+    // se o navegador segurar o áudio (aba em segundo plano, sem toque), a leitura não fica parada para sempre
+    const reserva = window.setTimeout(ok, (buffer.duration + 2) * 1000);
+    s.onended = () => { window.clearTimeout(reserva); if (fonte === s) fonte = undefined; ok(); };
+    fonte = s;
+    s.start();
+  });
+}
+
+function falarNoAparelho(p: Parte, fator: number, minha: number): Promise<void> {
+  return new Promise((ok) => {
+    if (typeof speechSynthesis === 'undefined' || minha !== geracao) { ok(); return; }
+    const u = prepararFala(p.texto, p.lingua, fator);
+    u.onend = () => ok();
+    u.onerror = () => ok();
+    speechSynthesis.speak(u);
+  });
+}
+
+/**
+ * Fala uma ou mais partes, na ordem, cada uma na voz da sua língua. Usa a voz natural
+ * escolhida quando ela já está baixada; senão, a do aparelho. Termina quando acaba de
+ * falar ou quando outra fala começa.
+ */
+export async function falar(partes: Parte | Parte[], fator = 1): Promise<void> {
+  const lista = (Array.isArray(partes) ? partes : [partes]).filter((p) => p.texto.trim());
+  const ocupado = !!fonte || (typeof speechSynthesis !== 'undefined' && (speechSynthesis.speaking || speechSynthesis.pending));
+  pararFala();
+  const minha = geracao;
+  if (!lista.length) return;
+  if (lista.some((p) => vozNatural(p.lingua))) {
+    // criado e acordado aqui, ainda dentro do toque: o iPhone não deixa tocar som de outro jeito
+    contexto ??= new AudioContext();
+    if (contexto.state === 'suspended') void contexto.resume();
+  }
+  // falar logo depois de cancelar corta a primeira sílaba no Chrome do Android
+  if (ocupado) await esperar(150);
+
+  const gerar = (p: Parte) => {
+    const id = vozNatural(p.lingua);
+    if (!id) return Promise.resolve(null);
+    const vel = Math.max(0.5, Math.min(2, atual.velocidade[p.lingua] * fator));
+    return vozBaixada(id)
+      .then((ok) => (ok ? sintetizar(id, p.texto, vel) : null))
+      .catch(() => null);
+  };
+
+  // enquanto uma parte toca, a seguinte já está sendo gerada
+  let seguinte = gerar(lista[0]);
+  for (let i = 0; i < lista.length; i++) {
+    if (minha !== geracao) return;
+    const esta = seguinte;
+    seguinte = i + 1 < lista.length ? gerar(lista[i + 1]) : Promise.resolve(null);
+    const audio = await esta;
+    if (minha !== geracao) return;
+    if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha);
+    else await falarNoAparelho(lista[i], fator, minha);
+  }
+}
+// Carregar o modelo na memória leva alguns segundos: com o app aberto e parado, já
+// deixa pronta a voz natural escolhida, para a primeira fala não esperar.
+if (typeof window !== 'undefined') {
+  window.setTimeout(() => {
+    for (const lingua of ['en', 'pt'] as Lingua[]) {
+      const id = vozNatural(lingua);
+      if (id) void vozBaixada(id).then((ok) => (ok ? baixarVoz(id) : undefined)).catch(() => undefined);
+    }
+  }, 4000);
 }

@@ -10,6 +10,7 @@ import { speak } from '../../../core/lessons/lesson';
 import { GAME_KEYS } from '../../../core/storage/backup';
 import { Mic } from '../../../core/speech/mic';
 import { prepare, transcribe } from '../../../core/speech/transcriber';
+import { pararFala } from '../../../core/lessons/vozes';
 import { useData } from '../../hooks';
 import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
@@ -73,7 +74,7 @@ export function FastSpeech() {
     cancel.current();
     timers.current.forEach(window.clearTimeout);
     mic.current.close();
-    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    pararFala();
   }, []);
 
   const word = words[i];
@@ -185,7 +186,7 @@ export function FastSpeech() {
   }, [phase, i, attempt]); // eslint-disable-line react-hooks/exhaustive-deps -- uma escuta por palavra e tentativa
 
   const retry = () => {
-    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    pararFala();
     setAttempt((a) => a + 1);
   };
   const again = () => {

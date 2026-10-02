@@ -7,7 +7,7 @@
  * repete a lista quantas vezes o usuário pediu.
  */
 
-import { prepararFala } from './vozes';
+import { falar as falarParte, pararFala } from './vozes';
 
 export interface Fala {
   texto: string;
@@ -60,30 +60,25 @@ const avisar = () => ouvintes.forEach((o) => o());
 export function pararLeitura(): void {
   cancelar = true;
   window.clearTimeout(espera);
-  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  pararFala();
   lendo = false;
   avisar();
 }
 
 function falar(f: Fala, velocidade: number): Promise<void> {
-  return new Promise((pronto) => {
-    // a voz e o ritmo de cada língua vêm dos ajustes; aqui só entra o fator
-    // escolhido no painel de reprodução
-    const u = prepararFala(f.texto, f.idioma, velocidade);
-    u.onend = () => pronto();
-    u.onerror = () => pronto();
-    speechSynthesis.speak(u);
-  });
+  // a voz e o ritmo de cada língua vêm dos ajustes; aqui só entra o fator
+  // escolhido no painel de reprodução
+  return falarParte({ texto: f.texto, lingua: f.idioma }, velocidade);
 }
 
 const dormir = (ms: number) => new Promise<void>((pronto) => { espera = window.setTimeout(pronto, ms); });
 
 export async function lerFalas(todas: Fala[], op: OpcoesVoz = OPCOES_PADRAO): Promise<void> {
-  if (typeof speechSynthesis === 'undefined' || !todas.length) return;
+  if (!todas.length) return;
   const falas = op.traducao ? todas : todas.filter((f) => f.idioma === 'en');
   if (!falas.length) return;
 
-  speechSynthesis.cancel();
+  pararFala();
   cancelar = false;
   lendo = true;
   avisar();
