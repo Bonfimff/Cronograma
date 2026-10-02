@@ -184,7 +184,7 @@ export function ChatPage() {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(texto); }
           }}
-          placeholder={ouvindo ? 'Pode falar…' : 'Escreva ou toque no microfone'}
+          placeholder={ouvindo ? 'Pode falar…' : (ditadoDisponivel ? 'Escreva ou fale…' : 'Escreva aqui')}
           rows={1}
         />
         {ditadoDisponivel && (
