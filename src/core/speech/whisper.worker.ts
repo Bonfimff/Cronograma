@@ -22,7 +22,16 @@ const post = (m: unknown) => (self as unknown as Worker).postMessage(m);
 
 function load(): Promise<void> {
   loading ??= (async () => {
-    const hasGpu = 'gpu' in navigator;
+    // 'gpu' existir não basta: muito celular tem a API mas nenhum adaptador, e o
+    // onnxruntime que tentou WebGPU e falhou não volta para o wasm. Pergunta antes.
+    let hasGpu = false;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const gpu = (navigator as any).gpu;
+      hasGpu = !!(gpu && (await gpu.requestAdapter()));
+    } catch {
+      hasGpu = false;
+    }
     const opts = (device: 'webgpu' | 'wasm') => ({
       device,
       dtype: device === 'webgpu' ? 'fp32' : 'q8',
