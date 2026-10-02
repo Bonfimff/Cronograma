@@ -308,8 +308,10 @@ def test_a_lista_de_vocabulario_vem_do_banco_com_as_palavras_marcadas(client, co
     r = client.post("/chat", json={"messages": [{"role": "user", "content": "qual é a minha  lista de vocabulario ?"}]}, headers=a.headers)
     assert r.status_code == 200
     resposta = r.json()["reply"]
-    assert resposta.startswith("Você tem 3 palavras no vocabulário:")
-    assert "(você)" in resposta
+    assert resposta.startswith("Você tem 3 palavras no vocabulário:\n• ")
+    # uma por linha, e todas marcadas: inclusive a palavra de função
+    assert "\n• [[you]] (você)" in resposta and "\n• [[work]] (trabalhar)" in resposta
+    assert {g["en"] for g in r.json()["glossary"]} == {"rest", "work", "you"}
     assert "[[rest]]" in resposta and "[[work]]" in resposta  # as palavras viram palavras vivas na tela
 
 

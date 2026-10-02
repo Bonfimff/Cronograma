@@ -89,3 +89,26 @@ def marcar(texto: str, vocabulario: list[Palavra], maximo: int = MAXIMO) -> tupl
 
     glossario = [{"en": p.en, "pt": p.pt, "id": p.id} for p in encontradas.values()]
     return "".join(saida), glossario
+
+
+ITEM = re.compile(r"^(•\s*)(.+?)(\s+\()", re.MULTILINE)
+
+
+def marcar_lista(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
+    """
+    Marca uma lista de vocabulário ("• work (trabalhar)", uma por linha): a palavra no
+    começo de cada item, sem o limite de marcas da conversa. Só o começo do item é
+    marcado, para "do" e "a" do português não virarem palavras em inglês.
+    """
+    por_chave = {_chave(p.en): p for p in vocabulario if p.en.strip()}
+    achadas: dict[str, Palavra] = {}
+
+    def troca(m: re.Match) -> str:
+        p = por_chave.get(_chave(m.group(2)))
+        if not p:
+            return m.group(0)
+        achadas[_chave(p.en)] = p
+        return f"{m.group(1)}[[{m.group(2)}]]{m.group(3)}"
+
+    marcado = ITEM.sub(troca, limpar(texto))
+    return marcado, [{"en": p.en, "pt": p.pt, "id": p.id} for p in achadas.values()]

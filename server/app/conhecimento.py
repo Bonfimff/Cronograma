@@ -208,10 +208,10 @@ def resposta_direta(db: Session, user: User, conversa: list[dict]) -> str | None
         palavras = carregar(db, user, limite=100000, todas=True)
         if not palavras:
             return "Você ainda não tem palavras no vocabulário."
-        lista = "; ".join(f"{p.en} ({p.pt})" for p in palavras[:30])
+        lista = "\n".join(f"• {p.en} ({p.pt})" for p in palavras[:30])
         if len(palavras) <= 30:
-            return f"Você tem {len(palavras)} palavras no vocabulário: {lista}."
-        return f"Você tem {len(palavras)} palavras no vocabulário. As 30 que mais pedem atenção: {lista}."
+            return f"Você tem {len(palavras)} palavras no vocabulário:\n{lista}"
+        return f"Você tem {len(palavras)} palavras no vocabulário. As 30 que mais pedem atenção:\n{lista}"
     if RECORDE.search(fala):
         recordes = _recordes(db, user)
         return ("Seus recordes: " + "; ".join(recordes) + ".") if recordes else "Ainda não achei recordes seus nos jogos."

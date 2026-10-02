@@ -28,7 +28,7 @@ from ..conhecimento import contexto_do_app, pergunta_sobre_o_app, pergunta_sobre
 from ..db import db_session
 from ..deps import current_user
 from ..idioma import parece_portugues
-from ..marcacao import limpar, marcar
+from ..marcacao import limpar, marcar, marcar_lista
 from ..models import User
 from ..schemas import ChatIn, ChatOut
 from ..vocabulario import Palavra, carregar
@@ -170,7 +170,10 @@ async def conversar(
         # perguntas sobre o app, a conta e os dados da pessoa têm resposta pronta: sem modelo, sem erro
         direta = resposta_direta(db, user, conversa)
         if direta:
-            marcado, glossario = marcar(direta, vocabulario)
+            if "\n• " in direta:  # lista de vocabulário: todas as palavras marcadas, inclusive you, to, do
+                marcado, glossario = marcar_lista(direta, carregar(db, user, 100000, todas=True))
+            else:
+                marcado, glossario = marcar(direta, vocabulario)
             return ChatOut(reply=marcado, glossary=glossario)
         # o guia do app só entra quando a pessoa pergunta do app: em toda conversa, ele atrapalha
         sobre = contexto_do_app(db, user, pergunta_sobre_vocabulario(conversa)) if pergunta_sobre_o_app(conversa) else ""
