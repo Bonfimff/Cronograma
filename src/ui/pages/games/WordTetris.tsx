@@ -1,3 +1,4 @@
+import { IconeKit } from '../../components/Doodles';
 import { useEffect, useRef, useState } from 'react';
 import { TRANCO, vibrar } from '../../../core/vibrar';
 import {
@@ -287,8 +288,8 @@ export function WordTetris() {
         )}
         {!over && (
           <div className="wt-controls">
-            <button className="ghost" onClick={togglePause} aria-label={paused ? 'Continuar' : 'Pausar'}>{paused ? '▶' : '❚❚'}</button>
-            <button className="ghost" onClick={restart} aria-label="Recomeçar">↻</button>
+            <button className="ghost" onClick={togglePause} aria-label={paused ? 'Continuar' : 'Pausar'}>{paused ? '▶' : <IconeKit nome="pausar" width={40} />}</button>
+            <button className="ghost" onClick={restart} aria-label="Recomeçar"><IconeKit nome="reiniciar" width={40} /></button>
           </div>
         )}
       </section>

@@ -1,3 +1,4 @@
+import { IconeKit } from './Doodles';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { session } from '../../core/api/session';
 import { aplicarTema, temaAtual, type Tema } from '../../core/tema';
@@ -63,7 +64,7 @@ export function UserMenu() {
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
               <a href="#/conversa" role="menuitem" onClick={() => setAberto(false)}>Conversa</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
-              <a href="#/ajustes" role="menuitem" onClick={() => setAberto(false)}>Ajustes</a>
+              <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
               <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
               <button
                 role="menuitem"
@@ -78,7 +79,7 @@ export function UserMenu() {
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Entrar</a>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Criar conta</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
-              <a href="#/ajustes" role="menuitem" onClick={() => setAberto(false)}>Ajustes</a>
+              <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
               <button role="menuitem" onClick={trocarTema}>{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
             </>
           )}

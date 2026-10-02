@@ -109,7 +109,7 @@ export function Arrow({ className, width }: P) {
 
 export function Crown({ className, width }: P) {
   return (
-    <IconeKit nome="estrela" className={className} width={width} />
+    <IconeKit nome="coroa" className={className} width={width} />
   );
 }
 
@@ -295,7 +295,7 @@ export function StarBadge({ children, className }: { children: ReactNode; classN
 export function KindIcon({ kind, className, width }: P & { kind: string }) {
   switch (kind) {
     case 'new': return <Seedling className={className} width={width} />;
-    case 'practice': return <IconeKit nome="flashcards" className={className} width={width} />;
+    case 'practice': return <IconeKit nome="lapis" className={className} width={width} />;
     case 'review': return <IconReview className={className} width={width} />;
     case 'reinforce': return <Bolt className={className} width={width} />;
     default: return <IconeKit nome="tetris" className={className} width={width} />;

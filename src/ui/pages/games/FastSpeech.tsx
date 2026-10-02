@@ -217,7 +217,7 @@ export function FastSpeech() {
             Pronúncia aproximada vale.
           </p>
           {error && <p className="fs-error" role="alert">{error}</p>}
-          <button className="primary big" onClick={start}>🎤 Começar</button>
+          <button className="primary big" onClick={start}><IconeKit nome="microfone2" width={28} /> Começar</button>
         </section>
       )}
 
