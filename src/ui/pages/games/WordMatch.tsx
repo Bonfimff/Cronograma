@@ -8,7 +8,7 @@ import { speak } from '../../../core/lessons/lesson';
 import { GAME_KEYS } from '../../../core/storage/backup';
 import { playCrack, primeAudio } from '../../sfx';
 import { useData } from '../../hooks';
-import { Crown, Praise } from '../../components/Doodles';
+import { Crown, IconeKit, Praise } from '../../components/Doodles';
 import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
 
@@ -313,9 +313,8 @@ export function WordMatch() {
         <div>
           <small>Sequência atual</small>
           <b>
-            <svg viewBox="0 0 20 24" width="16" className="mt-flame" aria-hidden>
-              <path d="M10 1c1 5 7 7 7 14a7 7 0 0 1-14 0c0-4 2-6 3-8 1 3 2 4 3 4 0-4-1-7 1-10z" fill="currentColor" />
-            </svg>
+            <IconeKit nome="chama" className="mt-flame" width={24} />
+
             {streak}
           </b>
         </div>

@@ -11,6 +11,7 @@ import { GAME_KEYS } from '../../../core/storage/backup';
 import { Mic } from '../../../core/speech/mic';
 import { prepare, transcribe } from '../../../core/speech/transcriber';
 import { pararFala } from '../../../core/lessons/vozes';
+import { IconeKit } from '../../components/Doodles';
 import { useData } from '../../hooks';
 import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
@@ -253,7 +254,7 @@ export function FastSpeech() {
 
           {(stage === 'bad' || stage === 'unclear' || stage === 'silence') && (
             <div className="fs-actions">
-              <button className="ghost" onClick={() => speak(word.en)}>🔊 Pronúncia</button>
+              <button className="ghost" onClick={() => speak(word.en)}><IconeKit nome="ouvir" width={22} /> Pronúncia</button>
               <button className="ghost" onClick={retry}>Tentar de novo</button>
               <button className="link" onClick={next}>Pular</button>
             </div>

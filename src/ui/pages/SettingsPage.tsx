@@ -6,6 +6,7 @@ import {
   amostraDe, baixarVoz, PREFIXO_NATURAL, VOZES_NATURAIS, vozBaixada,
 } from '../../core/speech/piper';
 import { CatMegaphone } from '../components/Cutouts';
+import { IconeKit } from '../components/Doodles';
 
 /**
  * Ajustes da leitura em voz alta.
@@ -103,7 +104,7 @@ export function SettingsPage() {
                   onClick={() => ouvirAmostra(v.id)}
                   aria-label={tocando === v.id ? `Parar amostra de ${v.nome}` : `Ouvir ${v.nome}`}
                 >
-                  {tocando === v.id ? '■' : '▶'}
+                  {tocando === v.id ? '■' : <IconeKit nome="ouvir" width={24} />}
                 </button>
                 <span className="voz-nome">
                   <strong>{v.nome}</strong>

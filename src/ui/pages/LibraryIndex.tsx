@@ -1,3 +1,4 @@
+import { IconeKit } from '../components/Doodles';
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useData, useRoute } from '../hooks';
@@ -470,12 +471,8 @@ function BotaoVoz({ falas }: { falas: Fala[] }) {
         aria-label="Como repetir a leitura"
         title="Como repetir a leitura"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 10V8a3 3 0 0 1 3-3h10" />
-          <path d="m14 2 3 3-3 3" />
-          <path d="M20 14v2a3 3 0 0 1-3 3H7" />
-          <path d="m10 22-3-3 3-3" />
-        </svg>
+        <IconeKit nome="ligar" width={24} />
+
       </button>
       <button
         className={`lib-voz ${lendo ? 'on' : ''}`}
@@ -483,7 +480,7 @@ function BotaoVoz({ falas }: { falas: Fala[] }) {
         aria-label={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
         title={lendo ? 'Parar a leitura' : 'Ler esta folha em voz alta'}
       >
-        {lendo ? '◼' : '🔊'}
+        {lendo ? '◼' : <IconeKit nome="ouvir" width={24} />}
       </button>
 
       {painel && createPortal(

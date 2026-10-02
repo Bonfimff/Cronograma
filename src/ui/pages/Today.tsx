@@ -60,7 +60,7 @@ export function Today() {
 
       <section>
         <h2 className="head-row">
-          <Bolt className="doodle mark" width="12" />
+          <Bolt className="doodle mark" width="20" />
           Sessões de hoje {list.length > 0 && <small>{doneCount}/{list.length}</small>}
           <Notebook className="doodle head-aside" width="30" />
         </h2>

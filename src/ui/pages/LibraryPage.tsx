@@ -1,3 +1,4 @@
+import { IconeKit } from '../components/Doodles';
 import { createContext, useContext, useRef, useState } from 'react';
 import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
@@ -57,7 +58,7 @@ function Detail({ r }: { r: ContentRef }) {
             </svg>
           </button>
           {kind !== 'grammar' && (
-            <button className="lib-voz" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))} aria-label="Ouvir">🔊</button>
+            <button className="lib-voz" onClick={() => speak(refLabel(r).replace(/\+/g, ' '))} aria-label="Ouvir"><IconeKit nome="ouvir" width={24} /></button>
           )}
 
         </h2>

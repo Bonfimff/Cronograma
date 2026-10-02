@@ -109,17 +109,13 @@ export function Arrow({ className, width }: P) {
 
 export function Crown({ className, width }: P) {
   return (
-    <svg viewBox="0 0 44 30" className={className} width={width} aria-hidden>
-      <path d="M4 26 6 6l8 8 8-11 8 11 8-8 2 20z" fill="currentColor" />
-    </svg>
+    <IconeKit nome="estrela" className={className} width={width} />
   );
 }
 
 export function Bolt({ className, width }: P) {
   return (
-    <svg viewBox="0 0 26 40" className={className} width={width} aria-hidden>
-      <path d="M15 2 4 22h7l-3 16L22 16h-8l3-14z" fill="currentColor" />
-    </svg>
+    <IconeKit nome="raio" className={className} width={width} />
   );
 }
 
@@ -299,9 +295,9 @@ export function StarBadge({ children, className }: { children: ReactNode; classN
 export function KindIcon({ kind, className, width }: P & { kind: string }) {
   switch (kind) {
     case 'new': return <Seedling className={className} width={width} />;
-    case 'practice': return <Pencil className={className} width={width} />;
+    case 'practice': return <IconeKit nome="flashcards" className={className} width={width} />;
     case 'review': return <IconReview className={className} width={width} />;
     case 'reinforce': return <Bolt className={className} width={width} />;
-    default: return <Books className={className} width={width} />;
+    default: return <IconeKit nome="tetris" className={className} width={width} />;
   }
 }
