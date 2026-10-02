@@ -101,7 +101,7 @@ code, .mono { font-family: var(--mono); font-size: .85em; }
   padding: 10px 0 8px; font-size: .68rem; text-decoration: none; color: var(--ink-3);
   transition: color .15s ease;
 }
-.nav-icon { width: 22px; height: 22px; color: currentColor; opacity: .85; }
+.nav-icon { width: 28px; height: 28px; color: currentColor; opacity: .8; object-fit: contain; }
 .nav a.on { color: var(--accent); font-weight: 600; }
 .nav a.on .nav-icon { opacity: 1; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), .5)); }
 @media (min-width: 760px) {
@@ -1420,7 +1420,7 @@ a.lib-row:hover .lib-main b { text-decoration: underline; }
   transition: transform .15s ease, border-color .15s ease, background .15s ease;
 }
 .jogo-bloco:hover { transform: translateY(-2px); border-color: var(--accent); background: var(--paper-3); }
-.jogo-icone { color: var(--accent); display: block; }
+.jogo-icone { color: var(--accent); display: block; object-fit: contain; }
 @media (min-width: 620px) { .jogo-grade { grid-template-columns: repeat(4, 1fr); } }
 
 /* a folha do caderno ocupa toda a largura da tela no celular */

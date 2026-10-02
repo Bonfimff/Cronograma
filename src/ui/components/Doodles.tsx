@@ -176,117 +176,65 @@ export function Praise({ children, className }: { children: ReactNode; className
 /* ---------- ícones dos jogos: traço simples, só a ideia ---------- */
 
 /** Peças empilhadas. */
-export function IconTetris({ className, width }: P) {
+/**
+ * Ícone do kit desenhado (public/icones), recortado de "IMG/Kit de Ícones Doodle".
+ * Decorativo: o rótulo ao lado já diz o que é.
+ */
+export function IconeKit({ nome, className, width }: { nome: string; className?: string; width?: string | number }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
-      <g {...stroke}>
-        <path d="M6 4h8v8h-8z" />
-        <path d="M14 12h8v8h-8z" />
-        <path d="M6 20h16v8h-16z" />
-      </g>
-    </svg>
+    <img
+      src={`${import.meta.env.BASE_URL}icones/${nome}.png`}
+      className={className}
+      width={width}
+      height={width}
+      alt=""
+      aria-hidden
+      draggable={false}
+      decoding="async"
+    />
   );
+}
+export function IconTetris({ className, width }: P) {
+  return <IconeKit nome="tetris" className={className} width={width} />;
 }
 
 /** Dois pontos ligados. */
 export function IconLink({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
-      <g {...stroke}>
-        <circle cx="7" cy="9" r="3.2" />
-        <circle cx="25" cy="23" r="3.2" />
-        <path d="M9.8 10.8c5.8 1.4 8.6 5.2 11.6 10" />
-      </g>
-    </svg>
-  );
+  return <IconeKit nome="ligar" className={className} width={width} />;
 }
 
 /** Microfone com ondas de voz. */
 export function IconMic({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
-      <g {...stroke}>
-        <rect x="12" y="3" width="8" height="15" rx="4" />
-        <path d="M7 15a9 9 0 0 0 18 0" />
-        <path d="M16 24v4M12 28h8" />
-        <path d="M2.5 11v5M29.5 11v5" strokeWidth={1.6} opacity=".6" />
-      </g>
-    </svg>
-  );
+  return <IconeKit nome="microfone" className={className} width={width} />;
 }
 /** Grade com uma casa marcada. */
 export function IconGrid({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
-      <g {...stroke}>
-        <path d="M5 5h22v22h-22z" />
-        <path d="M12 5v22M20 5v22M5 12h22M5 20h22" strokeWidth={1.4} opacity=".65" />
-      </g>
-      <path d="M12 12h8v8h-8z" fill="currentColor" opacity=".25" />
-    </svg>
-  );
+  return <IconeKit nome="cruzadas" className={className} width={width} />;
 }
 
 /** Duas cartas, uma atrás da outra. */
 export function IconCards({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} width={width} aria-hidden>
-      <g {...stroke}>
-        <rect x="4" y="9" width="17" height="19" rx="3" />
-        <path d="M11 6h14a3 3 0 0 1 3 3v14" opacity=".6" />
-        <path d="M9 17h7M9 21h5" strokeWidth={1.6} opacity=".7" />
-      </g>
-    </svg>
-  );
+  return <IconeKit nome="flashcards" className={className} width={width} />;
 }
 
 export function IconHome({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} width={width} aria-hidden>
-      <path d="M3.5 10.5 12 3.5l8.5 7" {...stroke} strokeWidth={1.9} />
-      <path d="M5.5 9.6v9.4c0 .6.5 1 1 1h11c.6 0 1-.4 1-1V9.6" {...stroke} strokeWidth={1.9} />
-      <path d="M9.6 20.4v-5.3c0-.5.4-.9.9-.9h3c.5 0 .9.4.9.9v5.3" {...stroke} strokeWidth={1.7} />
-    </svg>
-  );
+  return <IconeKit nome="hoje" className={className} width={width} />;
 }
 
 export function IconWeek({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} width={width} aria-hidden>
-      <rect x="3.2" y="5.2" width="17.6" height="15.4" rx="2.4" {...stroke} strokeWidth={1.9} />
-      <path d="M3.4 10h17.2M8 3.4v3.6M16 3.4v3.6" {...stroke} strokeWidth={1.9} />
-      <path d="M7.4 13.6h2M14.6 13.6h2M7.4 17.2h2M11 17.2h2" {...stroke} strokeWidth={1.8} />
-    </svg>
-  );
+  return <IconeKit nome="semana" className={className} width={width} />;
 }
 
 export function IconReview({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} width={width} aria-hidden>
-      <path d="M20 12a8 8 0 1 1-2.6-5.9" {...stroke} strokeWidth={1.9} />
-      <path d="M20.4 3.2 19.9 8l-4.7-.8" {...stroke} strokeWidth={1.9} />
-    </svg>
-  );
+  return <IconeKit nome="revisao" className={className} width={width} />;
 }
 
 export function IconContent({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} width={width} aria-hidden>
-      <path d="M12 6.6C10 5 7.6 4.4 4.2 4.6c-.5 0-.9.4-.9.9v12c0 .5.4.9 1 .9 3.2-.2 5.6.4 7.7 2 2.1-1.6 4.5-2.2 7.7-2 .6 0 1-.4 1-.9v-12c0-.5-.4-.9-.9-.9-3.4-.2-5.8.4-7.8 2z" {...stroke} strokeWidth={1.9} />
-      <path d="M12 6.6v11.8" {...stroke} strokeWidth={1.7} />
-    </svg>
-  );
+  return <IconeKit nome="conteudo" className={className} width={width} />;
 }
 
 export function IconGames({ className, width }: P) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} width={width} aria-hidden>
-      <path d="M8 7.6h8c2.6 0 4.4 1.9 4.8 4.4l.5 3.3c.3 1.9-1 3.3-2.7 3.3-1 0-1.8-.5-2.4-1.3l-1-1.3H8.8l-1 1.3c-.6.8-1.4 1.3-2.4 1.3-1.7 0-3-1.4-2.7-3.3l.5-3.3C3.6 9.5 5.4 7.6 8 7.6z" {...stroke} strokeWidth={1.9} />
-      <path d="M6.6 11.6v2.6M5.3 12.9h2.6" {...stroke} strokeWidth={1.8} />
-      <circle cx="16" cy="11.9" r="1.1" fill="currentColor" />
-      <circle cx="18" cy="14.3" r="1.1" fill="currentColor" />
-    </svg>
-  );
+  return <IconeKit nome="jogos" className={className} width={width} />;
 }
 
 /* ── Miudezas ───────────────────────────────────────────────────────────── */

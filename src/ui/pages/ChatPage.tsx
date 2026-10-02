@@ -7,6 +7,7 @@ import { lerFala, pararLeitura } from '../../core/chat/leitura';
 import { useData } from '../hooks';
 import { falar as falarVoz } from '../../core/lessons/vozes';
 import { ditadoDisponivel, ditar, type Ditado } from '../../core/speech/ditado';
+import { IconeKit } from '../components/Doodles';
 import type { ChatTurn } from '../../core/types';
 
 const falar = (texto: string) => {
@@ -59,10 +60,7 @@ function Fala({ turno }: { turno: ChatTurn }) {
         })}
       </p>
       <button className="conversa-ouvir" onClick={() => lerFala(turno.content)} aria-label="Ouvir a mensagem">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M4 9.5h3.2L12 5.5v13L7.2 14.5H4z" strokeLinejoin="round" />
-          <path d="M15.6 9.2a4 4 0 0 1 0 5.6" strokeLinecap="round" />
-        </svg>
+        <IconeKit nome="ouvir" width={20} />
       </button>
     </div>
   );
@@ -191,10 +189,7 @@ export function ChatPage() {
             aria-label={ouvindo ? 'Parar de ouvir' : 'Falar a mensagem'}
             aria-pressed={ouvindo}
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-              <rect x="9" y="3" width="6" height="11" rx="3" />
-              <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
-            </svg>
+            <IconeKit nome="microfone" width={28} />
           </button>
         )}
         <button className="primary" type="submit" disabled={pensando || !texto.trim()}>Enviar</button>

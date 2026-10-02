@@ -28,7 +28,7 @@ export function GamesPage() {
       <section className="jogo-grade">
         {JOGOS.map((j) => (
           <a key={j.to} className="jogo-bloco" href={`#/jogos/${j.to}`}>
-            <j.Icon className="jogo-icone" width="34" />
+            <j.Icon className="jogo-icone" width="52" />
             <span>{j.nome}</span>
           </a>
         ))}
