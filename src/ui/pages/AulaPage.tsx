@@ -516,8 +516,9 @@ function CartaoFechamento({ e, modo, sessionId, placar }: { e: EtapaFechamento; 
       {e.chaves.map((x) => <Frase key={x.id} ex={x} chave={`${e.id}:${x.id}`} />)}
       {e.copia.length > 0 && (
         <div className="copybox aula-copia">
-          <p className="copy-mark">✎ Copie na folha</p>
+          <p className="copy-mark">✎ Na folha: copie a regra</p>
           {e.copia.map((l) => <p key={l}>{l}</p>)}
+          <p className="aula-dica">Depois faça a atividade de fixação da folha: complete, ordene e fale de você. As respostas estão de cabeça para baixo no pé.</p>
         </div>
       )}
       {e.criterios.length > 0 && (

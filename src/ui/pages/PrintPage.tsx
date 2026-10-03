@@ -4,7 +4,7 @@ import { store } from '../../core/storage/store';
 import type { Session } from '../../core/types';
 import { createBlankSheets, ensureSheetForSession, markPrinted } from '../../core/worksheets/worksheets';
 import { PAGES, SINGLE_PAGES, STUDY_PAGES } from '../../core/worksheets/templates';
-import { copyLines, studySheetValues, weekSheetValues } from '../../core/worksheets/fill';
+import { regraDaFolha, studySheetValues, weekSheetValues } from '../../core/worksheets/fill';
 import { addDays, fmtShort, today, weekStartOf } from '../../core/dates';
 import { SheetSvg } from '../components/SheetSvg';
 
@@ -21,7 +21,7 @@ export function PrintPage({ ids, mode: initialMode, week: initialWeek }: { ids: 
   const candidates = data.sessions.filter((s) => s.status !== 'done' || ids.includes(s.id)).sort((a, b) => a.date.localeCompare(b.date));
   const sessions = selected.map((id) => data.sessions.find((s) => s.id === id)).filter(Boolean) as Session[];
   const blanks = data.worksheets.filter((w) => !w.sessionId && !w.printedAt);
-  const tooLong = sessions.filter((s) => copyLines(s).length > 3);
+  const tooLong = sessions.filter((s) => regraDaFolha(s).join(' ').length > 3 * 68);
   // frente e verso, ou uma página só com a avaliação no pé (continua escaneável)
   const pages = backs ? STUDY_PAGES : SINGLE_PAGES;
 
@@ -86,7 +86,7 @@ export function PrintPage({ ids, mode: initialMode, week: initialWeek }: { ids: 
             </fieldset>
             {tooLong.length > 0 && (
               <p className="warn">
-                O Conceito principal tem 3 linhas. Em {tooLong.map((s) => s.id).join(', ')} há mais conteúdo ✎ COPIE do que cabe; só as 3 primeiras linhas saem na folha.
+                A regra tem 3 linhas na folha. Em {tooLong.map((s) => s.id).join(', ')} ela é mais longa e sai cortada; encurte no editor da sessão.
               </p>
             )}
           </>

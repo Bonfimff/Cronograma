@@ -260,7 +260,7 @@ export function SessionForm({
         <summary>Folha física</summary>
         <div className="form">
           <label>
-            Conceito principal ✎ COPIE <small>(até 3 linhas; vazio = usa os itens marcados com ✎)</small>
+            A regra ✎ COPIE <small>(explicação simples, até 3 linhas; vazio = gerada da aula; traduções do tipo X = Y são ignoradas)</small>
             <textarea rows={3} value={txt.copy} onChange={(e) => setT({ copy: e.target.value })} />
           </label>
           <label>

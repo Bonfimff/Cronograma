@@ -11,8 +11,9 @@
  */
 
 import type { ContentRef, Example, Exercise, Expression, Grammar, Pattern, Session, UserData, Word } from '../types';
-import { content, copyBlock, examplesFor, getExamples, getWord, parseRef, refLabel, resolve } from '../content/repository';
+import { content, examplesFor, getExamples, getWord, parseRef, refLabel, resolve } from '../content/repository';
 import { fromExample, getExerciseList, seeded, shuffle, wordsInSession } from '../exercises/exercises';
+import { regraDaFolha } from '../worksheets/fill';
 import { editDistance, judgeSpeech, normalizeSpoken, similarity, thresholdFor, type Verdict } from '../games/fastSpeech';
 import type { Parte } from './vozes';
 
@@ -195,9 +196,8 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
   }
 
   // 8. fechamento
-  const copia = s.sheet?.copy?.length
-    ? s.sheet.copy
-    : s.copyRefs.flatMap((r) => copyBlock(r)?.lines ?? []).slice(0, 3);
+  // a mesma regra da folha: uma explicação para copiar, não uma lista de traduções
+  const copia = regraDaFolha(s);
   etapas.push({
     tipo: 'fechamento', id: 'fechamento', rotulo: 'Fechamento',
     chaves: frasesChave(conceitosAula, todosExemplos).slice(0, 3),

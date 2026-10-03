@@ -110,11 +110,13 @@ function render(e: El, i: number, values: FieldValues, qr: Record<string, string
       const v = values[e.key];
       if (!v) return null;
       const lines = e.lines ? toLines(v, e.lines, e.maxChars) : [trunc(Array.isArray(v) ? v.join(' ') : v, e.maxChars)];
-      return (
+      const texto = (
         <text key={i} fontSize={e.size} fontWeight={e.weight ?? 400} fill={C[e.color ?? 'ink']} textAnchor={e.anchor} {...font}>
           {lines.map((l, k) => <tspan key={k} x={e.x} y={e.y + k * (e.step ?? 0)}>{l}</tspan>)}
         </text>
       );
+      // de cabeça para baixo (respostas): gira em volta do próprio texto
+      return e.flip ? <g key={i} transform={`rotate(180 ${e.x} ${e.y - e.size * 0.35})`}>{texto}</g> : texto;
     }
   }
 }

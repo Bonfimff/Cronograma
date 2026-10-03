@@ -24,7 +24,7 @@ export type El =
   | { t: 'marker'; kind: MarkerKind; x: number; y: number }
   | { t: 'qr'; x: number; y: number; size: number; page?: QrPage }
   | { t: 'box'; group: CheckGroupId; value: string; x: number; y: number; size: number }
-  | { t: 'field'; key: string; x: number; y: number; size: number; maxChars?: number; lines?: number; step?: number; color?: Color; weight?: number; anchor?: 'start' | 'middle' };
+  | { t: 'field'; key: string; x: number; y: number; size: number; maxChars?: number; lines?: number; step?: number; color?: Color; weight?: number; anchor?: 'start' | 'middle'; flip?: boolean };
 
 /** Qual QR a página leva: frente (só identifica), verso (/V) ou folha única (/U), que trazem as caixas. */
 export type QrPage = 'front' | 'back' | 'single';
@@ -77,7 +77,7 @@ const DAYS = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
 const DAY_TOPS = [528, 646, 764, 887, 1010, 1133, 1253];
 
 // ---------- Dia de Estudo — frente ----------
-const studyFront: El[] = [
+const cabecalho: El[] = [
   ...markers,
   { t: 'text', x: 57, y: 63, text: 'PLANO DE ESTUDOS', size: 16, ls: 0.28, weight: 500 },
   { t: 'line', x1: 293, y1: 58, x2: 510, y2: 58, color: 'ink', sw: 1.2 },
@@ -121,10 +121,11 @@ const studyFront: El[] = [
   { t: 'field', key: 'session', x: 814, y: 263, size: 16, weight: 600 },
 
   { t: 'icon', name: 'book', x: 64, y: 337, size: 34, color: 'ink' },
-  { t: 'text', x: 99, y: 342, text: 'CONCEITO PRINCIPAL', size: 17, weight: 700, ls: 0.04 },
-  { t: 'rect', x: 321, y: 324, w: 83, h: 26, r: 6, fill: 'fill' },
-  { t: 'icon', name: 'pencil', x: 340, y: 337, size: 15, color: 'teal' },
-  { t: 'text', x: 354, y: 342, text: 'COPIE', size: 12, weight: 700, ls: 0.06 },
+  { t: 'text', x: 99, y: 342, text: 'A REGRA', size: 17, weight: 700, ls: 0.04 },
+  { t: 'rect', x: 196, y: 324, w: 83, h: 26, r: 6, fill: 'fill' },
+  { t: 'icon', name: 'pencil', x: 215, y: 337, size: 15, color: 'teal' },
+  { t: 'text', x: 229, y: 342, text: 'COPIE', size: 12, weight: 700, ls: 0.06 },
+  { t: 'text', x: 296, y: 342, text: 'com as suas palavras, se quiser', size: 11, color: 'teal' },
   { t: 'rect', x: 45, y: 364, w: 646, h: 122, r: 7, fill: 'fill2' },
   { t: 'lines', x: 64, y: 395, w: 612, count: 3, step: 31.5, color: 'line' },
   { t: 'field', key: 'concept', x: 66, y: 390, size: 16, lines: 3, step: 31.5, maxChars: 68 },
@@ -135,12 +136,61 @@ const studyFront: El[] = [
   { t: 'text', x: 771, y: 349, text: 'QUANDO USAR?', size: 14, weight: 700, ls: 0.06 },
   { t: 'field', key: 'whenToUse', x: 771, y: 388, size: 13.5, lines: 4, step: 22, maxChars: 29, color: 'ink' },
 
-  { t: 'icon', name: 'pencil', x: 63, y: 527, size: 28, color: 'teal' },
-  { t: 'text', x: 101, y: 529, text: 'MINHA PRÁTICA', size: 14, weight: 700, ls: 0.06, color: 'teal' },
-  { t: 'text', x: 101, y: 548, text: 'Escreva aqui suas próprias frases ou traduções.', size: 11.5, color: 'teal' },
-  { t: 'field', key: 'practice', x: 101, y: 569, size: 12, maxChars: 120, weight: 600 },
-  { t: 'lines', x: 50, y: 583, w: 929, count: 27, step: 33.65, color: 'line' },
 ];
+
+// ---------- Atividade de fixação (frente) ----------
+/** Número do bloco + título + instrução curta. */
+const bloco = (n: number, y: number, titulo: string, instrucao: string): El[] => [
+  { t: 'circle', cx: 66, cy: y - 6, r: 15, fill: 'teal', text: String(n), textColor: 'white', size: 15 },
+  { t: 'text', x: 92, y, text: titulo, size: 14, weight: 700, ls: 0.06 },
+  { t: 'text', x: 92 + titulo.length * 10.4, y, text: instrucao, size: 12, color: 'teal' },
+];
+
+const atividade: El[] = [
+  { t: 'icon', name: 'check', x: 63, y: 527, size: 28, color: 'teal' },
+  { t: 'text', x: 97, y: 532, text: 'ATIVIDADE DE FIXAÇÃO', size: 16, weight: 700, ls: 0.06 },
+  { t: 'text', x: 360, y: 532, text: 'Sem consultar · uns 10 minutos · confira as respostas no fim', size: 12, color: 'teal' },
+
+  ...bloco(1, 582, 'COMPLETE', 'com as palavras do quadro (sobra uma)'),
+  { t: 'rect', x: 92, y: 596, w: 886, h: 36, r: 6, fill: 'fill2' },
+  { t: 'field', key: 'bank', x: 535, y: 620, size: 15, weight: 600, anchor: 'middle', maxChars: 90 },
+  { t: 'text', x: 94, y: 672, text: 'a)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'fill1', x: 120, y: 672, size: 14.5, maxChars: 92 },
+  { t: 'text', x: 94, y: 712, text: 'b)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'fill2', x: 120, y: 712, size: 14.5, maxChars: 92 },
+  { t: 'text', x: 94, y: 752, text: 'c)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'fill3', x: 120, y: 752, size: 14.5, maxChars: 92 },
+
+  ...bloco(2, 806, 'ORDENE', 'as palavras e escreva a frase'),
+  { t: 'text', x: 94, y: 846, text: 'a)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'order1', x: 120, y: 846, size: 14.5, maxChars: 92, color: 'muted' },
+  { t: 'line', x1: 120, y1: 884, x2: 978, y2: 884, color: 'line' },
+  { t: 'text', x: 94, y: 918, text: 'b)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'order2', x: 120, y: 918, size: 14.5, maxChars: 92, color: 'muted' },
+  { t: 'line', x1: 120, y1: 956, x2: 978, y2: 956, color: 'line' },
+
+  ...bloco(3, 1004, 'FALE DE VOCÊ', 'complete com a sua vida, em inglês'),
+  { t: 'text', x: 94, y: 1044, text: 'a)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'self1', x: 120, y: 1044, size: 14.5, maxChars: 92 },
+  { t: 'text', x: 94, y: 1084, text: 'b)', size: 13, weight: 700, color: 'teal' },
+  { t: 'field', key: 'self2', x: 120, y: 1084, size: 14.5, maxChars: 92 },
+
+  // respostas de 1 e 2, de cabeça para baixo: conferir na hora, sem "colar" sem querer
+  { t: 'rect', x: 45, y: 1104, w: 938, h: 40, r: 6, fill: 'fill2' },
+  { t: 'field', key: 'answers', x: 514, y: 1120, size: 11.5, anchor: 'middle', maxChars: 150, color: 'muted', flip: true },
+  { t: 'text', x: 60, y: 1137, text: 'RESPOSTAS ↻', size: 9, weight: 700, ls: 0.1, color: 'teal' },
+];
+
+/** Na folha de frente e verso, o resto da frente fica para escrever à vontade. */
+const praticaLivre: El[] = [
+  { t: 'icon', name: 'pencil', x: 63, y: 1180, size: 24, color: 'teal' },
+  { t: 'text', x: 89, y: 1186, text: 'MINHA PRÁTICA', size: 13, weight: 700, ls: 0.06, color: 'teal' },
+  { t: 'text', x: 225, y: 1186, text: 'frases suas com o que aprendeu', size: 11.5, color: 'teal' },
+  { t: 'field', key: 'practice', x: 470, y: 1186, size: 12, maxChars: 70, weight: 600 },
+  { t: 'lines', x: 50, y: 1222, w: 929, count: 8, step: 33.65, color: 'line' },
+];
+
+const studyFront: El[] = [...cabecalho, ...atividade, ...praticaLivre];
 
 // ---------- Dia de Estudo — avaliação (verso, ou o pé da folha única) ----------
 /*
@@ -207,11 +257,8 @@ const studyBack: El[] = [
  * O QR do topo leva "/U": quem lê sabe que as caixas estão nesta página.
  */
 const studySingle: El[] = [
-  ...studyFront.map((e): El => {
-    if (e.t === 'qr') return { ...e, page: 'single' };
-    if (e.t === 'lines' && e.count === 27) return { ...e, count: 17 };
-    return e;
-  }),
+  ...cabecalho.map((e): El => (e.t === 'qr' ? { ...e, page: 'single' } : e)),
+  ...atividade,
   ...avaliacao(false),
 ];
 // ---------- Plano semanal ----------
