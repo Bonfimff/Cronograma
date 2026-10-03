@@ -168,9 +168,22 @@ def varrer_vocabulario(texto: str, feitas: list[str], palavras: list, maximo: in
         pt = p.pt.strip()
         if len(pt) < 3 or pt.lower() in (f.lower() for f in feitas):
             continue
-        texto, novas = aplicar_troca(texto, [pt], palavras)
-        feitas += novas
+        novo, novas = aplicar_troca(texto, [pt], palavras)
+        if novas and _ingles_colado(novo, p.en, palavras):
+            continue  # "Felipe é um name work": duas trocas lado a lado viram frase sem sentido
+        texto, feitas = novo, feitas + novas
     return texto, feitas
+
+
+def _ingles_colado(texto: str, en: str, palavras: list) -> bool:
+    """A palavra recém-trocada ficou encostada em outra palavra do vocabulário em inglês?"""
+    outras = {x.en.lower() for x in palavras if x.en.lower() != en.lower()}
+    for m in re.finditer(r"\b" + re.escape(en) + r"\b", texto, re.IGNORECASE):
+        antes = re.findall(r"[A-Za-zÀ-ÿ']+", texto[: m.start()])[-1:]
+        depois = re.findall(r"[A-Za-zÀ-ÿ']+", texto[m.end():])[:1]
+        if any(w.lower() in outras for w in antes + depois):
+            return True
+    return False
 
 
 ABERTURA_VAZIA = re.compile(r"^\s*(?:(?:Entendi|Peço desculpas[^.!?]*|Desculpe[^.!?]*)\s*[!.]\s*)+", re.IGNORECASE)

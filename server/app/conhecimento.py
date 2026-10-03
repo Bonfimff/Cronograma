@@ -206,6 +206,8 @@ def resposta_direta(db: Session, user: User, conversa: list[dict]) -> str | None
         return " ".join(partes)
     if LISTA.search(fala):
         palavras = carregar(db, user, limite=100000, todas=True)
+        vistas: set[str] = set()
+        palavras = [p for p in palavras if not (p.en.lower() in vistas or vistas.add(p.en.lower()))]
         if not palavras:
             return "Você ainda não tem palavras no vocabulário."
         lista = "\n".join(f"• {p.en} ({p.pt})" for p in palavras[:30])

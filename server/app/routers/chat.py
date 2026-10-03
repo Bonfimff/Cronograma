@@ -29,6 +29,7 @@ from ..db import db_session
 from ..deps import current_user
 from ..idioma import parece_portugues
 from ..marcacao import limpar, marcar, marcar_lista
+from ..treino import correcao_fora_do_treino, responder_treino
 from ..models import User
 from ..schemas import ChatIn, ChatOut
 from ..vocabulario import Palavra, carregar
@@ -156,6 +157,19 @@ async def _conversar_slot(
     return ChatOut(reply=marcado, glossary=glossario)
 
 
+def _marcar_linhas_em_ingles(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
+    """No treino, só as linhas em inglês ganham palavras vivas ("do" e "a" do português não)."""
+    linhas, glossario = [], {}
+    for linha in texto.split("\n"):
+        if linha.strip() and not linha.startswith(("🎯", "(")) and not parece_portugues(linha):
+            marcada, itens = marcar(linha, vocabulario, maximo=12)
+            linhas.append(marcada)
+            glossario.update({g["en"].lower(): g for g in itens})
+        else:
+            linhas.append(linha)
+    return "\n".join(linhas), list(glossario.values())
+
+
 @router.post("", response_model=ChatOut)
 async def conversar(
     entrada: ChatIn,
@@ -167,6 +181,11 @@ async def conversar(
     conversa = [{"role": m.role, "content": limpar(m.content)} for m in entrada.messages]
 
     if settings().chat_modo == "slot":
+        # treino de conversa: perguntas em inglês das frases de estudo, uma por vez (ver treino.py)
+        treino = responder_treino(db, user, conversa)
+        if treino:
+            marcado, glossario = _marcar_linhas_em_ingles(treino, carregar(db, user, 100000, todas=True))
+            return ChatOut(reply=marcado, glossary=glossario)
         # perguntas sobre o app, a conta e os dados da pessoa têm resposta pronta: sem modelo, sem erro
         direta = resposta_direta(db, user, conversa)
         if direta:
@@ -177,7 +196,12 @@ async def conversar(
             return ChatOut(reply=marcado, glossary=glossario)
         # o guia do app só entra quando a pessoa pergunta do app: em toda conversa, ele atrapalha
         sobre = contexto_do_app(db, user, pergunta_sobre_vocabulario(conversa)) if pergunta_sobre_o_app(conversa) else ""
-        return await _conversar_slot(entrada.limit, conversa, vocabulario, sobre)
+        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre)
+        # escreveu em inglês com algo a acertar? a correção vem antes da conversa
+        correcao = correcao_fora_do_treino(db, user, conversa)
+        if correcao:
+            resposta.reply = correcao + resposta.reply
+        return resposta
 
     # modo "livre": o modelo escreve o inglês sozinho, uma palavra por vez
     palavra = _escolher(vocabulario, conversa)
