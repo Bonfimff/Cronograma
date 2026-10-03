@@ -11,7 +11,7 @@
  */
 
 import type { ContentRef, Example, Exercise, Expression, Grammar, Pattern, Session, UserData, Word } from '../types';
-import { content, copyBlock, examplesFor, getWord, parseRef, refLabel, resolve } from '../content/repository';
+import { content, copyBlock, examplesFor, getExamples, getWord, parseRef, refLabel, resolve } from '../content/repository';
 import { fromExample, getExerciseList, seeded, shuffle, wordsInSession } from '../exercises/exercises';
 import { editDistance, judgeSpeech, normalizeSpoken, similarity, thresholdFor, type Verdict } from '../games/fastSpeech';
 import type { Parte } from './vozes';
@@ -44,6 +44,9 @@ export interface EtapaPalavra extends Base {
   significado: string;
   exemplo?: Example;
   audio?: string;
+  /** aprofundar: os usos da palavra e as formas que ela toma */
+  usos: { rotulo: string; significado: string; explicacao: string; exemplos: Example[] }[];
+  formas: { forma: string; significado: string; nota?: string }[];
 }
 export interface EtapaConceito extends Base {
   tipo: 'conceito';
@@ -57,6 +60,19 @@ export interface EtapaConceito extends Base {
   explicacao: string;
   pontos: string[];
   exemplos: Example[];
+  /** expressão: as palavras que a compõem */
+  componentes: { en: string; pt: string }[];
+  /** padrão: peças para montar frases dos exemplos */
+  montador?: Montador;
+}
+
+export interface Montador {
+  /** cada peça: uma palavra fixa (1 opção) ou várias para trocar */
+  pecas: string[][];
+  /** pontuação do fim da fórmula (? ou .) */
+  final: string;
+  /** as frases que dá para montar (vêm dos exemplos, então estão certas) */
+  frases: Example[];
 }
 export interface EtapaExercicio extends Base { tipo: 'aquecimento' | 'pratica'; exercicio: Exercise; dica?: string }
 export interface EtapaEscuta extends Base { tipo: 'escuta'; exemplo: Example; opcoes: string[] }
@@ -122,6 +138,8 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
       significado: w.core_meaning,
       exemplo: examplesFor(ref).find(curto) ?? examplesFor(ref)[0],
       audio: w.audio,
+      usos: (w.uses ?? []).map((x) => ({ rotulo: x.label, significado: x.meaning, explicacao: x.explanation, exemplos: getExamples(x.examples ?? []).slice(0, 2) })),
+      formas: (w.variations ?? []).map((v) => ({ forma: v.form, significado: v.meaning, nota: v.note })),
     });
   });
 
@@ -201,6 +219,7 @@ function montarConceito(ref: ContentRef, rotulo: string): EtapaConceito | null {
       tipo: 'conceito', id: `conceito-${ref}`, rotulo, ref, classe: 'expressão',
       titulo: e.text, tituloEmIngles: true, traducao: e.translation,
       explicacao: [e.meaning, e.context].filter(Boolean).join(' '), pontos: [], exemplos,
+      componentes: (e.words ?? []).map((id) => getWord(id)).filter(Boolean).map((w) => ({ en: w!.word, pt: w!.translations[0]?.text ?? '' })),
     };
   }
   if (kind === 'pattern') {
@@ -210,7 +229,8 @@ function montarConceito(ref: ContentRef, rotulo: string): EtapaConceito | null {
       titulo: p.name, tituloEmIngles: false, formula: p.formula,
       explicacao: p.explanation,
       pontos: p.slots.filter((x) => x.options.length).map((x) => `${x.name}: ${x.options.join(' · ')}`).slice(0, 3),
-      exemplos,
+      exemplos, componentes: [],
+      montador: montarPecas(p, getExamples(p.examples ?? [])),
     };
   }
   if (kind === 'grammar') {
@@ -218,6 +238,7 @@ function montarConceito(ref: ContentRef, rotulo: string): EtapaConceito | null {
     return {
       tipo: 'conceito', id: `conceito-${ref}`, rotulo, ref, classe: 'gramática',
       titulo: g.title, tituloEmIngles: false, explicacao: g.explanation, pontos: g.points.slice(0, 3), exemplos,
+      componentes: [],
     };
   }
   return null;
@@ -385,4 +406,100 @@ export function lerAutomatico(): boolean {
 
 export function guardarAutomatico(v: boolean): void {
   try { localStorage.setItem(AUTO, v ? '1' : '0'); } catch { /* sem armazenamento */ }
+}
+// ---------- montador de frases (padrões) ----------
+
+const palavrasDe = (frase: string) => frase.replace(/[?.!,;:]/g, '').split(/\s+/).filter(Boolean);
+
+/**
+ * Peças para trocar a partir da fórmula ("How + are/is + subject?"), dos espaços do
+ * padrão e das próprias frases de exemplo. Só montamos quando dá para chegar a uma
+ * frase dos exemplos: assim a pessoa nunca ouve uma combinação errada como certa.
+ */
+export function montarPecas(p: Pattern, exemplos: Example[]): Montador | undefined {
+  const partes = p.formula.split(/\s*\+\s*/).map((x) => x.trim()).filter(Boolean);
+  if (partes.length < 2) return undefined;
+  const final = /\?\s*$/.test(p.formula) ? '?' : '.';
+  const frases = exemplos.filter((e) => palavrasDe(e.en).length === partes.length);
+  if (!frases.length) return undefined;
+  const pecas = partes.map((parte, i) => {
+    const nome = parte.replace(/[?.!]/g, '');
+    const opcoes = new Set<string>();
+    const espaco = p.slots.find((s) => s.name.toLowerCase() === nome.toLowerCase());
+    espaco?.options.forEach((o) => opcoes.add(o));
+    if (nome.includes('/')) nome.split('/').forEach((o) => opcoes.add(o.trim()));
+    frases.forEach((e) => opcoes.add(palavrasDe(e.en)[i]));
+    // palavra fixa da fórmula (How, do): fica como está
+    if (!espaco && !nome.includes('/') && frases.every((e) => palavrasDe(e.en)[i].toLowerCase() === nome.toLowerCase())) {
+      return [palavrasDe(frases[0].en)[i]];
+    }
+    // sem repetir a mesma palavra com outra caixa (How / how)
+    const vistas = new Set<string>();
+    return [...opcoes].filter((o) => {
+      const k = o.toLowerCase();
+      if (!o || vistas.has(k)) return false;
+      vistas.add(k);
+      return true;
+    });
+  });
+  if (!pecas.some((x) => x.length > 1)) return undefined;
+  return { pecas, final, frases };
+}
+
+/** A frase dos exemplos que a combinação forma, se formar. */
+export function fraseMontada(m: Montador, escolha: string[]): Example | undefined {
+  const alvo = normalizeSpoken(escolha.join(' '));
+  return m.frases.find((e) => normalizeSpoken(e.en) === alvo);
+}
+
+// ---------- tradução palavra a palavra ----------
+
+/** O básico que quase nunca vira ficha mas aparece em toda frase. */
+const BASICO: Record<string, string> = {
+  i: 'eu', you: 'você', he: 'ele', she: 'ela', it: 'isso / ele', we: 'nós', they: 'eles',
+  me: 'me / mim', him: 'ele / o', her: 'ela / dela', us: 'nós', them: 'eles / os',
+  my: 'meu / minha', your: 'seu / sua', his: 'dele', our: 'nosso', their: 'deles', its: 'dele / dela',
+  am: 'sou / estou', is: 'é / está', are: 'são / estão / é / está', was: 'era / estava', were: 'eram / estavam',
+  be: 'ser / estar', do: 'fazer (ou auxiliar de pergunta)', does: 'faz (ou auxiliar de pergunta)', did: 'fez (ou auxiliar do passado)',
+  have: 'ter', has: 'tem', not: 'não', no: 'não / nenhum', yes: 'sim',
+  the: 'o / a / os / as', a: 'um / uma', an: 'um / uma', this: 'este / isto', that: 'aquele / isso / que',
+  what: 'o que / qual', where: 'onde', how: 'como', who: 'quem', when: 'quando', why: 'por que', which: 'qual',
+  at: 'em / no / na', in: 'em / dentro', on: 'em / sobre', to: 'para / a', from: 'de / desde', with: 'com', for: 'para / por', of: 'de',
+  and: 'e', or: 'ou', but: 'mas', so: 'então', very: 'muito', too: 'também / demais',
+  today: 'hoje', tomorrow: 'amanhã', yesterday: 'ontem', now: 'agora', here: 'aqui', there: 'lá', home: 'casa',
+  good: 'bom', fine: 'bem', well: 'bem', nice: 'agradável / legal', thanks: 'obrigado', please: 'por favor',
+  hi: 'oi', hello: 'olá', bye: 'tchau', can: 'pode / consegue', will: 'vai (futuro)', would: 'gostaria / iria',
+};
+
+let indice: Map<string, { pt: string; ref?: string }> | undefined;
+let indiceDe: unknown;
+
+function indicePalavras() {
+  if (indice && indiceDe === content.words) return indice;
+  const novo = new Map<string, { pt: string; ref?: string }>();
+  Object.entries(BASICO).forEach(([en, pt]) => novo.set(en, { pt }));
+  content.words.forEach((w) => {
+    const pt = w.translations.slice(0, 2).map((t) => t.text).join(' / ');
+    if (pt) novo.set(w.word.toLowerCase(), { pt, ref: `word:${w.id}` });
+  });
+  indice = novo;
+  indiceDe = content.words;
+  return novo;
+}
+
+/** Tradução de uma palavra solta (aceita as formas works, working, worked, it's...). */
+export function traduzirPalavra(palavra: string): { pt: string; ref?: string } | undefined {
+  const w = palavra.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z']/g, '');
+  if (!w) return undefined;
+  const idx = indicePalavras();
+  const tentativas = [
+    w, w.replace(/'s$/, ''), w.replace(/'re$/, ''), w.replace(/'m$/, ''), w.replace(/n't$/, ''),
+    w.replace(/ies$/, 'y'), w.replace(/es$/, ''), w.replace(/s$/, ''), w.replace(/ed$/, ''), w.replace(/d$/, ''),
+    w.replace(/ing$/, ''), w.replace(/ing$/, 'e'), w.replace(/(.)\1ing$/, '$1'), w.replace(/(.)\1ed$/, '$1'),
+  ];
+  for (const t of tentativas) {
+    const achou = idx.get(t);
+    if (achou) return achou;
+  }
+  return undefined;
 }

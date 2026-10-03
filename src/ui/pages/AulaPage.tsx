@@ -3,9 +3,9 @@ import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import { finishSession, findSession, saveExerciseScore, startSession, updateSession } from '../../core/sessions/sessions';
 import {
-  falasDaEtapa, guardarAutomatico, julgarFrase, lerAutomatico, montarAula,
+  falasDaEtapa, fraseMontada, guardarAutomatico, julgarFrase, lerAutomatico, montarAula, traduzirPalavra,
   type Etapa, type EtapaConceito, type EtapaEscuta, type EtapaFala, type EtapaFechamento,
-  type EtapaMissao, type EtapaPalavra, type FraseJulgada, type Modo,
+  type EtapaMissao, type EtapaPalavra, type FraseJulgada, type Modo, type Montador,
 } from '../../core/lessons/aula';
 import { falaAtual, falar, pararFala, type Parte } from '../../core/lessons/vozes';
 import { refLabel } from '../../core/content/repository';
@@ -57,20 +57,163 @@ function Ouvir({ partes, chave, rotulo = 'Ouvir', lento = false }: { partes: Par
   );
 }
 
+// só um balão aberto por vez
+let balaoAberto: string | null = null;
+const ouvintesBalao = new Set<() => void>();
+const balao = {
+  get: () => balaoAberto,
+  set(id: string | null) { balaoAberto = id; ouvintesBalao.forEach((o) => o()); },
+  subscribe(o: () => void) { ouvintesBalao.add(o); return () => { ouvintesBalao.delete(o); }; },
+};
+let proximoBalao = 0;
+
+/**
+ * Palavra viva: pontilhada; tocar fala a palavra e abre a tradução (do vocabulário ou
+ * do básico). Tocar de novo, ou fora, fecha.
+ */
+function PalavraViva({ palavra }: { palavra: string }) {
+  const [id] = useState(() => `b${proximoBalao++}`);
+  const aberto = useSyncExternalStore(balao.subscribe, balao.get) === id;
+  const traducao = useMemo(() => traduzirPalavra(palavra), [palavra]);
+  useEffect(() => {
+    if (!aberto) return;
+    const fechar = () => balao.set(null);
+    document.addEventListener('pointerdown', fechar);
+    return () => document.removeEventListener('pointerdown', fechar);
+  }, [aberto]);
+  return (
+    <span className="viva">
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => { void falar({ texto: palavra, lingua: 'en' }); balao.set(aberto ? null : id); }}
+      >
+        {palavra}
+      </button>
+      {aberto && (
+        <span className="viva-balao" role="tooltip" onPointerDown={(e) => e.stopPropagation()}>
+          {traducao ? traducao.pt : 'toque nos alto-falantes para ouvir a frase'}
+          {traducao?.ref && <a href={`#/conteudo/${traducao.ref}`}>ver ficha</a>}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Texto em inglês com cada palavra viva; pontuação e espaços ficam como estão. */
+function InglesVivo({ texto }: { texto: string }) {
+  const pedacos = texto.split(/([A-Za-z][A-Za-z'’-]*)/);
+  return <>{pedacos.map((p, i) => (i % 2 === 1 ? <PalavraViva key={i} palavra={p} /> : p))}</>;
+}
+
+/** Tradução que se revela ao toque: tentar entender antes de ver ajuda a fixar. */
+function Traducao({ texto, oculta }: { texto: string; oculta: boolean }) {
+  const [vista, setVista] = useState(!oculta);
+  if (vista) return <p className="aula-pt"><T t={texto} /></p>;
+  return (
+    <button type="button" className="aula-pt aula-pt-oculta" onClick={() => setVista(true)} aria-label="Mostrar a tradução">
+      <span aria-hidden>{texto}</span>
+      <small>tente entender · toque para ver</small>
+    </button>
+  );
+}
+
 /** Frase em inglês com ouvir e ouvir devagar, e a tradução embaixo. */
-function Frase({ ex, chave, grande = false }: { ex: { en: string; pt?: string; context?: string }; chave: string; grande?: boolean }) {
+function Frase({ ex, chave, grande = false, ocultarPt = false }: {
+  ex: { en: string; pt?: string; context?: string }; chave: string; grande?: boolean; ocultarPt?: boolean;
+}) {
   const partes: Parte[] = [{ texto: ex.en, lingua: 'en' }];
   return (
     <div className={`aula-frase${grande ? ' grande' : ''}`}>
       <p className="aula-en">
-        <T t={ex.en} />
+        <T t={ex.en}><InglesVivo texto={ex.en} /></T>
         <span className="aula-botoes">
           <Ouvir partes={partes} chave={`${chave}:n`} />
           <Ouvir partes={partes} chave={`${chave}:l`} rotulo="Ouvir devagar" lento />
         </span>
       </p>
-      {ex.pt && <p className="aula-pt"><T t={ex.pt} /></p>}
+      {ex.pt && <Traducao texto={ex.pt} oculta={ocultarPt} />}
       {ex.context && <p className="aula-ctx">{ex.context}</p>}
+    </div>
+  );
+}
+
+/** Abas de aprofundar: o essencial fica à vista, o resto a um toque. */
+function Aprofundar({ abas }: { abas: { rotulo: string; conteudo: ReactNode }[] }) {
+  const [aberta, setAberta] = useState<number | null>(null);
+  const visiveis = abas.filter((a) => a.conteudo);
+  if (!visiveis.length) return null;
+  return (
+    <div className="aula-aprofundar">
+      <p className="aula-subtitulo">Aprofundar</p>
+      <div className="aula-abas" role="tablist">
+        {visiveis.map((a, k) => (
+          <button key={a.rotulo} type="button" role="tab" aria-selected={aberta === k} className={aberta === k ? 'on' : ''} onClick={() => setAberta(aberta === k ? null : k)}>
+            {a.rotulo}
+          </button>
+        ))}
+      </div>
+      {aberta !== null && <div className="aula-aba" role="tabpanel">{visiveis[aberta].conteudo}</div>}
+    </div>
+  );
+}
+
+/**
+ * Montador: tocar numa peça troca a palavra. Quando a combinação forma uma frase dos
+ * exemplos, ela acende, toca e mostra a tradução; as achadas ficam marcadas embaixo.
+ */
+function MontadorFrases({ m, chave }: { m: Montador; chave: string }) {
+  // começa numa combinação que ainda não é frase: achar é a graça
+  const [escolha, setEscolha] = useState(() => {
+    const inicio = m.pecas.map((p) => p[0]);
+    for (let i = m.pecas.length - 1; i >= 0 && fraseMontada(m, inicio); i--) {
+      for (const o of m.pecas[i]) {
+        inicio[i] = o;
+        if (!fraseMontada(m, inicio)) break;
+      }
+    }
+    return inicio;
+  });
+  const [achadas, setAchadas] = useState<Set<string>>(() => new Set());
+  const frase = fraseMontada(m, escolha);
+  const trocar = (i: number) => {
+    const opcoes = m.pecas[i];
+    const nova = [...escolha];
+    nova[i] = opcoes[(opcoes.indexOf(escolha[i]) + 1) % opcoes.length];
+    setEscolha(nova);
+    const achou = fraseMontada(m, nova);
+    if (achou) {
+      setAchadas((a) => new Set(a).add(achou.id));
+      void tocar([{ texto: achou.en, lingua: 'en' }], `${chave}:m`);
+    }
+  };
+  return (
+    <div className="aula-montador">
+      <p className="aula-subtitulo">Monte e ouça</p>
+      <p className="aula-dica">Toque nas peças coloridas para trocar. Quando formar uma frase de verdade, ela acende.</p>
+      <p className={`aula-formula montando${frase ? ' achou' : ''}`}>
+        {escolha.map((p, i) => (
+          <span key={i} className="aula-bloco-wrap">
+            {m.pecas[i].length > 1 ? (
+              <button type="button" className={`aula-bloco c${i % 5} troca`} onClick={() => trocar(i)} aria-label={`Trocar ${p}`}>{p} <small>↻</small></button>
+            ) : (
+              <span className="aula-bloco fixo">{p}</span>
+            )}
+          </span>
+        ))}
+        <span className="aula-mais">{m.final}</span>
+      </p>
+      {frase ? (
+        <p className="aula-veredito ok">✓ {frase.pt}</p>
+      ) : (
+        <p className="aula-dica">Ainda não é uma das frases. Continue trocando.</p>
+      )}
+      <p className="aula-achadas">
+        {m.frases.map((x) => (
+          <span key={x.id} className={achadas.has(x.id) ? 'achada' : ''}>{achadas.has(x.id) ? x.en : '•••'}</span>
+        ))}
+        <small>{achadas.size} de {m.frases.length} frases achadas</small>
+      </p>
     </div>
   );
 }
@@ -178,8 +321,32 @@ function CartaoPalavra({ e, obterMic, estudo }: { e: EtapaPalavra; obterMic: Obt
       )}
       <p className="aula-traducao"><T t={e.traducoes.join(', ')} /></p>
       {e.significado && <p className="aula-texto"><T t={e.significado} /></p>}
-      {e.exemplo && <Frase ex={e.exemplo} chave={`${e.id}:ex`} />}
+      {e.exemplo && <Frase ex={e.exemplo} chave={`${e.id}:ex`} ocultarPt={estudo} />}
       {estudo && <Repetir alvo={e.en} obterMic={obterMic} rotulo="Repita a palavra" />}
+      <Aprofundar
+        abas={[
+          {
+            rotulo: `Usos (${e.usos.length})`,
+            conteudo: e.usos.length ? e.usos.map((u) => (
+              <div key={u.rotulo} className="aula-uso">
+                <p><strong>{u.rotulo}</strong>: {u.significado}</p>
+                {u.explicacao && <p className="aula-dica">{u.explicacao}</p>}
+                {u.exemplos.map((x) => <Frase key={x.id} ex={x} chave={`${e.id}:uso:${x.id}`} />)}
+              </div>
+            )) : null,
+          },
+          {
+            rotulo: `Formas (${e.formas.length})`,
+            conteudo: e.formas.length ? (
+              <ul className="aula-formas">
+                {e.formas.map((v) => (
+                  <li key={v.forma}><span className="aula-en"><InglesVivo texto={v.forma} /></span> {v.significado}{v.nota && <small>: {v.nota}</small>}</li>
+                ))}
+              </ul>
+            ) : null,
+          },
+        ]}
+      />
     </>
   );
 }
@@ -198,13 +365,13 @@ function Formula({ formula }: { formula: string }) {
   );
 }
 
-function CartaoConceito({ e }: { e: EtapaConceito }) {
+function CartaoConceito({ e, estudo }: { e: EtapaConceito; estudo: boolean }) {
   return (
     <>
       <p className="aula-classe">{e.classe}</p>
       {e.tituloEmIngles ? (
         <h2 className="aula-palavra">
-          <T t={e.titulo} />
+          <T t={e.titulo}><InglesVivo texto={e.titulo} /></T>
           <span className="aula-botoes">
             <Ouvir partes={[{ texto: e.titulo, lingua: 'en' }]} chave={`${e.id}:t`} />
             <Ouvir partes={[{ texto: e.titulo, lingua: 'en' }]} chave={`${e.id}:tl`} rotulo="Ouvir devagar" lento />
@@ -216,12 +383,22 @@ function CartaoConceito({ e }: { e: EtapaConceito }) {
       {e.formula && <Formula formula={e.formula} />}
       {e.traducao && <p className="aula-traducao"><T t={e.traducao} /></p>}
       <p className="aula-texto"><T t={e.explicacao} /></p>
-      {e.pontos.length > 0 && <ul className="aula-pontos">{e.pontos.map((p) => <li key={p}>{p}</li>)}</ul>}
+      {e.componentes.length > 0 && (
+        <p className="aula-componentes">
+          {e.componentes.map((c) => (
+            <span key={c.en} className="aula-componente"><span className="aula-en"><InglesVivo texto={c.en} /></span><small>{c.pt}</small></span>
+          ))}
+        </p>
+      )}
       {e.exemplos.length > 0 && (
         <div className="aula-exemplos">
           <p className="aula-subtitulo">Exemplos</p>
-          {e.exemplos.map((x) => <Frase key={x.id} ex={x} chave={`${e.id}:${x.id}`} />)}
+          {e.exemplos.map((x) => <Frase key={x.id} ex={x} chave={`${e.id}:${x.id}`} ocultarPt={estudo} />)}
         </div>
+      )}
+      {e.montador && <MontadorFrases m={e.montador} chave={e.id} />}
+      {e.pontos.length > 0 && (
+        <Aprofundar abas={[{ rotulo: 'Peças do padrão', conteudo: <ul className="aula-pontos">{e.pontos.map((p) => <li key={p}>{p}</li>)}</ul> }]} />
       )}
     </>
   );
@@ -493,7 +670,7 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
           </>
         )}
         {etapa.tipo === 'palavra' && <CartaoPalavra e={etapa} obterMic={obterMic} estudo={modo === 'estudo'} />}
-        {etapa.tipo === 'conceito' && <CartaoConceito e={etapa} />}
+        {etapa.tipo === 'conceito' && <CartaoConceito e={etapa} estudo={modo === 'estudo'} />}
         {(etapa.tipo === 'aquecimento' || etapa.tipo === 'pratica') && (
           <>
             {etapa.dica && <p className="aula-dica">{etapa.dica}</p>}
