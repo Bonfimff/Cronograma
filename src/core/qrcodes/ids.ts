@@ -16,9 +16,11 @@ export function normalizeCode(text: string): string {
   return m ? m[0] : text.trim().toUpperCase();
 }
 
-/** Conteúdo do QR de cada página: frente = código; verso = código + "/V". */
-export const qrPayload = (code: string, page: 'front' | 'back' = 'front') => (page === 'back' ? `${code}/V` : code);
+/** Conteúdo do QR de cada página: frente = código; verso = código + "/V"; folha única = código + "/U". */
+export const qrPayload = (code: string, page: 'front' | 'back' | 'single' = 'front') =>
+  (page === 'back' ? `${code}/V` : page === 'single' ? `${code}/U` : code);
 export const isBackPayload = (text: string) => /\/V\s*$/i.test(text.trim());
+export const isSinglePayload = (text: string) => /\/U\s*$/i.test(text.trim());
 
 /** Reserva o próximo código do ano (muta o rascunho). */
 export function nextCode(draft: UserData, year = new Date().getFullYear()): string {

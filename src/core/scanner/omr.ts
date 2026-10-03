@@ -137,8 +137,15 @@ export function findMarkers(img: Img): Pt[] | null {
 
   const big = Math.max(w, h);
   const found = blobs(bin, w, h, Math.max(4, big * 0.0025), big * 0.05);
-  const squares = found.filter((b) => classify(b, bin, w) === 'square').slice(0, 60);
-  const ls = found.filter((b) => classify(b, bin, w) === 'L').slice(0, 60);
+  // os marcadores ficam nos cantos da folha: entre as formas parecidas (letras, ícones,
+  // o próprio QR), ficam as mais perto dos cantos da foto. Uma página cheia de desenho
+  // (a folha única) tem formas demais para olhar todas.
+  const doCanto = (b: Blob) => Math.min(
+    Math.hypot(b.cx, b.cy), Math.hypot(w - b.cx, b.cy), Math.hypot(b.cx, h - b.cy), Math.hypot(w - b.cx, h - b.cy),
+  );
+  const perto = (xs: Blob[]) => xs.sort((a, b) => doCanto(a) - doCanto(b)).slice(0, 30);
+  const squares = perto(found.filter((b) => classify(b, bin, w) === 'square'));
+  const ls = perto(found.filter((b) => classify(b, bin, w) === 'L'));
   if (squares.length < 2 || ls.length < 2) return null;
 
   // escolhe a combinação (2 ■ + 2 L) que forma o maior quadrilátero: os marcadores ficam nos cantos

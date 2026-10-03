@@ -22,9 +22,12 @@ export type El =
   | { t: 'circle'; cx: number; cy: number; r: number; fill: Color; text?: string; textColor?: Color; size?: number }
   | { t: 'icon'; name: IconName; x: number; y: number; size: number; color?: Color }
   | { t: 'marker'; kind: MarkerKind; x: number; y: number }
-  | { t: 'qr'; x: number; y: number; size: number; page?: 'front' | 'back' }
+  | { t: 'qr'; x: number; y: number; size: number; page?: QrPage }
   | { t: 'box'; group: CheckGroupId; value: string; x: number; y: number; size: number }
   | { t: 'field'; key: string; x: number; y: number; size: number; maxChars?: number; lines?: number; step?: number; color?: Color; weight?: number; anchor?: 'start' | 'middle' };
+
+/** Qual QR a página leva: frente (só identifica), verso (/V) ou folha única (/U), que trazem as caixas. */
+export type QrPage = 'front' | 'back' | 'single';
 
 export type Color = 'ink' | 'teal' | 'muted' | 'line' | 'fill' | 'fill2' | 'border' | 'sage' | 'white';
 
@@ -50,7 +53,7 @@ export const CHECK_GROUPS: CheckGroup[] = [
   ] },
 ];
 
-export type PageKind = 'study-front' | 'study-back' | 'week-plan' | 'guide';
+export type PageKind = 'study-front' | 'study-back' | 'study-single' | 'week-plan' | 'guide';
 
 export interface PageTemplate {
   id: PageKind;
@@ -139,32 +142,17 @@ const studyFront: El[] = [
   { t: 'lines', x: 50, y: 583, w: 929, count: 27, step: 33.65, color: 'line' },
 ];
 
-// ---------- Dia de Estudo — verso ----------
-const quizRow = (n: number, cx: number, x1: number, x2: number, y: number): El[] => [
-  { t: 'circle', cx, cy: y - 6, r: 14, fill: 'fill', text: String(n), textColor: 'ink', size: 15 },
-  { t: 'line', x1, y1: y, x2, y2: y, color: 'line' },
-  { t: 'field', key: `quiz${n}`, x: x1 + 2, y: y - 6, size: 12, maxChars: 44, color: 'muted' },
-];
-
-const studyBack: El[] = [
-  ...markers,
-  { t: 'lines', x: 50, y: 48, w: 929, count: 28, step: 32.63, color: 'line' },
-
-  { t: 'icon', name: 'check', x: 59, y: 986, size: 32, color: 'teal' },
-  { t: 'text', x: 95, y: 988, text: 'TENTE SEM CONSULTAR', size: 14.5, weight: 700, ls: 0.06 },
-  { t: 'text', x: 95, y: 1010, text: 'Responda antes de ver o conteúdo completo no aplicativo.', size: 12, color: 'teal' },
-  ...quizRow(1, 59, 92, 488, 1047),
-  ...quizRow(2, 59, 92, 488, 1086),
-  ...quizRow(3, 59, 92, 488, 1125),
-  { t: 'line', x1: 512, y1: 1028, x2: 512, y2: 1135, color: 'muted' },
-  ...quizRow(4, 546, 578, 974, 1047),
-  ...quizRow(5, 546, 578, 974, 1086),
-  ...quizRow(6, 546, 578, 974, 1125),
-
+// ---------- Dia de Estudo — avaliação (verso, ou o pé da folha única) ----------
+/*
+ * As caixas ficam exatamente onde sempre estiveram: o leitor procura cada uma pela
+ * posição no modelo, e as folhas já impressas continuam sendo lidas.
+ */
+const avaliacao = (qr: boolean): El[] => [
   { t: 'rect', x: 37, y: 1161, w: 358, h: 257, r: 7, fill: 'fill' },
-  { t: 'icon', name: 'doc', x: 63, y: 1188, size: 26, color: 'teal' },
-  { t: 'text', x: 89, y: 1192, text: 'RESUMO DO QUE FOI ESTUDADO', size: 11.5, weight: 700, ls: 0.08 },
-  { t: 'lines', x: 54, y: 1225, w: 326, count: 6, step: 33, color: 'line' },
+  { t: 'icon', name: 'pencil', x: 63, y: 1188, size: 24, color: 'teal' },
+  { t: 'text', x: 89, y: 1192, text: 'OBSERVAÇÕES', size: 11.5, weight: 700, ls: 0.08 },
+  { t: 'text', x: 89, y: 1210, text: 'Dúvidas, dificuldades, o que quer rever.', size: 10.5, color: 'teal' },
+  { t: 'lines', x: 54, y: 1246, w: 326, count: 6, step: 29, color: 'line' },
 
   { t: 'rect', x: 409, y: 1163, w: 251, h: 257, r: 7, stroke: 'border', sw: 1.2 },
   { t: 'icon', name: 'bars', x: 438, y: 1188, size: 26, color: 'teal' },
@@ -177,7 +165,7 @@ const studyBack: El[] = [
   { t: 'box', group: 'mastery', value: 'reinforce', x: 428, y: 1342, size: 22 },
   { t: 'text', x: 469, y: 1358, text: 'Preciso de reforço', size: 14 },
 
-  { t: 'rect', x: 674, y: 1163, w: 304, h: 259, r: 7, stroke: 'border', sw: 1.2 },
+  { t: 'rect', x: 674, y: 1163, w: 304, h: 257, r: 7, stroke: 'border', sw: 1.2 },
   { t: 'icon', name: 'star', x: 697, y: 1188, size: 26, color: 'teal' },
   { t: 'text', x: 722, y: 1192, text: 'AO FINAL DO ESTUDO', size: 11.5, weight: 700, ls: 0.08 },
   { t: 'text', x: 689, y: 1224, text: 'Entendi?', size: 12, weight: 700 },
@@ -194,16 +182,38 @@ const studyBack: El[] = [
   { t: 'text', x: 772, y: 1300, text: 'Com dificuldade', size: 10 },
   { t: 'box', group: 'usage', value: 'no', x: 861, y: 1289, size: 13 },
   { t: 'text', x: 881, y: 1300, text: 'Não', size: 10 },
-  { t: 'icon', name: 'pencil', x: 698, y: 1334, size: 22, color: 'teal' },
-  { t: 'text', x: 722, y: 1338, text: 'Observação', size: 10.5, weight: 600 },
-  { t: 'lines', x: 706, y: 1362, w: 258, count: 3, step: 24.5, color: 'line' },
+  { t: 'line', x1: 689, y1: 1322, x2: 963, y2: 1322, color: 'border' },
+  { t: 'text', x: 689, y: 1348, text: 'Marque as caixas e', size: 10.5, color: 'teal' },
+  { t: 'text', x: 689, y: 1364, text: 'fotografe a folha inteira', size: 10.5, color: 'teal' },
+  { t: 'text', x: 689, y: 1380, text: 'para registrar no app.', size: 10.5, color: 'teal' },
 
   { t: 'text', x: 45, y: 1460, text: 'PEQUENOS PASSOS, GRANDES RESULTADOS', size: 10.5, ls: 0.3, color: 'teal' },
-  { t: 'line', x1: 358, y1: 1456, x2: 872, y2: 1456, color: 'line' },
+  { t: 'line', x1: 358, y1: 1456, x2: qr ? 872 : 978, y2: 1456, color: 'line' },
   // QR do verso: mesmo código + "/V" → identifica a folha e que esta é a página das caixas
-  { t: 'qr', x: 888, y: 1420, size: 68, page: 'back' },
+  ...(qr ? [{ t: 'qr', x: 888, y: 1420, size: 68, page: 'back' } as El] : []),
 ];
 
+const studyBack: El[] = [
+  ...markers,
+  // a página toda para escrever, até a faixa de avaliação
+  { t: 'icon', name: 'pencil', x: 63, y: 60, size: 24, color: 'teal' },
+  { t: 'text', x: 89, y: 66, text: 'MINHA PRÁTICA (CONTINUAÇÃO)', size: 12, weight: 700, ls: 0.06, color: 'teal' },
+  { t: 'lines', x: 50, y: 100, w: 929, count: 32, step: 32.63, color: 'line' },
+  ...avaliacao(true),
+];
+
+/**
+ * Folha única: a frente inteira, com menos linhas de prática, e a avaliação no pé.
+ * O QR do topo leva "/U": quem lê sabe que as caixas estão nesta página.
+ */
+const studySingle: El[] = [
+  ...studyFront.map((e): El => {
+    if (e.t === 'qr') return { ...e, page: 'single' };
+    if (e.t === 'lines' && e.count === 27) return { ...e, count: 17 };
+    return e;
+  }),
+  ...avaliacao(false),
+];
 // ---------- Plano semanal ----------
 const weekPlan: El[] = [
   { t: 'text', x: 60, y: 102, text: 'Plano de Estudos', size: 54, weight: 700 },
@@ -291,6 +301,7 @@ const guide: El[] = [
 export const PAGES: Record<PageKind, PageTemplate> = {
   'study-front': { id: 'study-front', name: 'Dia de Estudo: frente', hasQR: true, hasMarkers: true, elements: studyFront },
   'study-back': { id: 'study-back', name: 'Dia de Estudo: verso', hasQR: true, hasMarkers: true, elements: studyBack },
+  'study-single': { id: 'study-single', name: 'Dia de Estudo: folha única', hasQR: true, hasMarkers: true, elements: studySingle },
   'week-plan': { id: 'week-plan', name: 'Plano de Estudos: semanal', hasQR: false, hasMarkers: false, elements: weekPlan },
   guide: { id: 'guide', name: 'Plano de Estudos: orientações', hasQR: false, hasMarkers: false, elements: guide },
 };
@@ -298,6 +309,8 @@ export const PAGES: Record<PageKind, PageTemplate> = {
 /** Folha de estudo = frente + verso. */
 export const DEFAULT_TEMPLATE_ID = 'dia-de-estudo';
 export const STUDY_PAGES: PageKind[] = ['study-front', 'study-back'];
+/** Folha de estudo numa página só (com a avaliação no pé). */
+export const SINGLE_PAGES: PageKind[] = ['study-single'];
 
 /** Ponto de referência (centroide) de cada marcador, em px de referência. */
 export function markerCentroid(kind: MarkerKind, x: number, y: number): { x: number; y: number } {

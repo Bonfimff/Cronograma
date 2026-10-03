@@ -3,7 +3,7 @@ import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import type { Session } from '../../core/types';
 import { createBlankSheets, ensureSheetForSession, markPrinted } from '../../core/worksheets/worksheets';
-import { PAGES, STUDY_PAGES } from '../../core/worksheets/templates';
+import { PAGES, SINGLE_PAGES, STUDY_PAGES } from '../../core/worksheets/templates';
 import { copyLines, studySheetValues, weekSheetValues } from '../../core/worksheets/fill';
 import { addDays, fmtShort, today, weekStartOf } from '../../core/dates';
 import { SheetSvg } from '../components/SheetSvg';
@@ -22,7 +22,8 @@ export function PrintPage({ ids, mode: initialMode, week: initialWeek }: { ids: 
   const sessions = selected.map((id) => data.sessions.find((s) => s.id === id)).filter(Boolean) as Session[];
   const blanks = data.worksheets.filter((w) => !w.sessionId && !w.printedAt);
   const tooLong = sessions.filter((s) => copyLines(s).length > 3);
-  const pages = STUDY_PAGES.filter((p) => backs || p === 'study-front');
+  // frente e verso, ou uma página só com a avaliação no pé (continua escaneável)
+  const pages = backs ? STUDY_PAGES : SINGLE_PAGES;
 
   const print = () => {
     if (mode === 'study')
@@ -71,10 +72,18 @@ export function PrintPage({ ids, mode: initialMode, week: initialWeek }: { ids: 
               </div>
               {blanks.length > 0 && <p className="muted">{blanks.length} em branco na fila de impressão.</p>}
             </fieldset>
-            <label className="check">
-              <input type="checkbox" checked={backs} onChange={(e) => setBacks(e.target.checked)} />
-              <span>Incluir verso (frente e verso)</span>
-            </label>
+            <fieldset>
+              <legend>Formato</legend>
+              <div className="seg">
+                <button type="button" className={backs ? 'on' : ''} onClick={() => setBacks(true)}>Frente e verso</button>
+                <button type="button" className={!backs ? 'on' : ''} onClick={() => setBacks(false)}>Uma página só</button>
+              </div>
+              <p className="muted">
+                {backs
+                  ? 'Duas páginas: a frente para estudar, o verso para escrever e avaliar.'
+                  : 'Tudo numa página: menos linhas de prática e a avaliação no pé, que continua sendo lida pela câmera.'}
+              </p>
+            </fieldset>
             {tooLong.length > 0 && (
               <p className="warn">
                 O Conceito principal tem 3 linhas. Em {tooLong.map((s) => s.id).join(', ')} há mais conteúdo ✎ COPIE do que cabe; só as 3 primeiras linhas saem na folha.

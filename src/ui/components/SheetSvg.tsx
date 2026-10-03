@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import QRCode from 'qrcode';
-import { MARKER, REF_H, REF_W, type Color, type El, type IconName, type PageTemplate } from '../../core/worksheets/templates';
+import { MARKER, REF_H, REF_W, type Color, type El, type IconName, type PageTemplate, type QrPage } from '../../core/worksheets/templates';
 import type { FieldValues } from '../../core/worksheets/fill';
 import { qrPayload } from '../../core/qrcodes/ids';
 
@@ -120,10 +120,11 @@ function render(e: El, i: number, values: FieldValues, qr: Record<string, string
 }
 
 export function SheetSvg({ page, values, code }: { page: PageTemplate; values: FieldValues; code?: string }) {
-  const pages = page.elements.filter((e) => e.t === 'qr').map((e) => (e as { page?: 'front' | 'back' }).page ?? 'front');
+  const pages = page.elements.filter((e) => e.t === 'qr').map((e) => (e as { page?: QrPage }).page ?? 'front');
   const front = useQR(page.hasQR && code && pages.includes('front') ? qrPayload(code) : undefined);
   const back = useQR(page.hasQR && code && pages.includes('back') ? qrPayload(code, 'back') : undefined);
-  const qr = { front, back };
+  const single = useQR(page.hasQR && code && pages.includes('single') ? qrPayload(code, 'single') : undefined);
+  const qr = { front, back, single };
   return (
     <svg className="sheet" xmlns="http://www.w3.org/2000/svg" width={`${A4_W}mm`} height={`${A4_H}mm`} viewBox={VIEWBOX}>
       <rect x={-(VB_W - REF_W) / 2} y={-(VB_H - REF_H) / 2} width={VB_W} height={VB_H} fill="#fff" />

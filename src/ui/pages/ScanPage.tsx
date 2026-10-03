@@ -6,7 +6,7 @@ import { PAGES } from '../../core/worksheets/templates';
 import { readQR, readSheet, type Img, type SheetReading } from '../../core/scanner/omr';
 import { createSession, finishSession, saveUserExercises, startSession, updateSession } from '../../core/sessions/sessions';
 import { saveUserContent } from '../../core/content/novos';
-import { isBackPayload, isCode, normalizeCode } from '../../core/qrcodes/ids';
+import { isBackPayload, isCode, isSinglePayload, normalizeCode } from '../../core/qrcodes/ids';
 import type { MasteryStatus, UnderstoodStatus, UsageStatus } from '../../core/types';
 import { SessionForm } from '../components/SessionForm';
 import { FinishForm } from '../components/FinishForm';
@@ -53,19 +53,26 @@ export function ScanPage({ code: initialCode, autoCam, autoManual }: { code?: st
     setError('');
     const { img, url, w, h } = await fileToImage(f);
     const qr = readQR(img);
-    if (qr && !isBackPayload(qr.code)) {
+    const unica = !!qr && isSinglePayload(qr.code);
+    if (qr && !isBackPayload(qr.code) && !unica) {
       // frente: só identifica a folha
       setCode(normalizeCode(qr.code));
       setReading(null); setPhoto(null);
       return;
     }
-    // verso: o QR "/V" identifica a folha; os marcadores dos cantos localizam as caixas
-    const r = readSheet(img, PAGES['study-back']);
+    // verso ("/V") ou folha única ("/U"): o QR identifica a folha; os marcadores dos cantos localizam as caixas.
+    // Sem o QR lido de longe, tenta a folha única pelo QR na posição do modelo, depois o verso.
+    let r = unica ? readSheet(img, PAGES['study-single']) : null;
+    if (!qr) {
+      const tentativa = readSheet(img, PAGES['study-single']);
+      if (tentativa?.code && isSinglePayload(tentativa.code)) r = tentativa;
+    }
+    r ??= readSheet(img, PAGES['study-back']);
     const backQR = qr?.code ?? r?.code;
     const backCode = backQR ? normalizeCode(backQR) : code;
     if (qr && !r) {
       setCode(backCode);
-      setError('Reconheci o verso, mas não os 4 marcadores dos cantos. Fotografe a página inteira, com boa luz.');
+      setError(`Reconheci , mas não os 4 marcadores dos cantos. Fotografe a página inteira, com boa luz.`);
       return;
     }
     if (!r) {
