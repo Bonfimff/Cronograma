@@ -229,7 +229,8 @@ export function readSheet(img: Img, page: PageTemplate): SheetReading | null {
   const boxes = boxesOf(page);
   const code = readQRAt(img, map, page);
 
-  const groups = CHECK_GROUPS.map((g): GroupReading => {
+  // só os grupos que esta folha imprime (a folha nova tem só o status do conteúdo)
+  const groups = CHECK_GROUPS.filter((g) => g.options.every((o) => boxes.some((x) => x.group === g.id && x.value === o.value))).map((g): GroupReading => {
     const options = g.options.map((o) => {
       const b = boxes.find((x) => x.group === g.id && x.value === o.value)!;
       return { value: o.value, label: o.label, fill: fillRatio(img, map, b, thr), center: map({ x: b.x + b.size / 2, y: b.y + b.size / 2 }) };

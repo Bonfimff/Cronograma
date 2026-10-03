@@ -13,7 +13,7 @@
 import type { ContentRef, Example, Exercise, Expression, Grammar, Pattern, Session, UserData, Word } from '../types';
 import { content, examplesFor, getExamples, getWord, parseRef, refLabel, resolve } from '../content/repository';
 import { fromExample, getExerciseList, seeded, shuffle, wordsInSession } from '../exercises/exercises';
-import { regraDaFolha } from '../worksheets/fill';
+import { atividadeDaFolha, regraDaFolha, type AtividadeFolha } from '../worksheets/fill';
 import { editDistance, judgeSpeech, normalizeSpoken, similarity, thresholdFor, type Verdict } from '../games/fastSpeech';
 import type { Parte } from './vozes';
 
@@ -82,7 +82,10 @@ export interface EtapaMissao extends Base { tipo: 'missao'; situacao: string; ta
 export interface EtapaFechamento extends Base {
   tipo: 'fechamento';
   chaves: Example[];
+  /** o que copiar na folha (a regra da aula) */
   copia: string[];
+  /** a atividade de fixação, feita na folha genérica */
+  atividade: AtividadeFolha;
   criterios: string[];
   extras: ContentRef[];
 }
@@ -202,6 +205,7 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
     tipo: 'fechamento', id: 'fechamento', rotulo: 'Fechamento',
     chaves: frasesChave(conceitosAula, todosExemplos).slice(0, 3),
     copia,
+    atividade: atividadeDaFolha(s),
     criterios: s.expected?.criteria ?? [],
     extras,
   });

@@ -2091,3 +2091,14 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .aula-achadas span { font-family: var(--serif); font-size: .9rem; padding: 2px 10px; border-radius: 999px; background: #e8dcc4; color: #8b8271; letter-spacing: .1em; }
 .aula-achadas span.achada { background: rgba(111, 216, 138, .35); color: #221f19; letter-spacing: 0; }
 .aula-achadas small { width: 100%; color: #6c6455; font-size: .78rem; }
+/* fechamento: o que vai para a folha */
+.aula-folha { margin: 16px 0; }
+.aula-atividade { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.55); border: 1.5px solid #cdbf9f; line-height: 1.5; }
+.aula-atividade p { margin: 8px 0 4px; }
+.aula-atividade ol { margin: 0 0 6px; padding-left: 1.6rem; font-family: var(--serif); }
+.aula-atividade-titulo { font-weight: 700; margin-top: 0 !important; }
+.aula-atividade-titulo small { font-weight: 400; color: #6c6455; margin-left: 6px; }
+.aula-banco { display: inline-block; font-family: var(--serif); font-weight: 600; background: #e8dcc4; border-radius: 8px; padding: 4px 12px; }
+.aula-respostas { margin-top: 8px; }
+.aula-respostas summary { cursor: pointer; font-weight: 600; color: #5b5346; }
+.aula-respostas p { font-family: var(--serif); }

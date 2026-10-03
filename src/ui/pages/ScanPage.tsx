@@ -166,9 +166,9 @@ export function ScanPage({ code: initialCode, autoCam, autoManual }: { code?: st
         <section>
           {!reading && (
             <div className="scan-options">
-              <p>Fotografe o <strong>verso</strong> da folha, com as caixas marcadas e os 4 marcadores dos cantos visíveis.</p>
+              <p>Fotografe a página com o <strong>Status do conteúdo</strong> marcado (o verso, ou a folha única), com os 4 marcadores dos cantos visíveis.</p>
               <label className="primary big file">
-                Fotografar verso
+                Fotografar a folha
                 <input type="file" accept="image/*" capture="environment" onChange={(e) => onPhoto(e.target.files?.[0])} />
               </label>
               {error && <p className="error">{error}</p>}

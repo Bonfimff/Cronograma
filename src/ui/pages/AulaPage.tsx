@@ -515,10 +515,36 @@ function CartaoFechamento({ e, modo, sessionId, placar }: { e: EtapaFechamento; 
       )}
       {e.chaves.map((x) => <Frase key={x.id} ex={x} chave={`${e.id}:${x.id}`} />)}
       {e.copia.length > 0 && (
-        <div className="copybox aula-copia">
-          <p className="copy-mark">✎ Na folha: copie a regra</p>
-          {e.copia.map((l) => <p key={l}>{l}</p>)}
-          <p className="aula-dica">Depois faça a atividade de fixação da folha: complete, ordene e fale de você. As respostas estão de cabeça para baixo no pé.</p>
+        <div className="aula-folha">
+          <p className="aula-subtitulo">Na folha</p>
+          <div className="copybox aula-copia">
+            <p className="copy-mark">✎ Copie da aula</p>
+            {e.copia.map((l) => <p key={l}>{l}</p>)}
+          </div>
+          <div className="aula-atividade">
+            <p className="aula-atividade-titulo">☑ Atividade de fixação <small>sem consultar, escreva as respostas na folha</small></p>
+            {e.atividade.complete.length > 0 && (
+              <>
+                <p><strong>1 · Complete</strong> com as palavras do quadro (sobra uma)</p>
+                <p className="aula-banco">{e.atividade.banco.join('  ·  ')}</p>
+                <ol type="a">{e.atividade.complete.map((x) => <li key={x}>{x}</li>)}</ol>
+              </>
+            )}
+            {e.atividade.ordene.length > 0 && (
+              <>
+                <p><strong>2 · Ordene</strong> e escreva a frase</p>
+                <ol type="a">{e.atividade.ordene.map((x) => <li key={x}>{x}</li>)}</ol>
+              </>
+            )}
+            <p><strong>3 · Fale de você</strong>: complete com a sua vida, em inglês</p>
+            <ol type="a">{e.atividade.voce.map((x) => <li key={x}>{x}</li>)}</ol>
+            {e.atividade.respostas && (
+              <details className="aula-respostas">
+                <summary>Ver respostas de 1 e 2</summary>
+                <p>{e.atividade.respostas}</p>
+              </details>
+            )}
+          </div>
         </div>
       )}
       {e.criterios.length > 0 && (
