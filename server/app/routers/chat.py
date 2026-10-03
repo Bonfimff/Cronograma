@@ -14,6 +14,7 @@ aqui, com um cadeado, em vez de deixar as requisições se atropelarem lá.
 """
 
 import asyncio
+import re
 import json
 import urllib.error
 import urllib.request
@@ -30,6 +31,7 @@ from ..deps import current_user
 from ..idioma import parece_portugues
 from ..marcacao import limpar, marcar, marcar_lista
 from ..treino import correcao_fora_do_treino, responder_treino
+from ..vocab_chat import responder_vocabulario
 from ..models import User
 from ..schemas import ChatIn, ChatOut
 from ..vocabulario import Palavra, carregar
@@ -157,6 +159,21 @@ async def _conversar_slot(
     return ChatOut(reply=marcado, glossary=glossario)
 
 
+def _marcar_com_traducao(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
+    """Marca só as palavras escritas como "hi (oi)": o português em volta fica sem marca."""
+    por_palavra = {p.en.lower(): p for p in vocabulario}
+    glossario = {}
+
+    def troca(m: re.Match) -> str:
+        p = por_palavra.get(m.group(1).lower())
+        if not p:
+            return m.group(0)
+        glossario[p.en.lower()] = {"en": p.en, "pt": p.pt, "id": p.id}
+        return f"[[{m.group(1)}]] ("
+
+    return re.sub(r"\b([A-Za-z][A-Za-z'-]*) \(", troca, texto), list(glossario.values())
+
+
 def _marcar_linhas_em_ingles(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
     """No treino, só as linhas em inglês ganham palavras vivas ("do" e "a" do português não)."""
     linhas, glossario = [], {}
@@ -185,6 +202,11 @@ async def conversar(
         treino = responder_treino(db, user, conversa)
         if treino:
             marcado, glossario = _marcar_linhas_em_ingles(treino, carregar(db, user, 100000, todas=True))
+            return ChatOut(reply=marcado, glossary=glossario)
+        # adicionar palavra ou conferir se está na lista: feito de verdade, no banco (ver vocab_chat.py)
+        vocab = responder_vocabulario(db, user, conversa)
+        if vocab:
+            marcado, glossario = _marcar_com_traducao(vocab, carregar(db, user, 100000, todas=True))
             return ChatOut(reply=marcado, glossary=glossario)
         # perguntas sobre o app, a conta e os dados da pessoa têm resposta pronta: sem modelo, sem erro
         direta = resposta_direta(db, user, conversa)

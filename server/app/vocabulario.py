@@ -81,7 +81,7 @@ def _dias(desde: str | None) -> int:
 def carregar(db: Session, user: User, limite: int = 60, todas: bool = False) -> list[Palavra]:
     """
     O vocabulário em ordem de prioridade: quem tropeçou primeiro, depois quem
-    está sumido há mais tempo. 	odas inclui as palavras de função (you, how,
+    está sumido há mais tempo. `todas` inclui as palavras de função (you, how,
     to...), que a conversa deixa de fora mas a lista da pessoa precisa mostrar.
     """
     linhas = db.scalars(

@@ -111,7 +111,7 @@ def test_o_guia_cobre_todas_as_telas_e_jogos():
 
 def test_o_guia_diz_quem_e_o_app_quem_o_fez_e_o_que_o_chat_nao_faz():
     for trecho in ("Eita", "Inglês Híbrido", "Exksvol Systems", "Felipe Bonfim Flausino", "Limpar histórico",
-                   "não grava nada de forma permanente", "não consegue adicionar palavras"):
+                   "não grava nada de forma permanente", "consegue adicionar palavras ao vocabulário"):
         assert trecho in conhecimento.GUIA, trecho
 
 
@@ -176,7 +176,7 @@ def test_perguntas_sobre_o_app_e_o_amigo_recebem_a_resposta_pronta():
     assert "IA pequena" in _direta("Qual é o seu modelo de linguagem?")
     assert "não busco nada na internet" in _direta("Qual é a previsão do tempo para amanhã no rio de janeiro")
     assert "não busco nada na internet" in _direta("Eu quero saber se vai chover. Consegue me passar essa informação?")
-    assert "adicionar palavras" in _direta("adiciona a palavra Hi a minha lista de vocabulario")
+    # adicionar palavra agora é feito de verdade, antes das respostas prontas (ver test_vocab_chat.py)
     assert "outras pessoas" in _direta("Essa informação fica responsável para outros usuários ou só para mim?")
 
 

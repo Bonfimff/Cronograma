@@ -34,7 +34,7 @@ Aula guiada: Entender, Observar, Relacionar, Praticar e Avaliar. Também dá par
 
 No menu do avatar: Meu progresso (o que já gruda, o que ainda escapa e com que frequência você estuda), Ajustes (vozes e velocidade da leitura em voz alta) e a conta. Para fazer backup: menu do avatar, depois Ajustes, depois Backup dos dados; o backup leva também os recordes dos jogos.
 
-Este chat é o Amigo de treino: conversa em português e troca por inglês, no meio da fala, palavras do vocabulário que você já estudou. Ele só enxerga a conversa que está na tela: o botão Limpar histórico apaga tudo e ele esquece. Ele não grava nada de forma permanente, não consegue adicionar palavras ao vocabulário nem mudar configurações pelo chat, e não busca informações na internet. Ele é uma IA pequena que roda no computador do desenvolvedor."""
+Este chat é o Amigo de treino: conversa em português e troca por inglês, no meio da fala, palavras do vocabulário que você já estudou. Ele só enxerga a conversa que está na tela: o botão Limpar histórico apaga tudo e ele esquece. Ele não grava nada de forma permanente, consegue adicionar palavras ao vocabulário quando a pessoa pede (por exemplo: adicione hello), mas não muda configurações pelo chat, e não busca informações na internet. Ele é uma IA pequena que roda no computador do desenvolvedor."""
 
 # recordes que o app guarda como registros do tipo "game" (ver src/core/storage/backup.ts)
 RECORDES = {
@@ -169,8 +169,7 @@ FIXAS: list[tuple[re.Pattern, str]] = [
      "Eu só enxergo a conversa que está na tela. Se você limpar o histórico, eu esqueço tudo, e não consigo gravar nada de forma permanente."),
     (re.compile(r"outros usu[aá]rios|compartilh", re.I),
      "Eu só vejo esta conversa e não tenho como passar o que você diz para outras pessoas."),
-    (re.compile(r"(?:adicion|inclu|coloc|cadastr)\w*[^.?!]*(?:palavra|vocabul)", re.I),
-     "Pelo chat ainda não dá para adicionar palavras ao vocabulário."),
+
     (re.compile(r"previsão do tempo|vai chover|\bclima\b|que horas|cotação", re.I),
      "Eu não busco nada na internet, então não sei a previsão do tempo nem a hora."),
     (re.compile(r"modelo de linguagem|qual (?:é )?o seu modelo", re.I),
@@ -186,7 +185,9 @@ FIXAS: list[tuple[re.Pattern, str]] = [
 ]
 PLANO = re.compile(
     r"(?:tema|plano|aula|sess[aã]o|sess[oõ]es)[^.?!]*\b(?:hoje|hj|do dia)\b|\b(?:hoje|hj)\b[^.?!]*(?:tema|plano|aula|sess[aã]o)", re.I)
-LISTA = re.compile(r"lista de vocabul|minhas palavras|quais palavras|quantas palavras|vocabul[aá]rio\s*\?", re.I)
+LISTA = re.compile(
+    r"lista de vocabul|minhas palavras|quais palavras|quantas palavras|vocabul[aá]rio\s*\??\s*$"
+    r"|(?:qual|quais|como|mostr\w*|ver|veja)\b[^?]*\b(?:meu|o meu|minha|a minha)\s+(?:vocabul|lista)", re.I)
 RECORDE = re.compile(r"recorde|melhor pontua", re.I)
 
 

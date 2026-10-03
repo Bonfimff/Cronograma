@@ -238,7 +238,9 @@ def eco_do_usuario(texto: str, fala_da_pessoa: str) -> bool:
 
 PROMETE_MEMORIA = re.compile(
     r"definitiv|base de conhecimento|gravad[oa]|gravei|armazenad[oa]|vou (?:tentar )?(?:me )?lembrar|"
-    r"lembrar (?:de )?tudo|vou guardar|guardei|salvei|ficar[áa] salv",
+    r"lembrar (?:de )?tudo|vou guardar|guardei|salvei|ficar[áa] salv|"
+    # adicionar palavras é feito antes do modelo (vocab_chat.py): se o modelo diz que fez, é invenção
+    r"adicionei|coloquei|acrescentei|inclu[ií]\b|cadastrei|agora (?:tem|t[aá]|est[aá])\b|est[aá] na (?:sua )?lista",
     re.IGNORECASE,
 )
 
