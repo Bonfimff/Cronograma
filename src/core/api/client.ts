@@ -154,6 +154,46 @@ export class Api {
     return this.call('/chat', { method: 'POST', body: JSON.stringify({ messages, ...(limit ? { limit } : {}) }) }, token);
   }
 
+  /**
+   * A mesma conversa, com a resposta chegando enquanto o modelo escreve: `aoVivo` recebe o
+   * texto até ali (sem as palavras em inglês, que entram na versão final).
+   */
+  async chatAoVivo(
+    token: string, messages: ChatMessage[], aoVivo: (texto: string) => void,
+  ): Promise<{ reply: string; glossary: GlossaryItem[] }> {
+    if (!this.configured) throw new ApiError('Este aplicativo foi publicado sem servidor de conta.', 0);
+    let res: Response;
+    try {
+      res = await this.fetcher(`${this.baseUrl}/chat/stream`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ messages }),
+      });
+    } catch {
+      throw new ApiError('Servidor fora do ar ou sem internet.', 0);
+    }
+    if (res.status === 404) return this.chat(token, messages); // servidor antigo, sem a rota nova
+    if (!res.ok || !res.body) throw new ApiError(await readError(res), res.status);
+    const leitor = res.body.getReader();
+    const dec = new TextDecoder();
+    let resto = '';
+    for (;;) {
+      const { done, value } = await leitor.read();
+      resto += dec.decode(value ?? new Uint8Array(), { stream: !done });
+      const linhas = resto.split('\n');
+      resto = linhas.pop() ?? '';
+      for (const linha of linhas) {
+        if (!linha.trim()) continue;
+        const item = JSON.parse(linha) as { parcial?: string; final?: { reply: string; glossary: GlossaryItem[] }; erro?: string; status?: number };
+        if (item.parcial !== undefined) aoVivo(item.parcial);
+        if (item.final) return item.final;
+        if (item.erro) throw new ApiError(item.erro, item.status ?? 500);
+      }
+      if (done) break;
+    }
+    throw new ApiError('A resposta foi interrompida.', 0);
+  }
+
   /** O modelo está alcançável agora? */
   chatSaude(token: string): Promise<{ ok: boolean }> {
     return this.call('/chat/saude', {}, token);

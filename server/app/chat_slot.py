@@ -24,6 +24,7 @@ O que o modelo erra de forma teimosa é resolvido aqui, por código, e não por 
 import json
 import re
 import urllib.request
+from collections.abc import Callable
 from typing import Any
 
 from .idioma import parece_portugues
@@ -336,11 +337,27 @@ def _ler_json(bruto: str) -> dict:
         return {"reply": reply, "trocar": trocar}
 
 
+def reply_parcial(bruto: str) -> str:
+    """
+    O texto do campo "reply" de um JSON que ainda está chegando: {"reply": "Oi, tudo b
+    vira "Oi, tudo b". Serve para mostrar a resposta enquanto o modelo escreve.
+    """
+    m = re.search(r'"reply"\s*:\s*"((?:[^"\\]|\\.)*)', bruto, re.DOTALL)
+    if not m:
+        return ""
+    texto = re.sub(r"\\u[0-9a-fA-F]{0,3}$|\\$", "", m.group(1))  # escape ainda pela metade
+    try:
+        return json.loads('"' + texto + '"')
+    except json.JSONDecodeError:
+        return texto.replace('\\"', '"').replace("\\n", " ")
+
+
 def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras: list,
-            limite: int, temperatura: float, seed: int | None, timeout: int) -> tuple[str, list[str]]:
+            limite: int, temperatura: float, seed: int | None, timeout: int,
+            ao_vivo: Callable[[str], None] | None = None) -> tuple[str, list[str]]:
     corpo: dict[str, Any] = {
         "model": modelo,
-        "stream": False,
+        "stream": ao_vivo is not None,
         "format": esquema(palavras),
         "messages": [{"role": "system", "content": sistema}] + historico,
         # o JSON precisa caber inteiro, e o modelo escreve acentos como é (vários tokens cada):
@@ -356,14 +373,32 @@ def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras
         headers={"Content-Type": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        dados = _ler_json(json.loads(r.read().decode("utf-8"))["message"]["content"])
+        if ao_vivo is None:
+            bruto = json.loads(r.read().decode("utf-8"))["message"]["content"]
+        else:
+            # o Ollama manda uma linha JSON por pedaço; a cada um, o texto parcial vai para a tela
+            partes: list[str] = []
+            mostrado = ""
+            for linha in r:
+                if not linha.strip():
+                    continue
+                pedaco = json.loads(linha.decode("utf-8"))
+                partes.append((pedaco.get("message") or {}).get("content", ""))
+                parcial = reply_parcial("".join(partes))
+                if parcial != mostrado:
+                    mostrado = parcial
+                    ao_vivo(parcial)
+                if pedaco.get("done"):
+                    break
+            bruto = "".join(partes)
+        dados = _ler_json(bruto)
     return dados["reply"].strip(), [str(w) for w in dados.get("trocar", [])]
 
 
 def responder(url: str, modelo: str, historico: list[dict], palavras: list, limite: int = 200,
               timeout: int = 300, tentativas: int = 1, seed: int | None = None,
               sobre_o_app: str = "", minimo_trocas: int = 0, maximo_trocas: int = 0,
-              vocab_completo: list | None = None) -> dict:
+              vocab_completo: list | None = None, ao_vivo: Callable[[str], None] | None = None) -> dict:
     """
     Pede a resposta ao modelo, confere e troca as palavras marcadas.
 
@@ -383,6 +418,7 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
         reply, trocar = _chamar(
             url, modelo, instrucao(palavras, t > 0, sobre_o_app, palavras if vocab_completo is not None else None), historico, palavras, limite,
             0.3 + 0.2 * t, None if seed is None else seed + t, timeout,
+            **({"ao_vivo": ao_vivo} if ao_vivo else {}),
         )
         if reply and not parece_portugues(reply):
             problema = "ingles"

@@ -88,6 +88,8 @@ export function ChatPage() {
   const falas = lerConversa();
   const [texto, setTexto] = useState('');
   const [pensando, setPensando] = useState(false);
+  /** a resposta enquanto o modelo escreve (some quando chega a versão final) */
+  const [parcial, setParcial] = useState('');
   const [erro, setErro] = useState('');
   const fim = useRef<HTMLDivElement>(null);
   const ditado = useRef<Ditado | null>(null);
@@ -114,7 +116,7 @@ export function ChatPage() {
     }
   };
 
-  useEffect(() => { fim.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, [falas.length, pensando]);
+  useEffect(() => { fim.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, [falas.length, pensando, parcial.length > 0]);
 
   const enviar = async (conteudo: string) => {
     const limpo = conteudo.trim();
@@ -125,12 +127,13 @@ export function ChatPage() {
     setErro('');
     setPensando(true);
     try {
-      const r = await session.withToken((t) => api.chat(t, paraOModelo(lerConversa())));
+      const r = await session.withToken((t) => api.chatAoVivo(t, paraOModelo(lerConversa()), setParcial));
       acrescentar({ role: 'assistant', content: r.reply, glossary: r.glossary });
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o amigo de treino.');
     } finally {
       setPensando(false);
+      setParcial('');
     }
   };
 
@@ -173,7 +176,9 @@ export function ChatPage() {
           </div>
         )}
         {falas.map((f) => <Fala key={f.id} turno={f} />)}
-        {pensando && <div className="conversa-fala assistant pensando"><span /><span /><span /></div>}
+        {pensando && (parcial
+        ? <div className="conversa-fala assistant escrevendo">{parcial}<span className="cursor" /></div>
+        : <div className="conversa-fala assistant pensando"><span /><span /><span /></div>)}
         {erro && <p className="aviso">{erro}</p>}
         <div ref={fim} />
       </div>

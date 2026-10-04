@@ -21,11 +21,13 @@ import urllib.request
 from functools import partial
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from ..chat_slot import responder
 from ..config import settings
 from ..conhecimento import contexto_do_app, pergunta_sobre_o_app, pergunta_sobre_vocabulario, resposta_direta
+from .. import db as db_mod
 from ..db import db_session
 from ..deps import current_user
 from ..idioma import parece_portugues
@@ -128,7 +130,7 @@ def _pedir(mensagens: list[dict], limite: int) -> str:
 
 async def _conversar_slot(
     limite: int, conversa: list[dict], vocabulario: list[Palavra], sobre_o_app: str,
-    vocab_completo: list[Palavra] | None = None,
+    vocab_completo: list[Palavra] | None = None, ao_vivo=None,
 ) -> ChatOut:
     """
     O modelo escreve em português e marca as palavras que ficariam naturais em inglês; o
@@ -142,7 +144,7 @@ async def _conversar_slot(
                 partial(
                     responder, cfg.ollama_url, cfg.ollama_model, conversa, vocabulario, limite, cfg.ollama_timeout,
                     sobre_o_app=sobre_o_app, minimo_trocas=cfg.chat_trocas_minimo, maximo_trocas=cfg.chat_trocas_maximo,
-                    vocab_completo=vocab_completo,
+                    vocab_completo=vocab_completo, ao_vivo=ao_vivo,
                 )
             )
             texto = resposta["texto"]
@@ -210,6 +212,58 @@ async def conversar(
     user: User = Depends(current_user),
     db: Session = Depends(db_session),
 ) -> ChatOut:
+    return await _conversar(entrada, user, db)
+
+
+@router.post("/stream")
+async def conversar_ao_vivo(
+    entrada: ChatIn,
+    user: User = Depends(current_user),
+    db: Session = Depends(db_session),
+) -> StreamingResponse:
+    """
+    A mesma conversa, mas a resposta do modelo chega enquanto é escrita: uma linha JSON por
+    pedaço, {"parcial": "texto até aqui"}, e no fim {"final": {reply, glossary}} já com as
+    palavras do vocabulário trocadas e marcadas (ou {"erro": ..., "status": ...}). Respostas que
+    não passam pelo modelo (treino, consultas, vocabulário) chegam direto no "final".
+    """
+    laco = asyncio.get_running_loop()
+    fila: asyncio.Queue = asyncio.Queue()
+
+    def ao_vivo(texto: str) -> None:  # chamado na thread do modelo
+        laco.call_soon_threadsafe(fila.put_nowait, {"parcial": texto})
+
+    usuario_id = user.id
+
+    async def trabalhar() -> None:
+        # sessão própria: a da requisição fecha antes de a resposta em pedaços terminar
+        try:
+            with db_mod.SessionLocal() as sessao:
+                r = await _conversar(entrada, sessao.get(User, usuario_id), sessao, ao_vivo)
+            await fila.put({"final": r.model_dump()})
+        except HTTPException as e:
+            await fila.put({"erro": e.detail, "status": e.status_code})
+        except Exception:  # noqa: BLE001 — a pessoa vê uma mensagem, não a conexão caindo
+            await fila.put({"erro": "Não foi possível responder agora.", "status": 500})
+
+    async def linhas():
+        tarefa = asyncio.create_task(trabalhar())
+        try:
+            while True:
+                item = await fila.get()
+                yield json.dumps(item, ensure_ascii=False) + "\n"
+                if "final" in item or "erro" in item:
+                    break
+        finally:
+            if not tarefa.done():
+                tarefa.cancel()
+
+    # sem buffer no caminho (nginx), senão os pedaços chegam todos juntos no fim
+    return StreamingResponse(linhas(), media_type="application/x-ndjson",
+                             headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"})
+
+
+async def _conversar(entrada: ChatIn, user: User, db: Session, ao_vivo=None) -> ChatOut:
     vocabulario = carregar(db, user, 400)  # o vocabulário todo: a troca consulta todas as fichas
     # o histórico volta sem as marcas: elas são enfeite nosso, o modelo não precisa vê-las
     conversa = [{"role": m.role, "content": limpar(m.content)} for m in entrada.messages]
@@ -242,7 +296,7 @@ async def conversar(
             return ChatOut(reply=marcado, glossary=glossario)
         # o guia do app só entra quando a pessoa pergunta do app: em toda conversa, ele atrapalha
         sobre = contexto_do_app(db, user, pergunta_sobre_vocabulario(conversa)) if pergunta_sobre_o_app(conversa) else ""
-        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre, carregar(db, user, 100000, todas=True))
+        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre, carregar(db, user, 100000, todas=True), ao_vivo)
         # escreveu em inglês com algo a acertar? a correção vem antes da conversa
         correcao = correcao_fora_do_treino(db, user, conversa)
         if correcao:
