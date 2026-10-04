@@ -27,6 +27,7 @@ import urllib.request
 from typing import Any
 
 from .idioma import parece_portugues
+from .usar_vocabulario import usar_vocabulario
 
 # palavras do dia por resposta: mais que isso faz o modelo se perder
 QUANTAS = 6
@@ -339,7 +340,8 @@ def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras
 
 def responder(url: str, modelo: str, historico: list[dict], palavras: list, limite: int = 200,
               timeout: int = 300, tentativas: int = 1, seed: int | None = None,
-              sobre_o_app: str = "", minimo_trocas: int = 0, maximo_trocas: int = 0) -> dict:
+              sobre_o_app: str = "", minimo_trocas: int = 0, maximo_trocas: int = 0,
+              vocab_completo: list | None = None) -> dict:
     """
     Pede a resposta ao modelo, confere e troca as palavras marcadas.
 
@@ -375,6 +377,13 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
         else:
             problema = None
             break
+    if vocab_completo is not None:
+        # todas as palavras do vocabulário que couberem, por regras (ver usar_vocabulario.py);
+        # o texto volta já marcado, com as palavras vivas no lugar exato
+        limpo = limpar_abertura(reply)
+        marcado, inglesas = usar_vocabulario(limpo, vocab_completo, marcas=True) if problema is None else (limpo, [])
+        return {"texto": marcado.replace("[[", "").replace("]]", ""), "marcado": marcado, "trocadas": inglesas,
+                "tentativas": usadas, "problema": problema}
     texto, feitas = aplicar_troca(reply, trocar, palavras)
     if minimo_trocas > 0 and problema is None:
         texto, feitas = completar_trocas(texto, feitas, palavras, minimo_trocas)

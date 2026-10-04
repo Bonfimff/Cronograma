@@ -125,7 +125,8 @@ def _pedir(mensagens: list[dict], limite: int) -> str:
 
 
 async def _conversar_slot(
-    limite: int, conversa: list[dict], vocabulario: list[Palavra], sobre_o_app: str
+    limite: int, conversa: list[dict], vocabulario: list[Palavra], sobre_o_app: str,
+    vocab_completo: list[Palavra] | None = None,
 ) -> ChatOut:
     """
     O modelo escreve em português e marca as palavras que ficariam naturais em inglês; o
@@ -139,6 +140,7 @@ async def _conversar_slot(
                 partial(
                     responder, cfg.ollama_url, cfg.ollama_model, conversa, vocabulario, limite, cfg.ollama_timeout,
                     sobre_o_app=sobre_o_app, minimo_trocas=cfg.chat_trocas_minimo, maximo_trocas=cfg.chat_trocas_maximo,
+                    vocab_completo=vocab_completo,
                 )
             )
             texto = resposta["texto"]
@@ -152,6 +154,12 @@ async def _conversar_slot(
 
     if not texto:
         raise FORA_DO_AR
+    if resposta.get("marcado") and vocab_completo:
+        # as palavras do vocabulário já vêm marcadas no lugar exato (usar_vocabulario.py)
+        por_palavra = {p.en.lower(): p for p in vocab_completo}
+        usadas = {w.lower() for w in re.findall(r"\[\[([^\]]+)\]\]", resposta["marcado"])}
+        glossario = [{"en": por_palavra[w].en, "pt": por_palavra[w].pt, "id": por_palavra[w].id} for w in usadas if w in por_palavra]
+        return ChatOut(reply=resposta["marcado"], glossary=glossario)
     # se mesmo depois de pedir de novo veio em inglês, entrega sem marcar (como no modo livre)
     if not parece_portugues(texto):
         return ChatOut(reply=limpar(texto), glossary=[])
@@ -218,7 +226,7 @@ async def conversar(
             return ChatOut(reply=marcado, glossary=glossario)
         # o guia do app só entra quando a pessoa pergunta do app: em toda conversa, ele atrapalha
         sobre = contexto_do_app(db, user, pergunta_sobre_vocabulario(conversa)) if pergunta_sobre_o_app(conversa) else ""
-        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre)
+        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre, carregar(db, user, 100000, todas=True))
         # escreveu em inglês com algo a acertar? a correção vem antes da conversa
         correcao = correcao_fora_do_treino(db, user, conversa)
         if correcao:

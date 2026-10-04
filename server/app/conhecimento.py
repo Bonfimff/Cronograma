@@ -187,7 +187,7 @@ PLANO = re.compile(
     r"(?:tema|plano|aula|sess[aã]o|sess[oõ]es)[^.?!]*\b(?:hoje|hj|do dia)\b|\b(?:hoje|hj)\b[^.?!]*(?:tema|plano|aula|sess[aã]o)", re.I)
 LISTA = re.compile(
     r"lista de vocabul|minhas palavras|quais palavras|quantas palavras|vocabul[aá]rio\s*\??\s*$"
-    r"|(?:qual|quais|como|mostr\w*|ver|veja)\b[^?]*\b(?:meu|o meu|minha|a minha)\s+(?:vocabul|lista)", re.I)
+    r"|(?:qual|quais|como|mostr\w*|ver|veja)\b[^?]*\b(?:meu|o meu|minha|a minha|a)\s+(?:vocabul|lista)\b", re.I)
 RECORDE = re.compile(r"recorde|melhor pontua", re.I)
 
 
