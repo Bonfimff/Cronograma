@@ -108,6 +108,27 @@ folhas também aparecem no jogo de ligar palavras.
 }
 ```
 
+### Mandar só alguns dias (ou uma aula só)
+
+O arquivo não precisa trazer a semana inteira. **Só os dias que estão no arquivo mudam**; os outros
+ficam exatamente como estão. `week` pode ficar de fora: a semana vem da data do primeiro dia.
+
+```json
+{
+  "format": "ingles-hibrido/semana@1",
+  "days": [
+    { "date": "2026-10-08", "sessions": [
+      { "kind": "practice", "title": "Where do you work?", "refs": ["word:work"] }
+    ] }
+  ]
+}
+```
+
+A aula do arquivo atualiza a aula do aparelho com o **mesmo código** (`id`) ou, sem código, a do
+**mesmo dia com o mesmo título**. Se nenhuma corresponder, a aula é criada. As outras aulas daquele
+dia continuam lá, a menos que a opção "Nos dias do arquivo, tirar as aulas não iniciadas que não
+estão nele" esteja marcada.
+
 ### Reimportar sem perder o que já foi feito
 
 A semana exportada traz o **código** de cada sessão (`id`, o mesmo do QR da folha) e o `status`
@@ -115,13 +136,13 @@ A semana exportada traz o **código** de cada sessão (`id`, o mesmo do QR da fo
 
 | A sessão do arquivo… | O que acontece |
 |---|---|
-| não tem `id` | é **criada** com código novo |
+| não tem `id` | atualiza a aula planejada do mesmo dia com o mesmo título; se não houver, é **criada** com código novo |
 | tem `id` de uma sessão **planejada** | é **atualizada no lugar**, com o mesmo código — a folha impressa continua valendo |
 | tem `id` de uma sessão **iniciada ou feita** | fica **como está** (nada é duplicado nem sobrescrito) |
 | tem `id` que não existe neste aparelho | é criada com código novo (com aviso) |
 
-Com **"Tirar da semana as sessões não iniciadas que não estão no arquivo"** marcado, as sessões
-planejadas da semana que você apagou do arquivo são removidas. A prévia mostra exatamente quantas
+Com **"Nos dias do arquivo, tirar as aulas não iniciadas que não estão nele"** marcado, as aulas
+planejadas desses dias que não vieram no arquivo são removidas. Dias fora do arquivo nunca são tocados. A prévia mostra exatamente quantas
 sessões serão criadas, atualizadas, mantidas e removidas antes de importar.
 
 ---

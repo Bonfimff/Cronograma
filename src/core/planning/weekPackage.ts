@@ -125,22 +125,45 @@ function packageSessions(p: WeekPackage): { date: string; s: PackageSession }[] 
   return days.flatMap((d) => (Array.isArray(d.sessions) ? d.sessions.filter(isObj) : []).map((s) => ({ date: d.date, s })));
 }
 
+/**
+ * A semana do arquivo: "week" quando vem, senão a do primeiro dia. Um arquivo só com a
+ * aula de quinta (sem "week") é aceito: mexe só naquele dia, o resto fica como está.
+ */
+export function semanaDoPacote(p: WeekPackage): string {
+  if (isDate(p.week)) return weekStartOf(p.week);
+  const dia = (Array.isArray(p.days) ? p.days : []).find((d) => isObj(d) && isDate(d.date));
+  return dia ? weekStartOf(dia.date) : '';
+}
+
+const mesmoTitulo = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/**
+ * A sessão do aparelho que esta sessão do arquivo atualiza: pelo código (id) ou, sem código,
+ * pela mesma data e o mesmo título. Assim, reenviar só uma aula corrige aquela aula em vez de
+ * criar outra igual ao lado.
+ */
+function sessaoCorrespondente(data: UserData, date: string, s: PackageSession, usados: Set<string>): Session | undefined {
+  if (typeof s.id === 'string') return data.sessions.find((x) => x.id === s.id);
+  if (typeof s.title !== 'string') return undefined;
+  return data.sessions.find((x) => x.date === date && !usados.has(x.id) && mesmoTitulo(x.title, s.title));
+}
+
 /** Plano das sessões: o que é criado, atualizado, mantido e removido. */
 export function planSessions(data: UserData, p: WeekPackage, replacePlanned: boolean): SessionPlan {
-  const ws = isDate(p.week) ? weekStartOf(p.week) : '';
-  const byId = new Map(data.sessions.map((s) => [s.id, s]));
   const plan: SessionPlan = { create: 0, update: [], keep: [], remove: [] };
   const cited = new Set<string>();
-  packageSessions(p).forEach(({ s }) => {
-    const cur = typeof s.id === 'string' ? byId.get(s.id) : undefined;
+  packageSessions(p).forEach(({ date, s }) => {
+    const cur = sessaoCorrespondente(data, date, s, cited);
     if (!cur) plan.create++;
     else {
       cited.add(cur.id);
       (cur.status === 'planned' ? plan.update : plan.keep).push(cur.id);
     }
   });
-  if (replacePlanned && ws) {
-    plan.remove = data.sessions.filter((s) => s.weekStart === ws && s.status === 'planned' && !cited.has(s.id)).map((s) => s.id);
+  // "substituir": só nos dias que vieram no arquivo; os outros dias ficam intactos
+  if (replacePlanned) {
+    const dias = new Set(packageSessions(p).map((x) => x.date).concat((Array.isArray(p.days) ? p.days : []).filter(isObj).map((d) => d.date)));
+    plan.remove = data.sessions.filter((s) => dias.has(s.date) && s.status === 'planned' && !cited.has(s.id)).map((s) => s.id);
   }
   return plan;
 }
@@ -152,8 +175,10 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
   const warn = (m: string) => warnings.push(m);
 
   if (p.format !== PACKAGE_FORMAT) warn(`"format" deveria ser "${PACKAGE_FORMAT}".`);
-  if (!isDate(p.week)) err('"week" deve ser uma data que existe, no formato AAAA-MM-DD.');
+  // "week" é opcional: sem ele, o arquivo traz só os dias que vai mudar (uma aula avulsa, por exemplo)
+  if (p.week !== undefined && !isDate(p.week)) err('"week" deve ser uma data que existe, no formato AAAA-MM-DD (ou fique de fora).');
   const ws = isDate(p.week) ? weekStartOf(p.week) : '';
+  if (!ws && !semanaDoPacote(p)) err('Sem "week", pelo menos um dia precisa de "date".');
   if (!Array.isArray(p.days)) err('"days" deve ser uma lista.');
   if (p.goals !== undefined && typeof p.goals !== 'string') err('"goals" deve ser um texto.');
 
@@ -227,6 +252,10 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
   const plan = planSessions(data, p, opts.replacePlanned);
   const byId = new Map(data.sessions.map((s) => [s.id, s]));
   const idsInFile = new Set<string>();
+  const datas = (Array.isArray(p.days) ? p.days : []).filter(isObj).map((d) => d.date);
+  if (datas.length && datas.length < 7) {
+    warn(`Só ${datas.length === 1 ? 'o dia' : 'os dias'} ${datas.filter(isDate).map((d) => d.split('-').reverse().slice(0, 2).join('/')).join(', ')} ${datas.length === 1 ? 'muda' : 'mudam'}; os outros dias ficam como estão.`);
+  }
   let sessions = 0;
   (Array.isArray(p.days) ? p.days : []).forEach((d, di) => {
     if (!isObj(d)) return err(`days[${di}] deve ser um objeto.`);
@@ -253,7 +282,7 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
           const cur = byId.get(s.id);
           if (!cur) warn(`${w}: o código ${s.id} não existe aqui, então a sessão será criada com código novo.`);
           else if (cur.status !== 'planned') warn(`${w}: ${s.id} já foi ${cur.status === 'done' ? 'feita' : 'iniciada'}, fica como está.`);
-          else if (cur.weekStart !== ws) warn(`${w}: ${s.id} muda da semana ${cur.weekStart} para esta.`);
+          else if (ws && cur.weekStart !== ws) warn(`${w}: ${s.id} muda da semana ${cur.weekStart} para esta.`);
         }
       }
       const sheet = isObj(s.sheet) ? s.sheet : undefined;
@@ -282,7 +311,7 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
     errors,
     warnings,
     summary: {
-      week: ws,
+      week: ws || semanaDoPacote(p),
       days: Array.isArray(p.days) ? p.days.length : 0,
       sessions,
       content: Object.fromEntries(CONTENT_KEYS.map((k) => [k, lists[k].length]).filter(([, n]) => n)),
@@ -314,7 +343,7 @@ export interface ApplyResult {
  * sessões conforme o plano. Só chame depois de checkPackage dar ok.
  */
 export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePlanned: boolean }): ApplyResult {
-  const ws = weekStartOf(p.week);
+  const ws = semanaDoPacote(p);
   const plan = planSessions(draft, p, opts.replacePlanned);
 
   // conteúdo do usuário (mesmo id substitui)
@@ -332,10 +361,10 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
   if (p.sheets?.length) mergeSheets(draft, p.sheets);
 
   plan.remove.forEach((id) => deleteSession(draft, id));
-  if (p.goals !== undefined) saveWeekGoals(draft, ws, p.goals);
+  if (p.goals !== undefined && ws) saveWeekGoals(draft, ws, p.goals);
 
   const result: ApplyResult = { created: [], updated: [], kept: [...plan.keep], removed: [...plan.remove] };
-  const byId = new Map(draft.sessions.map((s) => [s.id, s]));
+  const usados = new Set<string>();
   p.days.forEach((d) => {
     saveDayPlan(draft, d.date, {
       ...(d.theme !== undefined && { theme: d.theme }),
@@ -343,7 +372,8 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
       ...(d.minutes !== undefined && { minutes: d.minutes }),
     });
     (d.sessions ?? []).forEach((ps) => {
-      const cur = ps.id ? byId.get(ps.id) : undefined;
+      const cur = sessaoCorrespondente(draft, d.date, ps, usados);
+      if (cur) usados.add(cur.id);
       if (cur && cur.status !== 'planned') return; // já iniciada/feita: não mexe
 
       let s: Session;

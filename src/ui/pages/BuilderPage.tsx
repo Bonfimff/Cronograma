@@ -163,7 +163,7 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
             <label className="check">
               <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
               <span>
-                Tirar da semana as sessões não iniciadas que não estão no arquivo
+                Nos dias do arquivo, tirar as aulas não iniciadas que não estão nele (os outros dias não mudam)
                 {check.summary.plan.remove.length > 0 && <> ({check.summary.plan.remove.length}: {check.summary.plan.remove.join(', ')})</>}
               </span>
             </label>
