@@ -1,3 +1,4 @@
+import { useRegistro } from '../../useRegistro';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { TRANCO, vibrar } from '../../../core/vibrar';
 import { buildVocabPool } from '../../../core/games/wordTetris';
@@ -157,6 +158,7 @@ export function WordMatch() {
   const [shake, setShake] = useState(false);
   const [whip, setWhip] = useState<{ i: number; key: number } | null>(null);
   const [score, setScore] = useState(0);
+  const registro = useRegistro('jogo', 'palavras');
   const [rounds, setRounds] = useState(0); // rodadas já completadas
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(BEST_KEY) || 0) || 0);
@@ -234,6 +236,7 @@ export function WordMatch() {
     setSelL(null);
     setSelR(null);
     if (l === r) {
+      registro.atual().acerto(round.pairs[l].en);
       setMatched((m) => [...m, l]);
       // cada par vale uma fatia dos 100 pontos da rodada
       setScore((s) => s + pairPoints(round.pairs.length)[matched.length]);
@@ -252,6 +255,7 @@ export function WordMatch() {
       later(() => setHit((h) => (h === l ? null : h)), crack + 700);
       later(() => setWhip((w) => (w && w.i === l ? null : w)), WHIP_MS + 40);
     } else {
+      registro.atual().erro(round.pairs[l].en);
       setStreak(0);
       setWrong({ l, r });
       later(() => setWrong(null), WRONG_MS);

@@ -29,7 +29,7 @@ export interface GlossaryItem {
   id: string;
 }
 
-export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat';
+export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat' | 'activity';
 
 export interface SyncRecord {
   kind: SyncKind;
@@ -154,6 +154,11 @@ export class Api {
   /** O modelo está alcançável agora? */
   chatSaude(token: string): Promise<{ ok: boolean }> {
     return this.call('/chat/saude', {}, token);
+  }
+
+  /** A IA lê o resumo dos números do progresso e escreve a análise (5 tópicos). */
+  analiseProgresso(token: string, resumo: string): Promise<{ texto: string; fonte: string }> {
+    return this.call('/progresso/analise', { method: 'POST', body: JSON.stringify({ resumo }) }, token);
   }
 
   /** O reconhecedor de voz do servidor está alcançável agora? */

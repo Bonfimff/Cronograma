@@ -1,3 +1,4 @@
+import { useRegistro } from '../useRegistro';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
@@ -237,7 +238,7 @@ function erroDoMic(e: unknown): string {
 }
 
 function Repetir({ alvo, obterMic, onResultado, rotulo = 'Repetir' }: {
-  alvo: string; obterMic: ObterMic; onResultado?: (ok: boolean) => void; rotulo?: string;
+  alvo: string; obterMic: ObterMic; onResultado?: (ok: boolean, ouvido?: string) => void; rotulo?: string;
 }) {
   const [estado, setEstado] = useState<'parado' | 'preparando' | 'ouvindo' | 'julgando'>('parado');
   const [aviso, setAviso] = useState('');
@@ -270,7 +271,7 @@ function Repetir({ alvo, obterMic, onResultado, rotulo = 'Repetir' }: {
       const j = julgarFrase(alvo, await transcribe(got.samples));
       setRes(j);
       setEstado('parado');
-      if (j.verdict !== 'unclear') onResultado?.(j.verdict === 'ok' || j.verdict === 'close');
+      if (j.verdict !== 'unclear') onResultado?.(j.verdict === 'ok' || j.verdict === 'close', j.ouvido);
     } catch (e) {
       setEstado('parado');
       setAviso(erroDoMic(e));
@@ -302,7 +303,9 @@ function Repetir({ alvo, obterMic, onResultado, rotulo = 'Repetir' }: {
 
 // ---------- cartões ----------
 
-function CartaoPalavra({ e, obterMic, estudo }: { e: EtapaPalavra; obterMic: ObterMic; estudo: boolean }) {
+function CartaoPalavra({ e, obterMic, estudo, onFala }: {
+  e: EtapaPalavra; obterMic: ObterMic; estudo: boolean; onFala?: (ok: boolean, ouvido?: string) => void;
+}) {
   return (
     <>
       <p className="aula-classe">{e.classe}</p>
@@ -322,7 +325,7 @@ function CartaoPalavra({ e, obterMic, estudo }: { e: EtapaPalavra; obterMic: Obt
       <p className="aula-traducao"><T t={e.traducoes.join(', ')} /></p>
       {e.significado && <p className="aula-texto"><T t={e.significado} /></p>}
       {e.exemplo && <Frase ex={e.exemplo} chave={`${e.id}:ex`} ocultarPt={estudo} />}
-      {estudo && <Repetir alvo={e.en} obterMic={obterMic} rotulo="Repita a palavra" />}
+      {estudo && <Repetir alvo={e.en} obterMic={obterMic} rotulo="Repita a palavra" onResultado={onFala} />}
       <Aprofundar
         abas={[
           {
@@ -443,7 +446,7 @@ function CartaoEscuta({ e, onResultado }: { e: EtapaEscuta; onResultado: (ok: bo
   );
 }
 
-function CartaoFala({ e, obterMic, onResultado }: { e: EtapaFala; obterMic: ObterMic; onResultado: (ok: boolean) => void }) {
+function CartaoFala({ e, obterMic, onResultado }: { e: EtapaFala; obterMic: ObterMic; onResultado: (ok: boolean, ouvido?: string) => void }) {
   return (
     <>
       <h2 className="aula-titulo">Ouça e repita</h2>
@@ -589,6 +592,8 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
   const etapas = useMemo(() => (s ? montarAula(data, s, modo) : []), [s?.id, modo]); // eslint-disable-line react-hooks/exhaustive-deps
   const [i, setI] = useState(() => (modo === 'estudo' && s && s.status !== 'done' ? Math.min(s.lessonStep ?? 0, Math.max(0, etapas.length - 1)) : 0));
   const [notas, setNotas] = useState<Record<string, boolean>>({});
+  // cada resposta da aula vai para o relatório de progresso (ver core/progress/registro.ts)
+  const registro = useRegistro('aula', `aula:${id}`);
   const [auto, setAuto] = useState(lerAutomatico);
   const tocando = useSyncExternalStore(falaAtual.subscribe, falaAtual.get);
   const mic = useRef<Mic>(new Mic());
@@ -619,7 +624,11 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
     return m;
   };
 
-  const registrar = (etapaId: string) => (ok: boolean) => setNotas((n) => ({ ...n, [etapaId]: (n[etapaId] ?? false) || ok }));
+  const registrar = (etapaId: string, en: string) => (ok: boolean, ouvido?: string) => {
+    registro.atual()[ok ? 'acerto' : 'erro'](en, ouvido);
+    setNotas((n) => ({ ...n, [etapaId]: (n[etapaId] ?? false) || ok }));
+  };
+  const respostaDe = (ex: { answer?: string | string[]; prompt: string }) => String((Array.isArray(ex.answer) ? ex.answer[0] : ex.answer) ?? ex.prompt);
   const placar = { total: Object.keys(notas).length, certos: Object.values(notas).filter(Boolean).length };
 
   const ouvirPasso = (e: Etapa) => void tocar(falasDaEtapa(e), e.id);
@@ -696,17 +705,19 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
             </div>
           </>
         )}
-        {etapa.tipo === 'palavra' && <CartaoPalavra e={etapa} obterMic={obterMic} estudo={modo === 'estudo'} />}
+        {etapa.tipo === 'palavra' && (
+          <CartaoPalavra e={etapa} obterMic={obterMic} estudo={modo === 'estudo'} onFala={(ok, ouvido) => registro.atual()[ok ? 'acerto' : 'erro'](etapa.en, ouvido)} />
+        )}
         {etapa.tipo === 'conceito' && <CartaoConceito e={etapa} estudo={modo === 'estudo'} />}
         {(etapa.tipo === 'aquecimento' || etapa.tipo === 'pratica') && (
           <>
             {etapa.dica && <p className="aula-dica">{etapa.dica}</p>}
-            <ExerciseView ex={etapa.exercicio} onResult={registrar(etapa.id)} />
+            <ExerciseView ex={etapa.exercicio} onResult={registrar(etapa.id, respostaDe(etapa.exercicio))} />
           </>
         )}
-        {etapa.tipo === 'escuta' && <CartaoEscuta e={etapa} onResultado={registrar(etapa.id)} />}
-        {etapa.tipo === 'fala' && <CartaoFala e={etapa} obterMic={obterMic} onResultado={registrar(etapa.id)} />}
-        {etapa.tipo === 'missao' && <CartaoMissao e={etapa} obterMic={obterMic} onResultado={registrar(etapa.id)} />}
+        {etapa.tipo === 'escuta' && <CartaoEscuta e={etapa} onResultado={registrar(etapa.id, etapa.exemplo.en)} />}
+        {etapa.tipo === 'fala' && <CartaoFala e={etapa} obterMic={obterMic} onResultado={registrar(etapa.id, etapa.alvo.en)} />}
+        {etapa.tipo === 'missao' && <CartaoMissao e={etapa} obterMic={obterMic} onResultado={registrar(etapa.id, etapa.tarefas[0]?.en ?? 'missão')} />}
         {etapa.tipo === 'fechamento' && <CartaoFechamento e={etapa} modo={modo} sessionId={s.id} placar={placar} />}
       </article>
 

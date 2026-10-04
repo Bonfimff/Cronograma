@@ -243,6 +243,34 @@ export interface UserData {
   sheets?: LibrarySheet[];
   /** A conversa com o amigo de treino, em ordem de tempo. */
   chat?: ChatTurn[];
+  /** O que foi feito em cada atividade (jogos, aula, fala), para o relatório de progresso. */
+  atividades?: Atividade[];
+}
+
+export type TipoAtividade = 'aula' | 'jogo' | 'fala' | 'leitura';
+
+/** Uma palavra tentada numa atividade: acertou ou não, e o que o reconhecedor ouviu (na fala). */
+export interface TentativaPalavra {
+  en: string;
+  ok: boolean;
+  ouvido?: string;
+}
+
+/**
+ * Registro de uma atividade terminada (uma partida, uma aula, uma rodada de fala).
+ * Guarda só números e palavras: nada de áudio.
+ */
+export interface Atividade {
+  id: string;
+  /** início, ISO com fuso */
+  quando: string;
+  tipo: TipoAtividade;
+  /** qual: "tetris", "palavras", "cruzadas", "flashcards", "fala-rapida", "aula:ENG-2026-0002"… */
+  origem: string;
+  duracaoSeg: number;
+  acertos: number;
+  erros: number;
+  palavras: TentativaPalavra[];
 }
 
 export interface SheetItem {

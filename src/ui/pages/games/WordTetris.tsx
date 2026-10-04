@@ -1,3 +1,4 @@
+import { useRegistro } from '../../useRegistro';
 import { IconeKit } from '../../components/Doodles';
 import { useEffect, useRef, useState } from 'react';
 import { TRANCO, vibrar } from '../../../core/vibrar';
@@ -35,6 +36,7 @@ export function WordTetris() {
   const [board, setBoard] = useState<Board>(emptyBoard);
   const [falling, setFalling] = useState<Falling | null>(null);
   const [score, setScore] = useState(0);
+  const registro = useRegistro('jogo', 'tetris');
   const [lines, setLines] = useState(0);
   const [streak, setStreak] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(BEST_KEY) || 0) || 0);
@@ -66,6 +68,7 @@ export function WordTetris() {
   };
 
   const recordStat = (en: string, correct: boolean) => {
+    registro.atual()[correct ? 'acerto' : 'erro'](en);
     const cur = statsRef.current![en] ?? { c: 0, w: 0 };
     const hoje = new Date().toISOString().slice(0, 10);
     statsRef.current = {
@@ -196,6 +199,7 @@ export function WordTetris() {
     setStreak(0);
     setToast(null);
     setOver(false);
+    registro.novo(); // partida nova, registro novo
     setPaused(false);
     setBoard(emptyBoard());
     spawnPiece(emptyBoard(), 0);

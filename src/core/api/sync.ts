@@ -12,7 +12,7 @@
  * este aparelho aplicou.
  */
 
-import type { ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
+import type { Atividade, ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
 import type { SyncRecord } from './client';
 import { session } from './session';
 import { store } from '../storage/store';
@@ -40,6 +40,7 @@ function registrosLocais(d: UserData): SyncRecord[] {
   d.sessions.forEach((s) => saida.push({ kind: 'session', id: s.id, data: s as unknown as Record<string, unknown> }));
   d.worksheets.forEach((w) => saida.push({ kind: 'worksheet', id: w.id, data: w as unknown as Record<string, unknown> }));
   d.history.forEach((h) => saida.push({ kind: 'history', id: h.id, data: h as unknown as Record<string, unknown> }));
+  (d.atividades ?? []).forEach((a) => saida.push({ kind: 'activity', id: a.id, data: a as unknown as Record<string, unknown> }));
 
   return saida;
 }
@@ -72,6 +73,9 @@ function aplicar(itens: SyncRecord[]): void {
         d.worksheets = [...d.worksheets.filter((w) => w.id !== item.id), ...(item.deleted ? [] : [dados as unknown as Worksheet])];
       } else if (item.kind === 'history') {
         d.history = [...d.history.filter((h) => h.id !== item.id), ...(item.deleted ? [] : [dados as unknown as HistoryEntry])];
+      } else if (item.kind === 'activity') {
+        const atual = (d.atividades ?? []).filter((a) => a.id !== item.id);
+        d.atividades = item.deleted ? atual : [...atual, dados as unknown as Atividade].sort((a, b) => a.quando.localeCompare(b.quando));
       }
     }
   });

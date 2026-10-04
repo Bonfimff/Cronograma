@@ -1,3 +1,4 @@
+import { useRegistro } from '../../useRegistro';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildCrossword, cellKey, cellsOf, crosswordWords, isFilled, isSolved, type Crossword as Board, type Dir, type Entry } from '../../../core/games/crossword';
 import { buildVocabPool } from '../../../core/games/wordTetris';
@@ -53,6 +54,8 @@ export function Crossword() {
   const [dir, setDir] = useState<Dir>(() => board.entries[0]?.dir ?? 'across');
   const [wrong, setWrong] = useState<string | null>(null);
   const [score, setScore] = useState(0);
+  const registro = useRegistro('jogo', 'cruzadas');
+  const errosVistos = useRef(new Set<string>());
   const [hints, setHints] = useState<Record<string, number>>({});
   const [gaveUp, setGaveUp] = useState<string[]>([]);
   const cellRefs = useRef(new Map<string, HTMLInputElement>());
@@ -80,6 +83,7 @@ export function Crossword() {
       const k = keyOf(ok);
       if (!scored.current.has(k)) {
         scored.current.add(k);
+        registro.atual().acerto(ok.word);
         const full = value.get(k) ?? 0;
         const won = full * Math.max(MIN_SHARE, 1 - HINT_CUT * (hints[k] ?? 0));
         setScore((n) => n + Math.round(won));
@@ -87,6 +91,9 @@ export function Crossword() {
     }
     const bad = full.find((e) => !isSolved(e, letters));
     if (bad) {
+      // cada resposta errada diferente conta uma vez (o efeito roda a cada letra digitada)
+      const tentativa = `${keyOf(bad)}:${cellsOf(bad).map((x) => letters[cellKey(x.row, x.col)] ?? '').join('')}`;
+      if (!errosVistos.current.has(tentativa)) { errosVistos.current.add(tentativa); registro.atual().erro(bad.word); }
       setWrong(`${bad.num}${bad.dir}`);
       const t = window.setTimeout(() => setWrong(null), 700);
       return () => window.clearTimeout(t);

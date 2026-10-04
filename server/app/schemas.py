@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from .models import KINDS
 
-Kind = Literal["week", "session", "worksheet", "history", "sheet", "content", "game", "chat"]
+Kind = Literal["week", "session", "worksheet", "history", "sheet", "content", "game", "chat", "activity"]
 
 MIN_PASSWORD = 8
 

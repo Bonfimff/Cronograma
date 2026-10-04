@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .db import create_all
-from .routers import auth, chat, fala, sync
+from .routers import auth, chat, fala, progresso, sync
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -39,6 +39,7 @@ app.include_router(auth.router)
 app.include_router(sync.router)
 app.include_router(chat.router)
 app.include_router(fala.router)
+app.include_router(progresso.router)
 
 
 @app.get("/saude", tags=["serviço"])

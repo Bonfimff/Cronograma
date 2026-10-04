@@ -1,3 +1,4 @@
+import { useRegistro } from '../../useRegistro';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TRANCO, vibrar } from '../../../core/vibrar';
 import { buildVocabPool } from '../../../core/games/wordTetris';
@@ -58,6 +59,7 @@ export function FastSpeech() {
   const [heard, setHeard] = useState('');
   const [left, setLeft] = useState(FAST_SECONDS);
   const [hits, setHits] = useState(0);
+  const registro = useRegistro('fala', 'fala-rapida');
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(BEST_KEY) || 0) || 0);
 
@@ -166,6 +168,7 @@ export function FastSpeech() {
       setHeard(j.heard);
 
       if (j.verdict === 'ok' || j.verdict === 'close') {
+        registro.atual().acerto(word.en, j.heard);
         setStage('ok');
         vibrar(TRANCO.carimbo);
         if (!scored.current.has(i)) {
@@ -179,6 +182,7 @@ export function FastSpeech() {
         unclearCount.current++;
         setStage('unclear');
       } else {
+        registro.atual().erro(word.en, j.heard);
         setStage('bad');
       }
     })();

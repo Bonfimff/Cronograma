@@ -38,7 +38,7 @@ class User(Base):
 
 
 #: tipos que o app sincroniza — o mesmo nome que ele usa no `UserData`
-KINDS = ("week", "session", "worksheet", "history", "sheet", "content", "game", "chat")
+KINDS = ("week", "session", "worksheet", "history", "sheet", "content", "game", "chat", "activity")
 
 
 class Record(Base):

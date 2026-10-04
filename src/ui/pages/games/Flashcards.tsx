@@ -1,3 +1,4 @@
+import { useRegistro } from '../../useRegistro';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TRANCO, vibrar } from '../../../core/vibrar';
 import type { ContentRef, Word } from '../../../core/types';
@@ -38,6 +39,7 @@ export function Flashcards() {
   const [drag, setDrag] = useState(0);
   const [stamp, setStamp] = useState<Stamp | null>(null);
   const [tally, setTally] = useState({ ok: 0, bad: 0 });
+  const registro = useRegistro('jogo', 'flashcards');
   const [score, setScore] = useState(0); // o baralho inteiro é uma rodada de 100 pontos
   const scored = useRef(new Set<number>());
   const startX = useRef<number | null>(null);
@@ -60,6 +62,7 @@ export function Flashcards() {
     setDrag(0);
     setStamp(s);
     setTally((t) => ({ ...t, [s]: t[s] + 1 }));
+    if (deck[i]) registro.atual()[s === 'ok' ? 'acerto' : 'erro'](deck[i].word);
     if (s === 'ok' && !scored.current.has(i)) {
       scored.current.add(i); // cada cartão pontua uma vez, mesmo revendo o baralho
       setScore((n) => n + shares(deck.length)[i]);
