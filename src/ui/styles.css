@@ -2119,3 +2119,6 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .prog-barras .barra { height: 10px; border: 1.5px solid currentColor; border-radius: 6px; overflow: hidden; }
 .prog-barras .barra i { display: block; height: 100%; background: var(--accent, #e8a33d); }
 .prog-barras small { opacity: .75; font-size: .8rem; white-space: nowrap; }
+
+.conversa-enviar { width: 48px; padding: 0; }
+

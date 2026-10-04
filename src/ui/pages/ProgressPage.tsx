@@ -134,14 +134,14 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
       </section>
 
       <section className="prog-cartoes">
-        <Cartao icone="relogio-fallback" titulo="Estudo (7 dias)" valor={horas(g.minutos7)} detalhe={`${horas(g.minutosTotal)} no total`} />
+        <Cartao icone="semana" titulo="Estudo (7 dias)" valor={horas(g.minutos7)} detalhe={`${horas(g.minutosTotal)} no total`} />
         <Cartao icone="chama" titulo="Sequência" valor={`${g.sequenciaAtual} ${g.sequenciaAtual === 1 ? 'dia' : 'dias'}`} detalhe={`melhor: ${g.melhorSequencia}`} />
         <Cartao icone="estrela" titulo="Acerto (7 dias)" valor={pct(g.taxa7)} detalhe={tendencia} />
         <Cartao icone="jogos" titulo="Atividades (7 dias)" valor={String(g.atividades7)} detalhe={`${g.diasEstudados30} dias nos últimos 30`} />
         <Cartao icone="conteudo" titulo="Palavras praticadas" valor={String(g.palavrasPraticadas)} detalhe={`${g.palavrasAprendidas} já firmes`} />
         <Cartao icone="microfone2" titulo="Fala" valor={pct(r.fala.taxa)} detalhe={`${r.fala.tentativas} tentativas`} />
         <Cartao icone="estrela" titulo="Lembra hoje" valor={String(m.lembradasHoje)} detalhe={m.retencaoMedia === null ? 'pratique para medir' : `retenção média ${pct(m.retencaoMedia)}`} />
-        <Cartao icone="relogio-fallback" titulo="Mês" valor={horas(r.mes.atual.minutos)} detalhe={`antes: ${horas(r.mes.anterior.minutos)} · ${r.mes.atual.dias} dias`} />
+        <Cartao icone="semana" titulo="Mês" valor={horas(r.mes.atual.minutos)} detalhe={`antes: ${horas(r.mes.anterior.minutos)} · ${r.mes.atual.dias} dias`} />
       </section>
 
       <section className="paper-card tape prog-analise">

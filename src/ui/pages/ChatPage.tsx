@@ -199,7 +199,7 @@ export function ChatPage() {
             <IconeKit nome="microfone" width={28} />
           </button>
         )}
-        <button className="primary" type="submit" disabled={pensando || !texto.trim()}><IconeKit nome="enviar" width={22} />Enviar</button>
+        <button className="primary conversa-enviar" type="submit" aria-label="Enviar" title="Enviar" disabled={pensando || !texto.trim()}><IconeKit nome="enviar" width={26} /></button>
       </form>
 
     </div>

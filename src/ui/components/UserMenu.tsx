@@ -62,7 +62,6 @@ export function UserMenu() {
             <>
               <p className="usuario-email">{estado.email}</p>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
-              <a href="#/conversa" role="menuitem" onClick={() => setAberto(false)}>Conversa</a>
               <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
               <a href="#/professor" role="menuitem" onClick={() => setAberto(false)}>Professores e alunos</a>
               <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
