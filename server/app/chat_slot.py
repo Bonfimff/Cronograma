@@ -27,6 +27,7 @@ import urllib.request
 from typing import Any
 
 from .idioma import parece_portugues
+from .consultas import ajustar_saudacao
 from .usar_vocabulario import usar_vocabulario
 
 # palavras do dia por resposta: mais que isso faz o modelo se perder
@@ -380,7 +381,8 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
     if vocab_completo is not None:
         # todas as palavras do vocabulário que couberem, por regras (ver usar_vocabulario.py);
         # o texto volta já marcado, com as palavras vivas no lugar exato
-        limpo = limpar_abertura(reply)
+        # cumprimentou? a resposta abre com bom dia, boa tarde ou boa noite do horário de Brasília
+        limpo = ajustar_saudacao(limpar_abertura(reply), ultima_da_pessoa)
         marcado, inglesas = usar_vocabulario(limpo, vocab_completo, marcas=True) if problema is None else (limpo, [])
         return {"texto": marcado.replace("[[", "").replace("]]", ""), "marcado": marcado, "trocadas": inglesas,
                 "tentativas": usadas, "problema": problema}

@@ -39,7 +39,7 @@ def test_a_rota_entrega_a_resposta_com_o_vocabulario(client, conta, monkeypatch)
     monkeypatch.setattr(chat_slot, "_chamar", lambda *a, **k: ("Olá! Como você está hoje?", []))
     a = conta()
     a.push([{"kind": "content", "id": f"words:{p.en}", "data": {"word": p.en, "translations": [{"text": p.pt}]}} for p in VOCAB])
-    r = client.post("/chat", json={"messages": [{"role": "user", "content": "Oi"}]}, headers=a.headers)
+    r = client.post("/chat", json={"messages": [{"role": "user", "content": "Tudo certo?"}]}, headers=a.headers)  # sem cumprimento: a saudação por horário não entra
     assert r.status_code == 200, r.text
     corpo = r.json()
     assert corpo["reply"] == "[[Hello]]! [[How]] [[are]] [[you]] hoje?"

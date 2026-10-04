@@ -174,8 +174,8 @@ def test_perguntas_sobre_o_app_e_o_amigo_recebem_a_resposta_pronta():
     assert "Backup dos dados" in _direta("Como faço backup?")
     assert "Amigo de treino" in _direta("Como vc se chama?")
     assert "IA pequena" in _direta("Qual é o seu modelo de linguagem?")
-    assert "não busco nada na internet" in _direta("Qual é a previsão do tempo para amanhã no rio de janeiro")
-    assert "não busco nada na internet" in _direta("Eu quero saber se vai chover. Consegue me passar essa informação?")
+    # tempo e hora agora são consultados de verdade (ver test_consultas.py)
+
     # adicionar palavra agora é feito de verdade, antes das respostas prontas (ver test_vocab_chat.py)
     assert "outras pessoas" in _direta("Essa informação fica responsável para outros usuários ou só para mim?")
 

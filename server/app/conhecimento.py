@@ -34,7 +34,7 @@ Aula guiada: Entender, Observar, Relacionar, Praticar e Avaliar. Também dá par
 
 No menu do avatar: Meu progresso (o que já gruda, o que ainda escapa e com que frequência você estuda), Ajustes (vozes e velocidade da leitura em voz alta) e a conta. Para fazer backup: menu do avatar, depois Ajustes, depois Backup dos dados; o backup leva também os recordes dos jogos.
 
-Este chat é o Amigo de treino: conversa em português e troca por inglês, no meio da fala, palavras do vocabulário que você já estudou. Ele só enxerga a conversa que está na tela: o botão Limpar histórico apaga tudo e ele esquece. Ele não grava nada de forma permanente, consegue adicionar palavras ao vocabulário quando a pessoa pede (por exemplo: adicione hello), mas não muda configurações pelo chat, e não busca informações na internet. Ele é uma IA pequena que roda no computador do desenvolvedor."""
+Este chat é o Amigo de treino: conversa em português e troca por inglês, no meio da fala, palavras do vocabulário que você já estudou. Ele só enxerga a conversa que está na tela: o botão Limpar histórico apaga tudo e ele esquece. Ele não grava nada de forma permanente, consegue adicionar palavras ao vocabulário quando a pessoa pede (por exemplo: adicione hello), mas não muda configurações pelo chat, e consulta de verdade a hora e a data de Brasília, a previsão do tempo de qualquer cidade e a Wikipédia (curiosidades e o que é ou quem foi algo). Ele é uma IA pequena que roda no computador do desenvolvedor."""
 
 # recordes que o app guarda como registros do tipo "game" (ver src/core/storage/backup.ts)
 RECORDES = {
@@ -170,8 +170,6 @@ FIXAS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"outros usu[aá]rios|compartilh", re.I),
      "Eu só vejo esta conversa e não tenho como passar o que você diz para outras pessoas."),
 
-    (re.compile(r"previsão do tempo|vai chover|\bclima\b|que horas|cotação", re.I),
-     "Eu não busco nada na internet, então não sei a previsão do tempo nem a hora."),
     (re.compile(r"modelo de linguagem|qual (?:é )?o seu modelo", re.I),
      "Sou uma IA pequena que roda no computador do desenvolvedor. Não sei dizer mais que isso sobre mim."),
     (re.compile(r"como (?:vc|voc[eê]) se chama|(?:qual|quem) (?:é )?(?:o )?seu nome|seu nome", re.I),

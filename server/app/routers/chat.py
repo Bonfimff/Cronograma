@@ -32,6 +32,8 @@ from ..idioma import parece_portugues
 from ..marcacao import limpar, marcar, marcar_lista
 from ..treino import correcao_fora_do_treino, responder_treino
 from ..vocab_chat import responder_vocabulario
+from ..consultas import responder_consulta
+from ..usar_vocabulario import usar_vocabulario
 from ..models import User
 from ..schemas import ChatIn, ChatOut
 from ..vocabulario import Palavra, carregar
@@ -167,6 +169,13 @@ async def _conversar_slot(
     return ChatOut(reply=marcado, glossary=glossario)
 
 
+def _glossario(marcado: str, vocabulario: list[Palavra]) -> list[dict]:
+    """O balão de cada palavra marcada com [[ ]]."""
+    por_palavra = {p.en.lower(): p for p in vocabulario}
+    usadas = {w.lower() for w in re.findall(r"\[\[([^\]]+)\]\]", marcado)}
+    return [{"en": por_palavra[w].en, "pt": por_palavra[w].pt, "id": por_palavra[w].id} for w in usadas if w in por_palavra]
+
+
 def _marcar_com_traducao(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
     """Marca só as palavras escritas como "hi (oi)": o português em volta fica sem marca."""
     por_palavra = {p.en.lower(): p for p in vocabulario}
@@ -216,6 +225,13 @@ async def conversar(
         if vocab:
             marcado, glossario = _marcar_com_traducao(vocab, carregar(db, user, 100000, todas=True))
             return ChatOut(reply=marcado, glossary=glossario)
+        # hora, data, tempo, curiosidade, Wikipédia: consultados de verdade pelo servidor (ver consultas.py)
+        consulta = responder_consulta(conversa, sobre_o_app=pergunta_sobre_o_app(conversa))
+        if consulta:
+            if consulta.endswith("(Wikipédia)") and "Neste dia" not in consulta:
+                return ChatOut(reply=consulta, glossary=[])  # texto de enciclopédia: sem troca de palavras
+            marcado, usadas = usar_vocabulario(consulta, carregar(db, user, 100000, todas=True), marcas=True)
+            return ChatOut(reply=marcado, glossary=_glossario(marcado, carregar(db, user, 100000, todas=True)))
         # perguntas sobre o app, a conta e os dados da pessoa têm resposta pronta: sem modelo, sem erro
         direta = resposta_direta(db, user, conversa)
         if direta:
