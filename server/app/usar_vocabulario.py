@@ -18,6 +18,7 @@ Aqui a troca é por regras, sem depender do modelo:
 
 import re
 
+from .sinonimos import sinonimos_de
 from .vocabulario import FUNCAO, Palavra
 
 LETRA = r"A-Za-zÀ-ÿ"
@@ -98,10 +99,19 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
     for p in vocabulario:
         for alt in _alternativas(p.pt):
             candidatas += [(forma, p.en) for forma in _formas(alt)]
-    for pt, en in sorted(candidatas, key=lambda c: -len(c[0])):
-        for m in _padrao(re.escape(pt)).finditer(texto):
-            if not any(tomado[m.start():m.end()]):
-                marcar(m.start(), m.end(), en)
+    # 2b. depois, os sinônimos: "emprego" vira work quando a pessoa tem work = trabalho
+    # (induz a frase às palavras que ela já tem; ver sinonimos.py)
+    diretas = {c[0] for c in candidatas}
+    induzidas: list[tuple[str, str]] = []
+    for p in vocabulario:
+        for alt in _alternativas(p.pt):
+            for s in sinonimos_de(alt):
+                induzidas += [(forma, p.en) for forma in _formas(s) if forma not in diretas]
+    for lista in (candidatas, induzidas):
+        for pt, en in sorted(lista, key=lambda c: -len(c[0])):
+            for m in _padrao(re.escape(pt)).finditer(texto):
+                if not any(tomado[m.start():m.end()]):
+                    marcar(m.start(), m.end(), en)
 
     if not trocas:
         return texto, []

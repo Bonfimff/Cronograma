@@ -29,6 +29,7 @@ from typing import Any
 from .idioma import parece_portugues
 from .consultas import ajustar_saudacao
 from .usar_vocabulario import usar_vocabulario
+from .vocabulario import FUNCAO
 
 # palavras do dia por resposta: mais que isso faz o modelo se perder
 QUANTAS = 6
@@ -74,6 +75,12 @@ Try to use one of these words in your reply whenever it fits. In the field "troc
 to 2 of the words you used that Brazilians would naturally say in English. If none sounds
 natural, leave "trocar" empty. Never list the words as a reply."""
 
+CONHECIDAS = """
+
+WORDS THE PERSON ALREADY KNOWS (Portuguese meaning): {lista}.
+When you choose words for your sentence, prefer these over synonyms: say "trabalho", not
+"emprego", if "trabalho" is in this list. Build simple sentences around them."""
+
 SEM_PALAVRAS = """
 
 The person has not studied any word yet: write in Portuguese only. Leave "trocar" empty."""
@@ -100,13 +107,27 @@ def escolhidas(palavras: list, quantas: int = QUANTAS) -> list:
     return saida
 
 
-def instrucao(palavras: list, lembrete: bool = False, sobre_o_app: str = "") -> str:
+def conhecidas(vocabulario: list | None, quantas: int = 30) -> list[str]:
+    """Uma tradução por palavra do vocabulário que cabe numa frase, na ordem de prioridade."""
+    vistas: list[str] = []
+    for p in vocabulario or []:
+        pt = p.pt.split("/")[0].split("(")[0].strip().lower()
+        if pt and pt not in vistas and p.en.lower() not in FUNCAO:
+            vistas.append(pt)
+        if len(vistas) == quantas:
+            break
+    return vistas
+
+
+def instrucao(palavras: list, lembrete: bool = False, sobre_o_app: str = "", vocabulario: list | None = None) -> str:
     """
     A ordem importa para o cache do modelo: o que muda a cada resposta (as palavras do dia)
     vai por último, depois do que quase nunca muda (regras e notas do app).
     """
     sel = escolhidas(palavras)
     corpo = REGRAS + (SOBRE_O_APP.format(notas=sobre_o_app) if sobre_o_app else "")
+    sabidas = conhecidas(vocabulario)
+    corpo += CONHECIDAS.format(lista=", ".join(sabidas)) if sabidas else ""
     corpo += COM_PALAVRAS.format(lista=", ".join(p.pt.strip() for p in sel)) if sel else SEM_PALAVRAS
     return corpo + LEMBRETE if lembrete else corpo
 
@@ -360,7 +381,7 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
     for t in range(tentativas + 1):
         usadas = t + 1
         reply, trocar = _chamar(
-            url, modelo, instrucao(palavras, t > 0, sobre_o_app), historico, palavras, limite,
+            url, modelo, instrucao(palavras, t > 0, sobre_o_app, palavras if vocab_completo is not None else None), historico, palavras, limite,
             0.3 + 0.2 * t, None if seed is None else seed + t, timeout,
         )
         if reply and not parece_portugues(reply):

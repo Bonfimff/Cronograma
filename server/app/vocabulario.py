@@ -115,6 +115,20 @@ def carregar(db: Session, user: User, limite: int = 60, todas: bool = False) -> 
         if dados.get("event") in TROPECOS:
             tropecou.add(ref)
 
+    # o registro de atividades (jogos, aulas, fala): a última tentativa de cada palavra
+    # conta como visto, e quem errou na última vez sobe na fila da conversa
+    atividades = db.scalars(
+        select(Record).where(Record.user_id == user.id, Record.kind == "activity", Record.deleted.is_(False))
+    ).all()
+    ultima: dict[str, tuple[str, bool]] = {}  # en → (quando, acertou)
+    for a in atividades:
+        dados = a.data or {}
+        quando = str(dados.get("quando") or "")
+        for t in dados.get("palavras") or []:
+            en = str((t or {}).get("en") or "").strip().lower()
+            if en and quando >= ultima.get(en, ("", True))[0]:
+                ultima[en] = (quando, bool(t.get("ok")))
+
     palavras: list[Palavra] = []
     for linha in linhas:
         dados = linha.data or {}
@@ -125,7 +139,9 @@ def carregar(db: Session, user: User, limite: int = 60, todas: bool = False) -> 
         if not todas and not _cabe_na_conversa(en, str(dados.get("type") or "")):
             continue
         ref = "word:" + linha.record_id.split(":", 1)[1]
-        peso = min(_dias(visto.get(ref)), 365) + (500 if ref in tropecou else 0)
+        quando, acertou = ultima.get(en.lower(), ("", True))
+        ultima_vez = max(visto.get(ref, ""), quando[:10])
+        peso = min(_dias(ultima_vez or None), 365) + (500 if ref in tropecou else 0) + (0 if acertou else 300)
         palavras.append(Palavra(id=linha.record_id, en=en, pt=pt, peso=float(peso)))
 
     palavras.sort(key=lambda p: p.peso, reverse=True)

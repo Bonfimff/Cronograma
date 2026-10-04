@@ -1,4 +1,5 @@
 import { useRegistro } from '../useRegistro';
+import type { Habilidade } from '../../core/types';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
@@ -624,8 +625,8 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
     return m;
   };
 
-  const registrar = (etapaId: string, en: string) => (ok: boolean, ouvido?: string) => {
-    registro.atual()[ok ? 'acerto' : 'erro'](en, ouvido);
+  const registrar = (etapaId: string, en: string, hab?: Habilidade) => (ok: boolean, ouvido?: string) => {
+    registro.atual()[ok ? 'acerto' : 'erro'](en, { ouvido, hab: ouvido !== undefined ? 'falar' : hab });
     setNotas((n) => ({ ...n, [etapaId]: (n[etapaId] ?? false) || ok }));
   };
   const respostaDe = (ex: { answer?: string | string[]; prompt: string }) => String((Array.isArray(ex.answer) ? ex.answer[0] : ex.answer) ?? ex.prompt);
@@ -712,10 +713,10 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
         {(etapa.tipo === 'aquecimento' || etapa.tipo === 'pratica') && (
           <>
             {etapa.dica && <p className="aula-dica">{etapa.dica}</p>}
-            <ExerciseView ex={etapa.exercicio} onResult={registrar(etapa.id, respostaDe(etapa.exercicio))} />
+            <ExerciseView ex={etapa.exercicio} onResult={registrar(etapa.id, respostaDe(etapa.exercicio), etapa.exercicio.options?.length || etapa.exercicio.pairs?.length ? 'reconhecer' : 'lembrar')} />
           </>
         )}
-        {etapa.tipo === 'escuta' && <CartaoEscuta e={etapa} onResultado={registrar(etapa.id, etapa.exemplo.en)} />}
+        {etapa.tipo === 'escuta' && <CartaoEscuta e={etapa} onResultado={registrar(etapa.id, etapa.exemplo.en, 'ouvir')} />}
         {etapa.tipo === 'fala' && <CartaoFala e={etapa} obterMic={obterMic} onResultado={registrar(etapa.id, etapa.alvo.en)} />}
         {etapa.tipo === 'missao' && <CartaoMissao e={etapa} obterMic={obterMic} onResultado={registrar(etapa.id, etapa.tarefas[0]?.en ?? 'missão')} />}
         {etapa.tipo === 'fechamento' && <CartaoFechamento e={etapa} modo={modo} sessionId={s.id} placar={placar} />}

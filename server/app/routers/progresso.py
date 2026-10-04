@@ -28,11 +28,11 @@ You receive a summary of the learner's numbers. Write the analysis in Brazilian 
 Rules:
 - Use ONLY the numbers and words that appear in the summary. Never invent a number.
 - Exactly 5 short bullet lines, each starting with "• ", in this order:
-  1. evolução (compare the last 7 days with the week before, or the weeks trend);
-  2. pontos fortes (activities or words that are going well);
-  3. dificuldades (words or activities with more errors);
-  4. padrão e melhor horário (when the learner studies and performs best);
-  5. próximo passo (one concrete suggestion for the next days).
+  1. evolução (last 7 days vs the week before, this month vs last month, skill levels);
+  2. pontos fortes (memory, words that stuck, the highest step of the mastery ladder reached);
+  3. dificuldades (words about to be forgotten, words with more errors, pronunciation patterns);
+  4. padrão e melhor horário (when the learner studies, performs and remembers next day best);
+  5. próximo passo (one concrete suggestion: which words to review and in which activity).
 - Friendly and direct, at most 30 words per bullet. No title, no extra text."""
 
 

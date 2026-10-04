@@ -12,7 +12,12 @@
  */
 
 import { addDays, daysBetween, today, weekStartOf } from '../dates';
-import type { Atividade, UserData } from '../types';
+import type { Atividade, ContentRef, Habilidade, UserData } from '../types';
+import { content, resolve } from '../content/repository';
+import { eventos, memoria, type Memoria, type MemoriaPalavra } from './memoria';
+import { padroesDeFala, type Padrao } from './padroes';
+
+export interface Comparacao { minutos: number; respostas: number; taxa: number | null; dias: number }
 
 export interface Placar {
   vezes: number;
@@ -71,8 +76,19 @@ export interface Relatorio {
   semanas: Semana[];
   dificeis: PalavraPlacar[];
   firmes: PalavraPlacar[];
-  fala: { tentativas: number; acertos: number; taxa: number | null; confusoes: { en: string; ouvido: string; vezes: number }[] };
-  chat: { conversas: number; mensagens: number; emIngles: number; correcoes: number; treinos: number; palavrasUsadas: number };
+  fala: {
+    tentativas: number; acertos: number; taxa: number | null; confusoes: { en: string; ouvido: string; vezes: number }[];
+    padroes: { padrao: Padrao; nome: string; vezes: number; exemplos: string[] }[];
+  };
+  chat: {
+    conversas: number; mensagens: number; emIngles: number; correcoes: number; treinos: number; palavrasUsadas: number;
+    /** produção: palavras por mensagem em inglês, palavras diferentes e palavras do vocabulário escritas pela pessoa */
+    palavrasPorMensagem: number | null; variedade: number; vocabularioProprio: number;
+  };
+  memoria: Memoria;
+  /** últimos 30 dias contra os 30 anteriores */
+  mes: { atual: Comparacao; anterior: Comparacao };
+  plano: { revisar: MemoriaPalavra[]; subir: { en: string; proximo: string }[] };
   folhas: { concluidas: number; escaneadas: number; absorvidas: number; revisar: number; reforcar: number; taxaExercicios: number | null };
 }
 
@@ -225,6 +241,37 @@ export function relatorio(data: UserData, hoje = today()): Relatorio {
   const doAmigo = turnos.filter((t) => t.role === 'assistant');
   const emIngles = dela.filter((t) => /^[\x00-\x7F]*$/.test(t.content) && /\b(i|you|my|is|are|the|what|where|how)\b/i.test(t.content)).length;
 
+  const textoIngles = dela.filter((t) => /^[\x00-\x7F]*$/.test(t.content)).map((t) => t.content.toLowerCase().match(/[a-z][a-z']*/g) ?? []);
+  const vocab = new Set(content.words.map((w) => w.word.toLowerCase()));
+  const proprias = new Set(textoIngles.flat().filter((w) => vocab.has(w) && w.length > 2));
+
+  // memória, escada e habilidades (memoria.ts)
+  const refParaEn = (ref: string) => {
+    const item = resolve(ref as ContentRef) as { word?: string } | undefined;
+    return item?.word;
+  };
+  const mem = memoria(eventos(data, refParaEn, vocab), new Date(`${hoje}T23:59:59`).getTime());
+
+  // o mês contra o anterior
+  const janela = (de: string, ate: string): Comparacao => {
+    const dentro = ms.filter((m) => diaLocal(m.quando) >= de && diaLocal(m.quando) < ate);
+    const a = dentro.reduce((s, m) => s + m.acertos, 0), e = dentro.reduce((s, m) => s + m.erros, 0);
+    return { minutos: Math.round(dentro.reduce((s, m) => s + m.minutos, 0)), respostas: a + e, taxa: a + e ? a / (a + e) : null,
+      dias: new Set(dentro.map((m) => diaLocal(m.quando))).size };
+  };
+  const amanha = addDays(hoje, 1);
+
+  // plano: o que está quase esquecido, e quem está pronto para subir um degrau
+  const PROXIMO: [Habilidade, string][] = [
+    ['reconhecer', 'reconhecer o sentido (Ligar palavras)'], ['lembrar', 'lembrar sozinho (Flashcards, Cruzadas)'],
+    ['ouvir', 'entender ouvindo (escuta da aula)'], ['falar', 'pronunciar (Fala-Rápida)'], ['usar', 'usar numa frase sua no chat'],
+  ];
+  const subir = mem.palavras
+    .filter((p) => p.habs.length > 0 && p.habs.length < 5 && p.retencao >= 0.85)
+    .sort((a, b) => b.estabilidade - a.estabilidade)
+    .slice(0, 6)
+    .map((p) => ({ en: p.en, proximo: PROXIMO.find(([h]) => !p.habs.includes(h))![1] }));
+
   // folhas
   const feitas = data.sessions.filter((s) => s.status === 'done' && s.result);
   const ex = feitas.reduce((s, x) => ({ t: s.t + (x.result!.exercises?.total ?? 0), c: s.c + (x.result!.exercises?.correct ?? 0) }), { t: 0, c: 0 });
@@ -256,6 +303,7 @@ export function relatorio(data: UserData, hoje = today()): Relatorio {
       acertos: falas.filter((p) => p.ok).length,
       taxa: falas.length ? falas.filter((p) => p.ok).length / falas.length : null,
       confusoes: [...confusoes.values()].sort((a, b) => b.vezes - a.vezes).slice(0, 6),
+      padroes: padroesDeFala(falas),
     },
     chat: {
       conversas: conversas(data).length,
@@ -264,7 +312,13 @@ export function relatorio(data: UserData, hoje = today()): Relatorio {
       correcoes: doAmigo.filter((t) => /Fica assim:|Em inglês, fica assim/.test(t.content)).length,
       treinos: doAmigo.filter((t) => /Treino concluído/.test(t.content)).length,
       palavrasUsadas: new Set(doAmigo.flatMap((t) => [...t.content.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1].toLowerCase()))).size,
+      palavrasPorMensagem: textoIngles.length ? Math.round((textoIngles.flat().length / textoIngles.length) * 10) / 10 : null,
+      variedade: new Set(textoIngles.flat()).size,
+      vocabularioProprio: proprias.size,
     },
+    memoria: mem,
+    mes: { atual: janela(addDays(hoje, -29), amanha), anterior: janela(addDays(hoje, -59), addDays(hoje, -29)) },
+    plano: { revisar: mem.emRisco.slice(0, 8), subir },
     folhas: {
       concluidas: feitas.length,
       escaneadas: feitas.filter((s) => s.result!.source === 'scan').length,
@@ -292,6 +346,18 @@ export function resumoParaIA(r: Relatorio): string {
     `Chat: ${r.chat.mensagens} mensagens, ${r.chat.emIngles} em inglês, ${r.chat.correcoes} correções, ${r.chat.treinos} treinos concluídos.`,
     `Folhas: ${r.folhas.concluidas} concluídas (${r.folhas.absorvidas} absorvidas, ${r.folhas.revisar} para revisar, ${r.folhas.reforcar} para reforçar).`,
     'Semanas (minutos, acerto): ' + r.semanas.map((s) => `${s.minutos} min ${pct(s.taxa)}`).join(' | ') + '.',
+    `Mês (últimos 30 dias): ${r.mes.atual.minutos} min, ${r.mes.atual.dias} dias, acerto ${pct(r.mes.atual.taxa)}; mês anterior: ${r.mes.anterior.minutos} min, ${r.mes.anterior.dias} dias, acerto ${pct(r.mes.anterior.taxa)}.`,
+    r.memoria.retencaoMedia !== null
+      ? `Memória: você deve lembrar hoje ${r.memoria.lembradasHoje} palavras; retenção média ${pct(r.memoria.retencaoMedia)}; estabilidade típica ${Math.round(r.memoria.estabilidadeMediana ?? 0)} dias.`
+      : '',
+    r.memoria.emRisco.length ? 'Quase esquecidas: ' + r.memoria.emRisco.slice(0, 6).map((p) => `${p.en} (${pct(p.retencao)})`).join(', ') + '.' : '',
+    'Escada de domínio: ' + r.memoria.escada.map((d) => `${d.rotulo} ${d.quantas}`).join(' → ') + '.',
+    'Habilidades (nível 0-100, acerto): ' + r.memoria.habilidades.filter((h) => h.respostas).map((h) => `${h.rotulo} ${h.nivel}, ${pct(h.taxa)}`).join('; ') + '.',
+    r.memoria.retencaoPorFaixa.some((f) => f.testes >= 5)
+      ? 'Lembrou no dia seguinte, pelo horário do estudo: ' + r.memoria.retencaoPorFaixa.filter((f) => f.testes >= 5).map((f) => `${f.nome} ${pct(f.taxa)}`).join('; ') + '.'
+      : '',
+    r.fala.padroes.length ? 'Padrões de pronúncia: ' + r.fala.padroes.slice(0, 3).map((p) => `${p.nome} ${p.vezes}x`).join('; ') + '.' : '',
+    r.chat.palavrasPorMensagem !== null ? `Escrita no chat: ${r.chat.palavrasPorMensagem} palavras por mensagem em inglês, ${r.chat.vocabularioProprio} palavras do vocabulário usadas por conta própria.` : '',
   ];
   return linhas.filter(Boolean).join('\n');
 }

@@ -2113,3 +2113,9 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .prog-confusoes { list-style: none; padding: 0; display: grid; gap: 6px; }
 .grafico-rotulos { display: flex; justify-content: space-between; font-size: .75rem; opacity: .7; }
 .tabela-rolagem { overflow-x: auto; }
+
+.prog-barras { list-style: none; padding: 0; display: grid; gap: 6px; }
+.prog-barras li { display: grid; grid-template-columns: minmax(90px, 34%) 1fr auto; gap: 8px; align-items: center; }
+.prog-barras .barra { height: 10px; border: 1.5px solid currentColor; border-radius: 6px; overflow: hidden; }
+.prog-barras .barra i { display: block; height: 100%; background: var(--accent, #e8a33d); }
+.prog-barras small { opacity: .75; font-size: .8rem; white-space: nowrap; }

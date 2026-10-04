@@ -116,7 +116,8 @@ export function ProgressPage() {
   const dificeis = r.dificeis.length ? r.dificeis : doTetris(stats, false);
   const firmes = r.firmes.length ? r.firmes : doTetris(stats, true);
   const g = r.geral;
-  const tendencia = g.taxa7 !== null && g.taxaAnterior !== null ? (g.taxa7 >= g.taxaAnterior ? '↑' : '↓') + ` antes ${pct(g.taxaAnterior)}` : undefined;
+  const m = r.memoria;
+  const tendencia = g.taxa7 !== null && g.taxaAnterior !== null ? (Math.round(g.taxa7 * 100) === Math.round(g.taxaAnterior * 100) ? '=' : g.taxa7 > g.taxaAnterior ? '↑' : '↓') + ` antes ${pct(g.taxaAnterior)}` : undefined;
   const semDados = !r.porTipo.length;
 
   return (
@@ -134,6 +135,8 @@ export function ProgressPage() {
         <Cartao icone="jogos" titulo="Atividades (7 dias)" valor={String(g.atividades7)} detalhe={`${g.diasEstudados30} dias nos últimos 30`} />
         <Cartao icone="conteudo" titulo="Palavras praticadas" valor={String(g.palavrasPraticadas)} detalhe={`${g.palavrasAprendidas} já firmes`} />
         <Cartao icone="microfone2" titulo="Fala" valor={pct(r.fala.taxa)} detalhe={`${r.fala.tentativas} tentativas`} />
+        <Cartao icone="estrela" titulo="Lembra hoje" valor={String(m.lembradasHoje)} detalhe={m.retencaoMedia === null ? 'pratique para medir' : `retenção média ${pct(m.retencaoMedia)}`} />
+        <Cartao icone="relogio-fallback" titulo="Mês" valor={horas(r.mes.atual.minutos)} detalhe={`antes: ${horas(r.mes.anterior.minutos)} · ${r.mes.atual.dias} dias`} />
       </section>
 
       <section className="paper-card tape prog-analise">
@@ -151,6 +154,63 @@ export function ProgressPage() {
         <button type="button" className="ghost small" onClick={atualizar} disabled={analisando}>
           {analisando ? 'Analisando…' : 'Atualizar análise'}
         </button>
+      </section>
+
+      {(r.plano.revisar.length > 0 || r.plano.subir.length > 0) && (
+        <section className="prog-duas">
+          <div>
+            <h2>Revise esta semana <small>quase esquecidas</small></h2>
+            {r.plano.revisar.length ? (
+              <ul className="prog-barras">
+                {r.plano.revisar.map((p) => (
+                  <li key={p.en}><b className="en">{p.en}</b><span className="barra"><i style={{ width: `${Math.round(p.retencao * 100)}%` }} /></span><small>{pct(p.retencao)}</small></li>
+                ))}
+              </ul>
+            ) : <p className="muted">Nada perto de ser esquecido agora.</p>}
+          </div>
+          <div>
+            <h2>Suba um degrau</h2>
+            {r.plano.subir.length ? (
+              <ul className="prog-confusoes">
+                {r.plano.subir.map((p) => <li key={p.en}><b className="en">{p.en}</b>: agora, {p.proximo}</li>)}
+              </ul>
+            ) : <p className="muted">Firme algumas palavras para aparecerem aqui.</p>}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <h2>Memória e domínio <small>{m.estabilidadeMediana !== null && `cada palavra dura ~${Math.round(m.estabilidadeMediana)} dias`}</small></h2>
+        <p className="muted">
+          A escada de saber uma palavra: reconhecer o sentido, lembrar sozinho, entender ouvindo, pronunciar e usar.
+          A chance de lembrar cai com o tempo; cada revisão no momento certo faz a memória durar mais.
+        </p>
+        <ul className="prog-barras">
+          {m.escada.map((d) => (
+            <li key={d.rotulo}><span>{d.rotulo}</span><span className="barra"><i style={{ width: `${Math.round((d.quantas / Math.max(1, m.escada[0].quantas)) * 100)}%` }} /></span><small>{d.quantas}</small></li>
+          ))}
+        </ul>
+        {m.habilidades.some((h) => h.respostas) && (
+          <div className="tabela-rolagem">
+            <table className="tabela">
+              <thead><tr><th>Habilidade</th><th className="num">Nível</th><th className="num">Respostas</th><th className="num">Acerto</th><th className="num">Tempo</th></tr></thead>
+              <tbody>
+                {m.habilidades.filter((h) => h.respostas).map((h) => {
+                  const antes = h.historico[0];
+                  return (
+                    <tr key={h.hab}>
+                      <td>{h.rotulo}</td>
+                      <td className="num">{h.nivel}{antes !== undefined && h.nivel !== antes ? ` ${h.nivel > antes ? '↑' : '↓'}` : ''}</td>
+                      <td className="num">{h.respostas}</td>
+                      <td className="num">{pct(h.taxa)}</td>
+                      <td className="num">{h.segundos === null ? '—' : `${h.segundos}s`}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {semDados ? (
@@ -198,6 +258,18 @@ export function ProgressPage() {
             <p className="muted">Por dia da semana</p>
             <SketchBars itens={r.minutosPorDiaDaSemana.map((m, i) => ({ label: DIAS[i], valor: m / Math.max(1, ...r.minutosPorDiaDaSemana) }))} altura={90} />
             <div className="grafico-rotulos">{DIAS.map((d) => <span key={d}>{d}</span>)}</div>
+            {m.retencaoPorFaixa.some((f) => f.testes >= 5) && (
+              <>
+                <p className="muted">O que você lembrou no dia seguinte, pelo horário em que estudou</p>
+                <dl className="facts">
+                  {m.retencaoPorFaixa.filter((f) => f.testes >= 5).map((f) => (
+                    <span key={f.nome} style={{ display: 'contents' }}>
+                      <dt>{f.nome}</dt><dd>{pct(f.taxa)} <small>({f.testes} testes)</small></dd>
+                    </span>
+                  ))}
+                </dl>
+              </>
+            )}
           </section>
         </>
       )}
@@ -215,6 +287,13 @@ export function ProgressPage() {
       {r.fala.confusoes.length > 0 && (
         <section>
           <h2>Pronúncia <small>o que o reconhecedor ouviu</small></h2>
+          {r.fala.padroes.length > 0 && (
+            <ul className="prog-barras">
+              {r.fala.padroes.map((p) => (
+                <li key={p.padrao}><span>{p.nome}</span><span className="barra"><i style={{ width: `${Math.round((p.vezes / r.fala.padroes[0].vezes) * 100)}%` }} /></span><small>{p.vezes}x · {p.exemplos.join(', ')}</small></li>
+              ))}
+            </ul>
+          )}
           <ul className="prog-confusoes">
             {r.fala.confusoes.map((c) => <li key={c.en + c.ouvido}><b className="en">{c.en}</b> soou como “{c.ouvido}” <small>{c.vezes}x</small></li>)}
           </ul>
@@ -229,7 +308,10 @@ export function ProgressPage() {
             <dt>Mensagens suas</dt><dd>{r.chat.mensagens} ({r.chat.emIngles} em inglês)</dd>
             <dt>Correções recebidas</dt><dd>{r.chat.correcoes}</dd>
             <dt>Treinos concluídos</dt><dd>{r.chat.treinos}</dd>
-            <dt>Palavras do vocabulário usadas</dt><dd>{r.chat.palavrasUsadas}</dd>
+            <dt>Palavras do vocabulário nas respostas</dt><dd>{r.chat.palavrasUsadas}</dd>
+            <dt>Palavras por mensagem em inglês</dt><dd>{r.chat.palavrasPorMensagem ?? '—'}</dd>
+            <dt>Palavras diferentes que você escreveu</dt><dd>{r.chat.variedade}</dd>
+            <dt>Do seu vocabulário, usadas por você</dt><dd>{r.chat.vocabularioProprio}</dd>
           </dl>
         </div>
         <div>

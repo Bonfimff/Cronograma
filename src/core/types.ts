@@ -254,7 +254,21 @@ export interface TentativaPalavra {
   en: string;
   ok: boolean;
   ouvido?: string;
+  /** o que a resposta mostra que a pessoa sabe (ver core/progress/memoria.ts) */
+  hab?: Habilidade;
+  /** milissegundos desde a resposta anterior (ou do início): quanto demorou para lembrar */
+  ms?: number;
+  /** usou dica, viu a resposta antes ou acertou na segunda tentativa */
+  dica?: boolean;
+  /** segundos desde o início da atividade */
+  t?: number;
 }
+
+/**
+ * Os degraus de saber uma palavra (Nation; Henriksen): reconhecer o sentido, lembrar
+ * sozinho, entender ouvindo, pronunciar e usar por conta própria.
+ */
+export type Habilidade = 'reconhecer' | 'lembrar' | 'ouvir' | 'falar' | 'usar';
 
 /**
  * Registro de uma atividade terminada (uma partida, uma aula, uma rodada de fala).
