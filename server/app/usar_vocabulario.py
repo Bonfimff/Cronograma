@@ -131,7 +131,10 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
     saida, fim_anterior, usadas = [], 0, []
     for inicio, fim, en in finais:
         saida.append(texto[fim_anterior:inicio])
-        saida.append(re.sub(r"[A-Za-z']+", lambda m: f"[[{m.group(0)}]]" if m.group(0).lower() in tem else m.group(0), en) if marcas else en)
+        if marcas and " " in en and en.lower() in tem:
+            saida.append(f"[[{en}]]")  # expressão do vocabulário ("thank you"): um bloco só
+        else:
+            saida.append(re.sub(r"[A-Za-z']+", lambda m: f"[[{m.group(0)}]]" if m.group(0).lower() in tem else m.group(0), en) if marcas else en)
         usadas.append(en)
         fim_anterior = fim
     saida.append(texto[fim_anterior:])

@@ -68,6 +68,11 @@ def _traducao(data: dict) -> str:
     return str(data.get("core_meaning") or "").strip()
 
 
+def sem_pontuacao(texto: str) -> str:
+    """ "How are you?" → "How are you": a pontuação do fim atrapalha a troca no meio da frase."""
+    return " ".join(texto.strip().rstrip("?!.,;:").split())
+
+
 def _dias(desde: str | None) -> int:
     """Quantos dias desde uma data ISO. Sem data, um número grande."""
     if not desde:
@@ -142,6 +147,24 @@ def carregar(db: Session, user: User, limite: int = 60, todas: bool = False) -> 
         quando, acertou = ultima.get(en.lower(), ("", True))
         ultima_vez = max(visto.get(ref, ""), quando[:10])
         peso = min(_dias(ultima_vez or None), 365) + (500 if ref in tropecou else 0) + (0 if acertou else 300)
+        palavras.append(Palavra(id=linha.record_id, en=en, pt=pt, peso=float(peso)))
+
+    # expressões ("thank you" = obrigado): entram como uma unidade, sem a pontuação do fim,
+    # para a troca no chat poder usar a expressão inteira em vez de palavra por palavra
+    expressoes = db.scalars(
+        select(Record).where(
+            Record.user_id == user.id, Record.kind == "content",
+            Record.record_id.like("expressions:%"), Record.deleted.is_(False),
+        )
+    ).all()
+    for linha in expressoes:
+        dados = linha.data or {}
+        en = sem_pontuacao(str(dados.get("text") or ""))
+        pt = sem_pontuacao(str(dados.get("translation") or ""))
+        if not en or not pt:
+            continue
+        ref = "expression:" + linha.record_id.split(":", 1)[1]
+        peso = min(_dias(visto.get(ref)), 365) + (500 if ref in tropecou else 0)
         palavras.append(Palavra(id=linha.record_id, en=en, pt=pt, peso=float(peso)))
 
     palavras.sort(key=lambda p: p.peso, reverse=True)
