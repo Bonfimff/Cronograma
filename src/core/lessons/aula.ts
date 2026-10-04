@@ -124,9 +124,10 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
     minutos: Math.max(5, Math.round(2 + palavrasAula.length * 1.5 + conceitosAula.length * 2.5 + (modo === 'estudo' ? 4 : 0))),
   });
 
-  // 2. aquecimento: lembrar de uma aula anterior, ou arriscar antes de aprender
+  // 2. aquecimento: a palavra pedida no pacote, uma quase esquecida a revisar, uma de aula
+  // anterior, ou arriscar antes de aprender
   if (modo === 'estudo') {
-    const aquece = aquecimento(data, s, todosExemplos, rnd);
+    const aquece = aquecimentoPedido(s, rnd) ?? aquecimento(data, s, todosExemplos, rnd);
     if (aquece) etapas.push(aquece);
   }
 
@@ -167,8 +168,9 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
       etapas.push({ tipo: 'pratica', id: `autoral-${ex.id}`, rotulo: `Revisão rápida ${n + 1}`, exercicio: ex });
     });
 
-    // 5. escuta: ouvir e entender sem ler
-    const paraOuvir = shuffle(todosExemplos.filter(curto), rnd).slice(0, 2);
+    // 5. escuta: ouvir e entender sem ler (as frases do pacote, se vieram)
+    const escritas = (s.aula?.escuta ?? []).map((f, i) => ({ id: `${s.id}-escuta-${i}`, en: f.en, pt: f.pt }));
+    const paraOuvir = escritas.length ? escritas.slice(0, 2) : shuffle(todosExemplos.filter(curto), rnd).slice(0, 2);
     paraOuvir.forEach((ex, n) => {
       const outros = unicos(
         [...shuffle(todosExemplos, rnd), ...shuffle(content.examples, rnd)].filter((o) => o.pt !== ex.pt),
@@ -181,18 +183,22 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
       });
     });
 
-    // 6. fala: ouvir e repetir as frases-chave
+    // 6. fala: ouvir e repetir as frases-chave (ou as do pacote)
+    const falaEscrita = (s.aula?.fala ?? []).map((f, i) => ({ id: `${s.id}-fala-${i}`, en: f.en, pt: f.pt }));
     const chaves = frasesChave(conceitosAula, todosExemplos);
-    chaves.slice(0, 2).forEach((ex, n) => {
+    (falaEscrita.length ? falaEscrita : chaves).slice(0, 2).forEach((ex, n) => {
       etapas.push({ tipo: 'fala', id: `fala-${ex.id}`, rotulo: `Fale ${n + 1}`, alvo: ex });
     });
 
     // 7. missão: usar na situação da aula
-    const tarefas = unicos([...chaves, ...todosExemplos.filter(curto)], (e) => e.id).slice(0, 3);
+    const missao = s.aula?.missao;
+    const tarefas = missao?.tarefas?.length
+      ? missao.tarefas.slice(0, 3).map((f, i) => ({ id: `${s.id}-missao-${i}`, en: f.en, pt: f.pt }))
+      : unicos([...chaves, ...todosExemplos.filter(curto)], (e) => e.id).slice(0, 3);
     if (tarefas.length) {
       etapas.push({
         tipo: 'missao', id: 'missao', rotulo: 'Missão',
-        situacao: s.app?.context || s.expected?.result || s.objective,
+        situacao: missao?.situacao || s.app?.context || s.expected?.result || s.objective,
         tarefas,
       });
     }
@@ -252,6 +258,28 @@ function montarConceito(ref: ContentRef, rotulo: string): EtapaConceito | null {
 function frasesChave(conceitos: ContentRef[], todos: Example[]): Example[] {
   const deConceitos = conceitos.map((r) => examplesFor(r).find(curto)).filter(Boolean) as Example[];
   return unicos([...deConceitos, ...todos.filter(curto)], (e) => e.id);
+}
+
+/** Aquecimento pedido no pacote (aula.aquecimento) ou a primeira palavra de palavras.revisar. */
+function aquecimentoPedido(s: Session, rnd: () => number): EtapaExercicio | null {
+  const ref = s.aula?.aquecimento ?? s.palavras?.revisar?.find((r) => parseRef(r).kind === 'word');
+  if (!ref || parseRef(ref).kind !== 'word') return null;
+  const w = getWord(parseRef(ref).id);
+  const certo = w?.translations[0]?.text;
+  if (!w || !certo) return null;
+  const outras = unicos(
+    shuffle(content.words.filter((x) => x.id !== w.id), rnd).map((x) => x.translations[0]?.text).filter(Boolean) as string[],
+    (x) => x,
+  ).filter((x) => x !== certo).slice(0, 2);
+  if (outras.length < 2) return null;
+  return {
+    tipo: 'aquecimento', id: 'aquecimento', rotulo: 'Aquecimento',
+    dica: 'Uma palavra que estava escapando. Lembrar sem consultar é o que fixa.',
+    exercicio: {
+      id: `aq-${w.id}`, type: 'choice', refs: [ref], habilidade: 'reconhecer',
+      prompt: `O que significa “${w.word}”?`, options: shuffle([certo, ...outras], rnd), answer: certo,
+    },
+  };
 }
 
 function aquecimento(data: UserData, s: Session, exemplos: Example[], rnd: () => number): EtapaExercicio | null {

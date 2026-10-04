@@ -109,6 +109,8 @@ export interface Exercise {
   tokens?: string[];
   refs: ContentRef[];
   generated?: boolean;
+  /** o que o exercício pede (vai para o registro e o relatório); sem ele, o app deduz */
+  habilidade?: Habilidade;
 }
 
 export interface ContentBundle {
@@ -160,7 +162,39 @@ export interface Session {
   result?: SessionResult;
   /** cartão da aula em que a pessoa parou (para retomar) */
   lessonStep?: number;
+  /** integração com o vocabulário (pacote semana@2): o foco, o que revisar e o que só apoia */
+  palavras?: PalavrasDaSessao;
+  /** cartões da aula escritos à mão (pacote semana@2); o que faltar o app monta sozinho */
+  aula?: AulaDaSessao;
+  /** perguntas do treino de conversa no chat, ligadas a esta aula */
+  treino?: TreinoChat[];
   createdAt: string;
+}
+
+export interface PalavrasDaSessao {
+  /** o que a aula ensina (até 4) */
+  novas?: ContentRef[];
+  /** do vocabulário, quase esquecidas: voltam no aquecimento e nos exercícios */
+  revisar?: ContentRef[];
+  /** já firmes: aparecem nos exemplos e exercícios, sem cartão próprio */
+  apoio?: ContentRef[];
+}
+
+export interface FraseAula { en: string; pt: string }
+
+export interface AulaDaSessao {
+  /** palavra (ref) que abre a aula como lembrança */
+  aquecimento?: ContentRef;
+  escuta?: FraseAula[];
+  fala?: FraseAula[];
+  missao?: { situacao: string; tarefas: FraseAula[] };
+}
+
+export interface TreinoChat {
+  en: string;
+  pt?: string;
+  /** modelo de resposta mostrado como dica: "I work at ____." */
+  resposta?: string;
 }
 
 /** Conteúdo da folha física. */

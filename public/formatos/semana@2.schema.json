@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eita.exksvol.com/formatos/semana@2.schema.json",
+  "title": "Pacote semanal do Eita (semana@2)",
+  "description": "Uma semana (ou só alguns dias, ou uma aula) de estudo de inglês. Campos que começam com $ são instruções e são ignorados na importação. O guia completo está em docs/formato-semana.md.",
+  "type": "object",
+  "required": ["format", "days"],
+  "properties": {
+    "format": { "enum": ["ingles-hibrido/semana@2", "ingles-hibrido/semana@1"] },
+    "aluno": { "$ref": "#/$defs/aluno" },
+    "week": { "$ref": "#/$defs/data", "description": "Opcional. Sem ele, só os dias do arquivo mudam." },
+    "goals": { "type": "string" },
+    "content": { "$ref": "#/$defs/content" },
+    "sheets": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["title", "items"],
+        "properties": { "title": { "type": "string" }, "items": { "type": "array", "items": { "$ref": "#/$defs/par" } } }
+      }
+    },
+    "days": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/dia" } }
+  },
+  "patternProperties": { "^\\$": {} },
+  "additionalProperties": false,
+  "$defs": {
+    "data": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "ref": { "type": "string", "pattern": "^(word|expression|pattern|grammar|topic):[a-z0-9-]+$", "examples": ["word:work", "expression:where-do-you-work"] },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "par": { "type": "object", "required": ["en", "pt"], "properties": { "en": { "type": "string" }, "pt": { "type": "string" } } },
+    "habilidade": { "enum": ["reconhecer", "lembrar", "ouvir", "falar", "usar"] },
+    "copy": { "type": "object", "required": ["lines"], "properties": { "lines": { "type": "array", "items": { "type": "string" } } } },
+    "aluno": {
+      "type": "object",
+      "description": "Gerado pelo app: o que o aluno já sabe. Leia; não precisa devolver.",
+      "properties": {
+        "gerado_em": { "$ref": "#/$defs/data" },
+        "vocabulario": {
+          "type": "array",
+          "description": "[inglês, português, estado, chance de lembrar hoje 0..1, degrau 0..5]",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              { "type": "string" }, { "type": "string" },
+              { "enum": ["firme", "estudando", "quase_esquecida", "nao_praticada"] },
+              { "type": "number", "minimum": 0, "maximum": 1 },
+              { "type": "integer", "minimum": 0, "maximum": 5 }
+            ]
+          }
+        },
+        "dificuldades": {
+          "type": "object",
+          "properties": { "palavras": { "type": "array", "items": { "type": "string" } }, "pronuncia": { "type": "array", "items": { "type": "string" } } }
+        },
+        "ja_estudado": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "words": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["id", "word", "translations", "core_meaning"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" }, "word": { "type": "string" }, "type": { "type": "string" },
+              "translations": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "context": { "type": "string" } } } },
+              "core_meaning": { "type": "string" },
+              "pronunciation": { "type": "object", "properties": { "ipa": { "type": "string" }, "respelling": { "type": "string" } } },
+              "uses": { "type": "array", "items": { "type": "object", "required": ["id", "label", "meaning"], "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "meaning": { "type": "string" }, "explanation": { "type": "string" }, "examples": { "type": "array", "items": { "type": "string" } } } } },
+              "variations": { "type": "array", "items": { "type": "object", "required": ["form", "meaning"], "properties": { "form": { "type": "string" }, "meaning": { "type": "string" }, "note": { "type": "string" }, "ref": { "$ref": "#/$defs/ref" } } } },
+              "related_words": { "type": "array", "items": { "type": "string" } },
+              "examples": { "type": "array", "items": { "type": "string" }, "description": "ids de content.examples" },
+              "audio": { "type": "string" },
+              "copy": { "$ref": "#/$defs/copy" }
+            }
+          }
+        },
+        "expressions": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["id", "text", "translation"],
+            "properties": { "id": { "$ref": "#/$defs/id" }, "text": { "type": "string" }, "translation": { "type": "string" }, "words": { "type": "array", "items": { "type": "string" } }, "context": { "type": "string" }, "meaning": { "type": "string" }, "pattern": { "type": "string" }, "examples": { "type": "array", "items": { "type": "string" } }, "copy": { "$ref": "#/$defs/copy" } }
+          }
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["id", "formula"],
+            "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "type": "string" }, "formula": { "type": "string" }, "slots": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "options": { "type": "array", "items": { "type": "string" } } } } }, "explanation": { "type": "string" }, "examples": { "type": "array", "items": { "type": "string" } }, "copy": { "$ref": "#/$defs/copy" } }
+          }
+        },
+        "grammar": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["id", "title"],
+            "properties": { "id": { "$ref": "#/$defs/id" }, "title": { "type": "string" }, "explanation": { "type": "string" }, "points": { "type": "array", "items": { "type": "string" } }, "examples": { "type": "array", "items": { "type": "string" } }, "copy": { "$ref": "#/$defs/copy" } }
+          }
+        },
+        "examples": {
+          "type": "array",
+          "items": { "type": "object", "required": ["id", "en", "pt"], "properties": { "id": { "$ref": "#/$defs/id" }, "en": { "type": "string" }, "pt": { "type": "string" }, "context": { "type": "string" } } }
+        },
+        "topics": {
+          "type": "array",
+          "items": { "type": "object", "required": ["id", "title"], "properties": { "id": { "$ref": "#/$defs/id" }, "title": { "type": "string" }, "description": { "type": "string" }, "objective": { "type": "string" }, "refs": { "type": "array", "items": { "$ref": "#/$defs/ref" } } } }
+        },
+        "exercises": { "type": "array", "items": { "$ref": "#/$defs/exercicio" } }
+      }
+    },
+    "exercicio": {
+      "type": "object", "required": ["type", "prompt"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "enum": ["translate", "fill", "choice", "match", "build", "qa", "produce"] },
+        "habilidade": { "$ref": "#/$defs/habilidade" },
+        "prompt": { "type": "string" },
+        "answer": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "pairs": { "type": "array", "items": { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }] } },
+        "tokens": { "type": "array", "items": { "type": "string" } },
+        "refs": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+      }
+    },
+    "dia": {
+      "type": "object", "required": ["date"],
+      "properties": {
+        "date": { "$ref": "#/$defs/data" },
+        "theme": { "type": "string" }, "objective": { "type": "string" }, "minutes": { "type": "number", "minimum": 0 },
+        "sessions": { "type": "array", "items": { "$ref": "#/$defs/sessao" } }
+      }
+    },
+    "sessao": {
+      "type": "object", "required": ["kind", "title"],
+      "anyOf": [{ "required": ["refs"] }, { "required": ["palavras"] }],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ENG-\\d{4}-\\d{4}$", "description": "Código da sessão; sem ele, atualiza a aula de mesmo dia e título, ou cria uma nova." },
+        "status": { "enum": ["planned", "in_progress", "done"], "description": "Só informativo." },
+        "kind": { "enum": ["new", "practice", "review", "reinforce", "consolidate"] },
+        "title": { "type": "string" },
+        "objective": { "type": "string" },
+        "topic": { "type": "string" },
+        "refs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "palavras": {
+          "type": "object",
+          "properties": {
+            "novas": { "type": "array", "maxItems": 4, "items": { "$ref": "#/$defs/ref" } },
+            "revisar": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+            "apoio": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+          }
+        },
+        "copyRefs": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "whenToUse": { "type": "string", "maxLength": 116 },
+        "sheet": {
+          "type": "object",
+          "properties": {
+            "copy": { "type": "array", "maxItems": 3, "items": { "type": "string", "maxLength": 68 } },
+            "quiz": { "type": "array", "maxItems": 6, "items": { "type": "string" } },
+            "practice": { "type": "string" }
+          }
+        },
+        "app": { "type": "object", "properties": { "intro": { "type": "string" }, "context": { "type": "string" }, "tips": { "type": "array", "items": { "type": "string" } } } },
+        "aula": {
+          "type": "object",
+          "properties": {
+            "aquecimento": { "$ref": "#/$defs/ref" },
+            "escuta": { "type": "array", "items": { "$ref": "#/$defs/par" } },
+            "fala": { "type": "array", "items": { "$ref": "#/$defs/par" } },
+            "missao": { "type": "object", "required": ["situacao", "tarefas"], "properties": { "situacao": { "type": "string" }, "tarefas": { "type": "array", "items": { "$ref": "#/$defs/par" } } } }
+          }
+        },
+        "exercises": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/exercicio" }] } },
+        "chat": {
+          "type": "object",
+          "properties": {
+            "treino": {
+              "type": "array",
+              "items": { "oneOf": [{ "type": "string" }, { "type": "object", "required": ["en"], "properties": { "en": { "type": "string" }, "pt": { "type": "string" }, "resposta": { "type": "string" } } }] }
+            }
+          }
+        },
+        "expected": { "type": "object", "required": ["result"], "properties": { "result": { "type": "string" }, "criteria": { "type": "array", "items": { "type": "string" } } } }
+      }
+    }
+  }
+}

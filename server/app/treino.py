@@ -71,8 +71,29 @@ def _frases_de_estudo(db: Session, user: User) -> list[tuple[str, str]]:
     return out
 
 
+def _treino_das_aulas(db: Session, user: User) -> list[Pergunta]:
+    """
+    Perguntas escritas no pacote semanal (sessão.treino): a aula mais recente primeiro. A resposta
+    vale se vier em inglês; o modelo de resposta, quando veio, é a dica.
+    """
+    linhas = db.scalars(
+        select(Record).where(Record.user_id == user.id, Record.kind == "session", Record.deleted.is_(False))
+    ).all()
+    sessoes = sorted((r.data or {} for r in linhas), key=lambda d: str(d.get("date") or ""), reverse=True)
+    out: list[Pergunta] = []
+    for s in sessoes:
+        for t in s.get("treino") or []:
+            en = str((t or {}).get("en") or "").strip()
+            if en and not any(p.en.lower() == en.lower() for p in out):
+                out.append(Pergunta(en, str(t.get("pt") or ""), str(t.get("resposta") or "Answer in English."), r"[a-z]{2,}"))
+    return out
+
+
 def perguntas(db: Session, user: User) -> list[Pergunta]:
     """As perguntas do treino, sempre na mesma ordem (o estado vive só na conversa)."""
+    das_aulas = _treino_das_aulas(db, user)
+    if das_aulas:
+        return das_aulas[:5]
     vocab = {p.en.lower() for p in carregar(db, user, 100000, todas=True)}
     lista: list[Pergunta] = []
     for exige, p in FIXAS:
@@ -167,7 +188,7 @@ def corrigir(texto: str, vocabulario: set[str]) -> str:
 # ---------- a conversa ----------
 
 def _bloco(n: int, total: int, p: Pergunta) -> str:
-    return f"🎯 Treino {n}/{total}\n{p.en}\n({p.pt})"
+    return f"🎯 Treino {n}/{total}\n{p.en}" + (f"\n({p.pt})" if p.pt else "")
 
 
 def _fecho() -> str:

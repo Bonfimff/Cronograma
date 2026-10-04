@@ -7,6 +7,7 @@ import { KIND_LABEL } from '../../core/planning/weeks';
 import {
   applyPackage, checkPackage, exportPackage, parsePackage, templatePackage, type ApplyResult, type WeekPackage,
 } from '../../core/planning/weekPackage';
+import { contextoDoAluno } from '../../core/planning/contextoAluno';
 
 function download(name: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -33,14 +34,15 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
   const [done, setDone] = useState<(ApplyResult & { week: string }) | null>(null);
 
   const parsed = useMemo(() => (text.trim() ? parsePackage(text) : null), [text]);
-  const pkg = parsed && typeof parsed !== 'string' ? (parsed as WeekPackage) : null;
-  const check = pkg ? checkPackage(data, pkg, { replacePlanned: replace }) : null;
+  const pkg = useMemo(() => (parsed && typeof parsed !== 'string' ? (parsed as WeekPackage) : null), [parsed]);
+  // a conferência com o vocabulário calcula o relatório: só refaz quando o texto ou os dados mudam
+  const check = useMemo(() => (pkg ? checkPackage(data, pkg, { replacePlanned: replace }) : null), [pkg, data, replace]);
 
   const apply = () => {
     if (!pkg || !check?.ok) return;
     let result: ApplyResult | null = null;
     store.update((d) => { result = applyPackage(d, pkg, { replacePlanned: replace }); });
-    if (result) setDone({ ...(result as ApplyResult), week: weekStartOf(pkg.week) });
+    if (result) setDone({ ...(result as ApplyResult), week: check.summary.week || weekStartOf(today()) });
     setText('');
   };
 
@@ -51,9 +53,9 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
         <h1>Pacote semanal (JSON)</h1>
         <p className="lead">Uma semana inteira num arquivo.</p>
         <div className="acoes-json">
-          <button onClick={() => download(`modelo-semana-${week}.json`, templatePackage(week))}>
+          <button onClick={() => download(`modelo-semana-${week}.json`, templatePackage(week, contextoDoAluno(data)))}>
             <b>Modelo</b>
-            <small>com o pedido pronto para colar numa IA</small>
+            <small>com o seu vocabulário e o pedido pronto para colar numa IA</small>
           </button>
           <button onClick={() => download(`semana-${week}.json`, exportPackage(data, week))}>
             <b>Exportar</b>
@@ -110,6 +112,14 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
               <div>
                 <h3>Erros ({check.errors.length}): corrija antes de importar</h3>
                 <ul className="check-list err">{check.errors.map((m, i) => <li key={i}>{m}</li>)}</ul>
+              </div>
+            )}
+            {check.integracao.length > 0 && (
+              <div>
+                <h3>Conversa com o seu vocabulário</h3>
+                <ul className="check-list">
+                  {check.integracao.map((m, i) => <li key={i} className={m.ok ? 'ok' : 'warn'}>{m.ok ? '✓ ' : '⚠ '}{m.texto}</li>)}
+                </ul>
               </div>
             )}
             {check.warnings.length > 0 && (

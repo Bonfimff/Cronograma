@@ -1,9 +1,11 @@
 import type {
-  ContentBundle, ContentRef, Exercise, ExerciseType, ExpectedResult, Session, SessionApp, SessionKind, SessionSheet,
-  SessionStatus, SheetItem, UserData,
+  AulaDaSessao, ContentBundle, ContentRef, Exercise, ExerciseType, ExpectedResult, Habilidade, PalavrasDaSessao, Session,
+  SessionApp, SessionKind, SessionSheet, SessionStatus, SheetItem, TreinoChat, UserData,
 } from '../types';
 import { addDays, weekStartOf } from '../dates';
-import { baseContent, parseRef } from '../content/repository';
+import { baseContent, examplesFor, parseRef } from '../content/repository';
+import { contextoDoAluno, type ContextoAluno } from './contextoAluno';
+import { adicionarTexto, cobertura } from './cobertura';
 import { normalizeContent } from '../content/normalize';
 import { mergeSheets } from '../library/sheets';
 import { createSession, deleteSession } from '../sessions/sessions';
@@ -17,7 +19,14 @@ import { saveDayPlan, saveWeekGoals, KIND_ORDER } from './weeks';
  * Formato documentado em docs/formato-semana.md.
  */
 
-export const PACKAGE_FORMAT = 'ingles-hibrido/semana@1';
+export const PACKAGE_FORMAT = 'ingles-hibrido/semana@2';
+/** @1 continua valendo: os campos novos do @2 são todos opcionais. */
+export const FORMATOS_ACEITOS = ['ingles-hibrido/semana@1', PACKAGE_FORMAT];
+const HABILIDADES: Habilidade[] = ['reconhecer', 'lembrar', 'ouvir', 'falar', 'usar'];
+/** Cobertura mínima de palavras conhecidas numa aula (Hu & Nation: 95% a 98%). */
+export const COBERTURA_MINIMA = 0.95;
+/** Quantas vezes, em sessões diferentes, uma palavra nova deveria aparecer na semana. */
+export const REPETICOES_NA_SEMANA = 3;
 
 export interface PackageSession {
   /**
@@ -32,7 +41,11 @@ export interface PackageSession {
   title: string;
   objective?: string;
   topic?: string;
-  refs: ContentRef[];
+  /** conteúdos da sessão; no @2 pode faltar quando há palavras.novas (vira novas + revisar) */
+  refs?: ContentRef[];
+  palavras?: PalavrasDaSessao;
+  aula?: AulaDaSessao;
+  chat?: { treino?: (string | TreinoChat)[] };
   copyRefs?: ContentRef[];
   whenToUse?: string;
   sheet?: SessionSheet;
@@ -58,7 +71,9 @@ export interface PackageSheet {
 
 export interface WeekPackage {
   format: string;
-  week: string; // segunda-feira YYYY-MM-DD (outra data da semana também é aceita)
+  /** o que o aluno já sabe (gerado pelo app; ignorado na importação) */
+  aluno?: ContextoAluno;
+  week?: string; // segunda-feira YYYY-MM-DD (outra data da semana também é aceita); opcional
   goals?: string;
   content?: Partial<ContentBundle>;
   sheets?: PackageSheet[];
@@ -73,10 +88,18 @@ export interface SessionPlan {
   remove: string[]; // planejadas da semana que não estão no arquivo (com "substituir")
 }
 
+/** Uma linha da conferência com o vocabulário do aluno: ok ou um alerta, com o porquê. */
+export interface Integracao {
+  ok: boolean;
+  texto: string;
+}
+
 export interface PackageCheck {
   ok: boolean;
   errors: string[];
   warnings: string[];
+  /** cobertura de palavras conhecidas, repetição das novas, revisão das quase esquecidas, habilidades */
+  integracao: Integracao[];
   summary: { week: string; days: number; sessions: number; content: Record<string, number>; sheets: number; plan: SessionPlan };
 }
 
@@ -173,8 +196,9 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
   const warnings: string[] = [];
   const err = (m: string) => errors.push(m);
   const warn = (m: string) => warnings.push(m);
+  const integracao: Integracao[] = [];
 
-  if (p.format !== PACKAGE_FORMAT) warn(`"format" deveria ser "${PACKAGE_FORMAT}".`);
+  if (!FORMATOS_ACEITOS.includes(p.format)) warn(`"format" deveria ser "${PACKAGE_FORMAT}".`);
   // "week" é opcional: sem ele, o arquivo traz só os dias que vai mudar (uma aula avulsa, por exemplo)
   if (p.week !== undefined && !isDate(p.week)) err('"week" deve ser uma data que existe, no formato AAAA-MM-DD (ou fique de fora).');
   const ws = isDate(p.week) ? weekStartOf(p.week) : '';
@@ -270,8 +294,21 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
       if (!text(s.title)) err(`${w}: falta "title".`);
       if (!KINDS.includes(s.kind)) err(`${w}: "kind" deve ser ${KINDS.join(', ')}.`);
       const refs = listOf<unknown>(s.refs, `${w}: refs`, err);
-      if (!refs.length) err(`${w}: "refs" precisa ter pelo menos um conteúdo.`);
+      const pal = isObj(s.palavras) ? s.palavras : undefined;
+      if (s.palavras !== undefined && !pal) err(`${w}: "palavras" deve ser um objeto ({ novas, revisar, apoio }).`);
+      const novas = listOf<unknown>(pal?.novas, `${w}: palavras.novas`, err);
+      (['novas', 'revisar', 'apoio'] as const).forEach((k) => listOf<unknown>(pal?.[k], `${w}: palavras.${k}`, err).forEach((r) => refOk(`${w}, palavras.${k}`, r)));
+      if (novas.length > 4) warn(`${w}: ${novas.length} palavras novas; a aula mostra até 4 em cartões, o resto vai para "Saiba mais".`);
+      if (!refs.length && !novas.length) err(`${w}: precisa de "refs" ou de "palavras.novas" com pelo menos um conteúdo.`);
       refs.forEach((r) => refOk(w, r));
+      checkAula(w, s.aula, err, refOk);
+      if (s.chat !== undefined) {
+        if (!isObj(s.chat)) err(`${w}: "chat" deve ser um objeto ({ treino: [...] }).`);
+        else listOf<unknown>(s.chat.treino, `${w}: chat.treino`, err).forEach((t, ti) => {
+          if (typeof t === 'string') return;
+          if (!isObj(t) || !text(t.en)) err(`${w}, chat.treino ${ti + 1}: precisa de "en" (a pergunta em inglês).`);
+        });
+      }
       listOf<unknown>(s.copyRefs, `${w}: copyRefs`, err).forEach((r) => refOk(`${w}, copyRefs`, r));
       if (s.topic !== undefined && !ids.topics.has(s.topic)) err(`${w}: tema "${s.topic}" não existe.`);
       if (s.id !== undefined) {
@@ -306,10 +343,13 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
     });
   });
 
+  if (!errors.length) integracao.push(...conferirIntegracao(data, p, lists));
+
   return {
     ok: errors.length === 0,
     errors,
     warnings,
+    integracao,
     summary: {
       week: ws || semanaDoPacote(p),
       days: Array.isArray(p.days) ? p.days.length : 0,
@@ -321,8 +361,113 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
   };
 }
 
+const refsDaSessao = (s: PackageSession): ContentRef[] =>
+  [...new Set([...(s.refs ?? []), ...(s.palavras?.novas ?? []), ...(s.palavras?.revisar ?? [])])];
+
+const treinoDe = (s: PackageSession): TreinoChat[] =>
+  (Array.isArray(s.chat?.treino) ? s.chat!.treino : []).map((t) => (typeof t === 'string' ? { en: t } : t)).filter((t) => isObj(t) && text(t.en));
+
+/**
+ * A semana conversa com o vocabulário do aluno? Confere, por sessão, a cobertura de palavras
+ * conhecidas e as habilidades; e, numa semana inteira, se cada palavra nova aparece em várias
+ * sessões e se as quase esquecidas foram revisadas. Só alerta: nada aqui bloqueia.
+ */
+function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof ContentBundle, Record<string, unknown>[]>): Integracao[] {
+  const out: Integracao[] = [];
+  const aluno = contextoDoAluno(data);
+  const conhecidas = new Set<string>();
+  aluno.vocabulario.forEach(([en]) => adicionarTexto(conhecidas, en));
+  const palavraDoRef = (r: string): string | undefined => {
+    const { kind, id } = parseRef(r as ContentRef);
+    if (kind !== 'word') return undefined;
+    const doPacote = lists.words.find((w) => w.id === id);
+    if (doPacote) return String(doPacote.word ?? '');
+    return [...baseContent.words, ...(data.content?.words ?? [])].find((w) => w.id === id)?.word;
+  };
+  // exemplos: os do pacote (ainda não estão no repositório) ou os que já existem
+  const exemploDoPacote = new Map(lists.examples.map((x) => [String(x.id), String(x.en ?? '')]));
+  const exemplosDe = (r: ContentRef): string[] => {
+    const { kind, id } = parseRef(r);
+    const chave = ({ word: 'words', expression: 'expressions', pattern: 'patterns', grammar: 'grammar' } as Record<string, keyof ContentBundle>)[kind];
+    const item = chave ? lists[chave].find((x) => x.id === id) : undefined;
+    if (item) return (Array.isArray(item.examples) ? item.examples : []).map((e) => exemploDoPacote.get(String(e)) ?? '').filter(Boolean);
+    return examplesFor(r).map((e) => e.en);
+  };
+
+  const sessoes = packageSessions(p);
+  const novasDaSemana = new Map<string, number>(); // ref → em quantas sessões aparece
+  lists.words.forEach((w) => novasDaSemana.set(`word:${w.id}`, 0));
+  sessoes.forEach(({ s }) => {
+    const todas = new Set([...refsDaSessao(s), ...(s.palavras?.apoio ?? [])]);
+    todas.forEach((r) => novasDaSemana.has(r) && novasDaSemana.set(r, novasDaSemana.get(r)! + 1));
+  });
+
+  sessoes.forEach(({ date, s }) => {
+    const nome = `${date.split('-').reverse().slice(0, 2).join('/')} · ${s.title ?? 'sem título'}`;
+    // nesta aula, contam como conhecidas também as palavras que ela ensina
+    const daAula = new Set(conhecidas);
+    refsDaSessao(s).forEach((r) => { const en = palavraDoRef(r); if (en) adicionarTexto(daAula, en); });
+    lists.words.forEach((w) => refsDaSessao(s).includes(`word:${w.id}` as ContentRef) && adicionarTexto(daAula, String(w.word ?? '')));
+    const exercicios = (s.exercises ?? []).filter((x): x is Exclude<typeof x, string> => typeof x !== 'string');
+    const textos = [
+      ...refsDaSessao(s).flatMap(exemplosDe),
+      ...exercicios.flatMap((x) => [x.prompt, ...(Array.isArray(x.answer) ? x.answer : [x.answer ?? '']), ...(x.options ?? []), ...(x.pairs ?? []).map((par) => par[0]), ...(x.tokens ?? [])]),
+      ...(s.aula?.escuta ?? []).map((f) => f.en), ...(s.aula?.fala ?? []).map((f) => f.en),
+      ...(s.aula?.missao?.tarefas ?? []).map((f) => f.en),
+      ...treinoDe(s).map((t) => t.en),
+    ].filter((t): t is string => typeof t === 'string' && /[a-z]/i.test(t))
+      // os enunciados em português dos exercícios ficam de fora: só conta o inglês
+      .filter((t) => !/[ãõçáéíóúâêô]/i.test(t));
+    const c = cobertura(textos, daAula);
+    if (c.total >= 10) {
+      const ok = c.taxa >= COBERTURA_MINIMA;
+      out.push({ ok, texto: `${nome}: ${Math.round(c.taxa * 100)}% de palavras conhecidas${ok ? '' : ` (mínimo ${COBERTURA_MINIMA * 100}%). Fora do vocabulário: ${c.desconhecidas.slice(0, 8).join(', ')}`}` });
+    }
+    // habilidades: exercícios marcados e cartões escritos
+    const habs = new Set<Habilidade>(exercicios.map((x) => x.habilidade).filter((h): h is Habilidade => !!h));
+    if (s.aula?.escuta?.length) habs.add('ouvir');
+    if (s.aula?.fala?.length) habs.add('falar');
+    if (s.aula?.missao || treinoDe(s).length) habs.add('usar');
+    if (habs.size && habs.size < 3) out.push({ ok: false, texto: `${nome}: só ${[...habs].join(' e ')}; uma aula completa treina pelo menos 3 habilidades (reconhecer, lembrar, ouvir, falar, usar).` });
+  });
+
+  // semana inteira: repetição das novas e revisão das quase esquecidas
+  const diasNoArquivo = (Array.isArray(p.days) ? p.days : []).length;
+  if (diasNoArquivo >= 5) {
+    novasDaSemana.forEach((n, ref) => {
+      if (n > 0 && n < REPETICOES_NA_SEMANA) out.push({ ok: false, texto: `${ref.slice(5)} aparece em ${n} ${n === 1 ? 'sessão' : 'sessões'}; palavra nova fixa melhor vista em ${REPETICOES_NA_SEMANA} sessões diferentes.` });
+    });
+    const citadas = new Set(sessoes.flatMap(({ s }) => [...refsDaSessao(s), ...(s.palavras?.apoio ?? []), ...(s.aula?.aquecimento ? [s.aula.aquecimento] : [])])
+      .map((r) => palavraDoRef(r)?.toLowerCase()).filter(Boolean));
+    const esquecidas = aluno.vocabulario.filter((l) => l[2] === 'quase_esquecida').map((l) => l[0]);
+    const faltam = esquecidas.filter((en) => !citadas.has(en.toLowerCase()));
+    if (esquecidas.length) {
+      out.push(faltam.length
+        ? { ok: false, texto: `Quase esquecidas sem revisão nesta semana: ${faltam.slice(0, 10).join(', ')}.` }
+        : { ok: true, texto: `As ${esquecidas.length} palavras quase esquecidas voltam nesta semana.` });
+    }
+  }
+  return out;
+}
+
+function checkAula(w: string, a: unknown, err: (m: string) => void, refOk: (where: string, r: unknown) => void) {
+  if (a === undefined) return;
+  if (!isObj(a)) return err(`${w}: "aula" deve ser um objeto.`);
+  if (a.aquecimento !== undefined) refOk(`${w}, aula.aquecimento`, a.aquecimento);
+  const frases = (campo: string, l: unknown) => listOf<unknown>(l, `${w}: ${campo}`, err).forEach((f, i) => {
+    if (!isObj(f) || !text(f.en) || !text(f.pt)) err(`${w}, ${campo} ${i + 1}: precisa de "en" e "pt".`);
+  });
+  frases('aula.escuta', a.escuta);
+  frases('aula.fala', a.fala);
+  if (a.missao !== undefined) {
+    if (!isObj(a.missao) || !text(a.missao.situacao)) err(`${w}: aula.missao precisa de "situacao" e "tarefas".`);
+    else frases('aula.missao.tarefas', a.missao.tarefas);
+  }
+}
+
 function checkExercise(where: string, e: Partial<Exercise>, err: (m: string) => void) {
   if (!isObj(e) || !EX_TYPES.includes(e.type as ExerciseType)) return err(`${where}: "type" deve ser ${EX_TYPES.join(', ')}.`);
+  if (e.habilidade !== undefined && !HABILIDADES.includes(e.habilidade)) err(`${where}: "habilidade" deve ser ${HABILIDADES.join(', ')}.`);
   if (!e.prompt) err(`${where}: falta "prompt".`);
   if (e.options !== undefined && !Array.isArray(e.options)) return err(`${where}: "options" deve ser uma lista.`);
   if ((e.type === 'choice' || e.type === 'fill') && e.options && !e.options.includes(String(e.answer))) err(`${where}: "answer" precisa estar em "options".`);
@@ -376,12 +521,13 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
       if (cur) usados.add(cur.id);
       if (cur && cur.status !== 'planned') return; // já iniciada/feita: não mexe
 
+      const refs = refsDaSessao(ps);
       let s: Session;
       if (cur) {
         // mesma sessão, mesmo código: atualiza no lugar (a folha impressa continua valendo)
         Object.assign(cur, {
           date: d.date, weekStart: weekStartOf(d.date), kind: ps.kind, topicId: ps.topic,
-          title: ps.title, objective: ps.objective ?? '', refs: ps.refs,
+          title: ps.title, objective: ps.objective ?? '', refs,
           copyRefs: ps.copyRefs ?? cur.copyRefs, whenToUse: ps.whenToUse || undefined,
         });
         s = cur;
@@ -389,14 +535,14 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
       } else {
         s = createSession(draft, {
           date: d.date, kind: ps.kind, topicId: ps.topic, title: ps.title, objective: ps.objective ?? '',
-          refs: ps.refs, copyRefs: ps.copyRefs ?? (ps.sheet?.copy ? [] : undefined), whenToUse: ps.whenToUse,
+          refs, copyRefs: ps.copyRefs ?? (ps.sheet?.copy ? [] : undefined), whenToUse: ps.whenToUse,
         });
         result.created.push(s.id);
       }
       // exercícios escritos dentro da sessão viram conteúdo do usuário
       const exIds = (ps.exercises ?? []).map((x, i) => {
         if (typeof x === 'string') return x;
-        const ex = normalizeContent({ exercises: [{ ...x, id: x.id ?? `${s.id}-x${i + 1}`, refs: x.refs ?? ps.refs } as Exercise] }).exercises![0];
+        const ex = normalizeContent({ exercises: [{ ...x, id: x.id ?? `${s.id}-x${i + 1}`, refs: x.refs ?? refs } as Exercise] }).exercises![0];
         uc.exercises = [...(uc.exercises ?? []).filter((e) => e.id !== ex.id), ex];
         return ex.id;
       });
@@ -404,6 +550,10 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
       s.app = ps.app;
       s.expected = ps.expected;
       s.exerciseIds = exIds.length ? exIds : undefined;
+      s.palavras = ps.palavras;
+      s.aula = ps.aula;
+      const treino = treinoDe(ps);
+      s.treino = treino.length ? treino : undefined;
     });
   });
   return result;
@@ -429,6 +579,7 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
 
   return {
     format: PACKAGE_FORMAT,
+    aluno: contextoDoAluno(data),
     week: weekStart,
     goals: week?.goals ?? '',
     ...(Object.keys(content).length && { content }),
@@ -450,6 +601,9 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
           ...(s.app && { app: s.app }),
           ...(s.exerciseIds && { exercises: s.exerciseIds }),
           ...(s.expected && { expected: s.expected }),
+          ...(s.palavras && { palavras: s.palavras }),
+          ...(s.aula && { aula: s.aula }),
+          ...(s.treino && { chat: { treino: s.treino } }),
         })),
       };
     }),
@@ -457,7 +611,7 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
 }
 
 /** Modelo comentado para começar uma semana nova. */
-export function templatePackage(weekStart: string): WeekPackage & {
+export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekPackage & {
   $leia_me: string[];
   $plataforma: Record<string, string>;
   $como_pedir: { pedido: string; preencha: Record<string, string>; regras: string[] };
@@ -477,6 +631,12 @@ export function templatePackage(weekStart: string): WeekPackage & {
       'pontuação': 'Cada rodada de jogo vale 100 pontos; no Tetris, 5 acertos fecham um nível de 100.',
       'ler a folha em voz alta': 'Na Biblioteca, cada folha lê tudo em sequência, alternando inglês e português, com velocidade, pausa e repetição. Vem de words/expressions/patterns/grammar e das traduções.',
       'meu progresso': 'Palavras que mais acerta e que mais escapam (placar dos jogos), frequência de estudo e tempo até um conteúdo firmar. Vem do histórico de refs e do resultado das sessões corrigidas, não do arquivo.',
+      'vocabulário do aluno': 'O bloco aluno (gerado pelo app) traz cada palavra com o estado: firme, estudando, quase_esquecida, nao_praticada. As aulas devem ser montadas em cima dele.',
+      'palavras (na sessão)': 'novas = o foco da aula (até 4, viram cartões); revisar = quase esquecidas do vocabulário (voltam no aquecimento); apoio = firmes usadas nos exemplos e exercícios.',
+      'aula (na sessão)': 'Cartões escritos à mão: aquecimento (ref de uma palavra a lembrar), escuta e fala (frases en/pt), missao (situação + tarefas). O que faltar, o app monta a partir do conteúdo.',
+      'habilidade (no exercício)': 'reconhecer, lembrar, ouvir, falar ou usar. Vai para o relatório de progresso (nível por habilidade).',
+      'chat.treino (na sessão)': 'Perguntas em inglês que o amigo da Conversa faz no treino, ligadas a esta aula. Opcional: pt (tradução) e resposta (modelo, ex.: "I work at ____.").',
+      'conferência na importação': 'A prévia mostra a cobertura de palavras conhecidas por aula (mínimo 95%), palavras novas vistas em menos de 3 sessões, quase esquecidas sem revisão e aulas com menos de 3 habilidades. São alertas: a importação não é bloqueada.',
       'só no aparelho': 'Tema claro/escuro, estrela das folhas, nome que você dá a cada folha e as vozes dos Ajustes ficam no aparelho: não entram nem saem neste arquivo.',
     },
     // pronto para colar num chat de IA: o pedido, o que o aluno preenche e as
@@ -504,11 +664,18 @@ export function templatePackage(weekStart: string): WeekPackage & {
         'sheet.copy: no máximo 3 linhas. sheet.quiz: no máximo 6 itens. São o que cabe na folha impressa.',
         'exercises.type: translate, fill, choice, match, build, qa ou produce. choice precisa de options; match precisa de pairs.',
         'Palavras para as cruzadas funcionam melhor com 3 a 9 letras, sem espaço nem hífen.',
+        'Monte as aulas em cima do bloco aluno: nos exemplos, exercícios, escutas, falas, missões e treino, pelo menos 95% das palavras devem ser do vocabulário do aluno; o resto, só as palavras.novas daquela sessão.',
+        'Cada sessão: até 4 palavras.novas; coloque em palavras.revisar as palavras "quase_esquecida" do aluno, espalhadas pela semana; use as "firme" em palavras.apoio.',
+        'Cada palavra nova deve aparecer em pelo menos 3 sessões diferentes da semana (como nova, revisar ou apoio).',
+        'Cada sessão treina pelo menos 3 habilidades: marque habilidade nos exercícios e use aula.escuta (ouvir), aula.fala (falar) e aula.missao ou chat.treino (usar).',
+        'Para mudar só um dia ou uma aula, mande só esses dias: os outros ficam como estão. Sem id, a aula de mesmo dia e mesmo título é atualizada.',
+        'Não devolva o bloco aluno nem os campos que começam com $.',
         'Não invente campos novos: use só os que aparecem neste modelo.',
       ],
     },
     $leia_me: [
-      'Pacote semanal do Inglês Híbrido. Campos que começam com $ são ignorados.',
+      'Pacote semanal do Inglês Híbrido (semana@2). Campos que começam com $ são ignorados.',
+      'Estrutura formal (JSON Schema): https://eita.exksvol.com/formatos/semana@2.schema.json',
       'content: conteúdo NOVO da semana (mesmo formato dos arquivos em /content). Pode referenciar o conteúdo que já existe.',
       'refs: conteúdos estudados na sessão: "word:id", "expression:id", "pattern:id", "grammar:id".',
       'sheet: o que vai para a FOLHA (copy = Conceito principal, até 3 linhas; quiz = Tente sem consultar, até 6; practice = instrução da Minha prática).',
@@ -525,16 +692,31 @@ export function templatePackage(weekStart: string): WeekPackage & {
       'topics: temas reutilizáveis (id, title, description, objective, refs) que aparecem no formulário da sessão.',
       'audio (na palavra): URL de um áudio; sem ele, a pronúncia usa a voz do aparelho.',
       'minutes (no dia): tempo previsto, impresso na folha semanal.',
+      'week: opcional. Sem ele, só os dias do arquivo mudam (dá para mandar uma aula só).',
+      'palavras (na sessão): { novas, revisar, apoio } com refs "word:id". Sem refs, a sessão estuda novas + revisar.',
+      'aula (na sessão): { aquecimento: "word:id", escuta: [{en, pt}], fala: [{en, pt}], missao: { situacao, tarefas: [{en, pt}] } }.',
+      'habilidade (no exercício): reconhecer, lembrar, ouvir, falar ou usar.',
+      'chat.treino (na sessão): perguntas do treino de conversa, "texto" ou { en, pt, resposta }.',
+      'aluno: gerado pelo app com o vocabulário e o estado de cada palavra. Leia, não devolva.',
     ],
     format: PACKAGE_FORMAT,
+    ...(aluno && { aluno }),
     week: weekStart,
     goals: 'Fazer e responder perguntas de apresentação.',
     content: {
       examples: [
         { id: 'ex-where-do-you-work', en: 'Where do you work?', pt: 'Onde você trabalha?', context: 'trabalho' },
         { id: 'ex-i-work-at-home', en: 'I work at home.', pt: 'Eu trabalho em casa.', context: 'resposta' },
+        { id: 'ex-how-are-you', en: 'How are you?', pt: 'Como você está?', context: 'cumprimento' },
+        { id: 'ex-i-am-fine', en: 'I am fine, thanks.', pt: 'Estou bem, obrigado.', context: 'resposta' },
       ],
       expressions: [
+        {
+          id: 'how-are-you', text: 'How are you?', words: ['how'],
+          translation: 'Como você está?', context: 'cumprimento', meaning: 'Pergunta como a pessoa está.',
+          examples: ['ex-how-are-you', 'ex-i-am-fine'],
+          copy: { lines: ['How are you? = Como você está?'] },
+        },
         {
           id: 'where-do-you-work', text: 'Where do you work?', words: ['where', 'do', 'work'],
           translation: 'Onde você trabalha?', context: 'conversa de apresentação',
@@ -568,6 +750,21 @@ export function templatePackage(weekStart: string): WeekPackage & {
       ],
       words: [
         {
+          id: 'how', word: 'how', type: 'question word', translations: [{ text: 'como' }],
+          core_meaning: 'Pergunta o estado ou a maneira.', uses: [], variations: [{ form: 'how much', meaning: 'quanto (custa)' }],
+          related_words: [], examples: ['ex-how-are-you'], pronunciation: { ipa: '/haʊ/', respelling: 'ráu' },
+        },
+        {
+          id: 'where', word: 'where', type: 'question word', translations: [{ text: 'onde' }],
+          core_meaning: 'Pergunta o lugar.', uses: [], variations: [], related_words: [], examples: ['ex-where-do-you-work'],
+          pronunciation: { ipa: '/wer/', respelling: 'uér' },
+        },
+        {
+          id: 'do', word: 'do', type: 'auxiliary / verb', translations: [{ text: 'fazer', context: 'verbo' }, { text: '(auxiliar de pergunta)', context: 'auxiliar' }],
+          core_meaning: 'Auxiliar das perguntas com a maioria dos verbos; também "fazer".', uses: [], variations: [{ form: 'does', meaning: 'he/she/it' }],
+          related_words: [], examples: ['ex-where-do-you-work'], pronunciation: { ipa: '/duː/', respelling: 'dú' },
+        },
+        {
           id: 'work', word: 'work', type: 'verb / noun',
           translations: [{ text: 'trabalhar', context: 'verbo' }, { text: 'trabalho', context: 'substantivo' }],
           core_meaning: 'Realizar uma atividade profissional; também o próprio trabalho.',
@@ -589,7 +786,7 @@ export function templatePackage(weekStart: string): WeekPackage & {
         sessions: [
           {
             kind: 'new', title: 'Perguntas com How', objective: 'Perguntar e responder como alguém está.',
-            refs: ['word:how', 'expression:how-are-you', 'pattern:how-be-subject'],
+            refs: ['word:how', 'expression:how-are-you'],
             whenToUse: 'Use how para perguntar como alguém está ou como algo é feito.',
             sheet: {
               copy: ['How = como', 'How + are/is + sujeito?', 'How are you? = Como você está?'],
@@ -602,9 +799,9 @@ export function templatePackage(weekStart: string): WeekPackage & {
               tips: ['Em inglês, o verbo be vem antes do sujeito na pergunta.'],
             },
             exercises: [
-              'x-qa-how-are-you',
-              { type: 'choice', prompt: 'How ___ they?', options: ['is', 'are', 'am'], answer: 'are' },
-              { type: 'produce', prompt: 'Escreva como você responderia a "How are you?" em 3 situações.' },
+              { type: 'choice', habilidade: 'reconhecer', prompt: 'How ___ they?', options: ['is', 'are', 'am'], answer: 'are' },
+              { type: 'translate', habilidade: 'lembrar', prompt: 'Como você está?', answer: ['How are you?', 'How are you'] },
+              { type: 'produce', habilidade: 'usar', prompt: 'Escreva como você responderia a "How are you?" em 3 situações.' },
             ],
             expected: {
               result: 'Perguntar e responder como alguém está usando How + be + sujeito.',
@@ -618,8 +815,20 @@ export function templatePackage(weekStart: string): WeekPackage & {
         sessions: [
           {
             kind: 'new', title: 'Where do you work?',
-            refs: ['word:work', 'word:where', 'word:do', 'pattern:wh-do-subject-verb'],
+            refs: ['pattern:pergunta-com-do'],
+            palavras: { novas: ['word:work'], revisar: ['word:where'], apoio: ['word:do'] },
             copyRefs: ['word:work'],
+            aula: {
+              aquecimento: 'word:where',
+              escuta: [{ en: 'I work at home.', pt: 'Eu trabalho em casa.' }],
+              fala: [{ en: 'Where do you work?', pt: 'Onde você trabalha?' }],
+              missao: { situacao: 'Um colega novo chegou. Pergunte onde ele trabalha e conte onde você trabalha.', tarefas: [{ en: 'Where do you work?', pt: 'Onde você trabalha?' }, { en: 'I work at home.', pt: 'Eu trabalho em casa.' }] },
+            },
+            exercises: [
+              { type: 'choice', habilidade: 'reconhecer', prompt: 'Where ___ you work?', options: ['do', 'are', 'is'], answer: 'do' },
+              { type: 'translate', habilidade: 'lembrar', prompt: 'Onde você trabalha?', answer: 'Where do you work?' },
+            ],
+            chat: { treino: [{ en: 'Where do you work?', pt: 'Onde você trabalha?', resposta: 'I work at ____.' }] },
             expected: { result: 'Perguntar e dizer onde trabalha.' },
           },
         ],
@@ -627,7 +836,13 @@ export function templatePackage(weekStart: string): WeekPackage & {
       {
         date: addDays(weekStart, 4), theme: 'Revisão da semana', minutes: 30,
         sessions: [
-          { kind: 'review', title: 'Revisão: perguntas', refs: ['expression:how-are-you', 'word:work'], expected: { result: 'Usar as perguntas da semana sem consultar.' } },
+          {
+            kind: 'review', title: 'Revisão: perguntas', refs: ['expression:how-are-you', 'expression:where-do-you-work'],
+            palavras: { revisar: ['word:work', 'word:where'], apoio: ['word:how', 'word:do'] },
+            aula: { escuta: [{ en: 'How are you?', pt: 'Como você está?' }], fala: [{ en: 'Where do you work?', pt: 'Onde você trabalha?' }] },
+            exercises: [{ type: 'translate', habilidade: 'lembrar', prompt: 'Onde você trabalha?', answer: 'Where do you work?' }],
+            expected: { result: 'Usar as perguntas da semana sem consultar.' },
+          },
         ],
       },
     ],

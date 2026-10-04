@@ -4,7 +4,7 @@ O app lê dois tipos de arquivo JSON:
 
 | Arquivo | Onde importar | Para quê |
 |---|---|---|
-| **Pacote semanal** (`ingles-hibrido/semana@1`) | Semana → Montar semana (JSON) | planejar uma semana: conteúdo novo, folhas da Biblioteca, plano dos dias e sessões |
+| **Pacote semanal** (`ingles-hibrido/semana@2`; o `@1` continua aceito) | Semana → Montar semana (JSON) | planejar uma semana, alguns dias ou uma aula: conteúdo novo, folhas da Biblioteca, plano dos dias e sessões, integrado ao vocabulário do aluno |
 | **Backup** (`ingles-hibrido/backup@1`) | Ajustes → Outros → Backup dos dados | levar **todos** os dados para outro aparelho ou guardar uma cópia |
 
 Os dois são validados antes de entrar. Erros bloqueiam a importação e dizem o que corrigir;
@@ -19,14 +19,99 @@ existente em **Exportar semana**, edite e importe de volta.
 
 ```jsonc
 {
-  "format": "ingles-hibrido/semana@1",
-  "week": "2026-09-21",          // qualquer data da semana (vira a segunda-feira)
+  "format": "ingles-hibrido/semana@2",
+  "aluno": { … },                // gerado pelo app: o vocabulário e o estado de cada palavra (só leitura)
+  "week": "2026-09-21",          // opcional: qualquer data da semana (vira a segunda-feira)
   "goals": "…",                  // objetivos: saem nas anotações da folha semanal impressa
   "content": { … },              // conteúdo novo (opcional)
   "sheets": [ … ],               // folhas da Biblioteca (opcional)
-  "days": [ … ]                  // obrigatório
+  "days": [ … ]                  // obrigatório: só os dias que vão mudar
 }
 ```
+
+A estrutura formal (JSON Schema, para validar ou para a IA seguir) fica em
+[`public/formatos/semana@2.schema.json`](../public/formatos/semana@2.schema.json), publicada em
+`https://eita.exksvol.com/formatos/semana@2.schema.json`.
+
+### O que mudou do `@1` para o `@2`
+
+Todos os campos novos são opcionais: um arquivo `@1` continua sendo importado igual.
+
+| Campo | Onde | Para quê |
+|---|---|---|
+| `aluno` | raiz | o que o aluno já sabe, gerado pelo app (Modelo e Exportar) |
+| `palavras` | sessão | `novas` (o foco), `revisar` (quase esquecidas), `apoio` (firmes) |
+| `aula` | sessão | cartões escritos à mão: aquecimento, escuta, fala, missão |
+| `habilidade` | exercício | reconhecer, lembrar, ouvir, falar ou usar (vai para o relatório) |
+| `chat.treino` | sessão | perguntas do treino de conversa ligadas à aula |
+| `week` opcional | raiz | mandar só alguns dias ou uma aula |
+| `refs` opcional | sessão | sem `refs`, a sessão estuda `palavras.novas` + `palavras.revisar` |
+
+### `aluno`: o vocabulário que a aula deve usar
+
+Sai preenchido em **Modelo** e **Exportar**. Cada palavra é uma linha curta, para caber num chat de IA:
+
+```jsonc
+"aluno": {
+  "gerado_em": "2026-10-04",
+  "vocabulario": [
+    // [inglês, português, estado, chance de lembrar hoje, degrau]
+    ["where", "onde", "quase_esquecida", 0.62, 1],
+    ["schedule", "agenda", "estudando", 0.9, 1],
+    ["work", "trabalho", "firme", 0.94, 4]
+  ],
+  "dificuldades": { "palavras": ["ship"], "pronuncia": ["Som de \"th\" (think, this)"] },
+  "ja_estudado": ["word:work", "expression:how-are-you"]
+}
+```
+
+| Estado | Regra (modelo de memória) | Como usar |
+|---|---|---|
+| `firme` | chance de lembrar ≥ 85% e degrau ≥ 2 | à vontade, em `palavras.apoio`, exemplos e exercícios |
+| `estudando` | praticada, ainda sem firmar | repetir em contexto |
+| `quase_esquecida` | chance de lembrar abaixo de 85% | em `palavras.revisar` de alguma sessão da semana |
+| `nao_praticada` | na lista, nunca praticada | pode virar palavra nova |
+
+Degrau: 0 vista, 1 reconhece, 2 lembra sozinho, 3 entende ouvindo, 4 pronuncia, 5 usa no chat.
+Com mais de 600 palavras, vão as que não estão firmes e as firmes mais praticadas. O bloco é
+ignorado na importação: não precisa voltar na resposta.
+
+### `palavras`, `aula`, `habilidade` e `chat.treino` na sessão
+
+```jsonc
+{
+  "kind": "new", "title": "Where do you work?",
+  "refs": ["pattern:pergunta-com-do"],
+  "palavras": { "novas": ["word:work"], "revisar": ["word:where"], "apoio": ["word:do"] },
+  "aula": {
+    "aquecimento": "word:where",                                  // abre a aula como lembrança
+    "escuta": [{ "en": "I work at home.", "pt": "Eu trabalho em casa." }],
+    "fala":   [{ "en": "Where do you work?", "pt": "Onde você trabalha?" }],
+    "missao": { "situacao": "Um colega novo chegou…", "tarefas": [{ "en": "Where do you work?", "pt": "Onde você trabalha?" }] }
+  },
+  "exercises": [{ "type": "choice", "habilidade": "reconhecer", "prompt": "Where ___ you work?", "options": ["do", "are"], "answer": "do" }],
+  "chat": { "treino": [{ "en": "Where do you work?", "pt": "Onde você trabalha?", "resposta": "I work at ____." }] }
+}
+```
+
+- **`aula`**: o que vier substitui o cartão que o app montaria; o que faltar, o app monta. Sem
+  `aula.aquecimento`, a primeira palavra de `palavras.revisar` abre a aula.
+- **`habilidade`**: sem ela, o app deduz (escolha = reconhecer, digitar = lembrar).
+- **`chat.treino`**: quando existe, o treino da Conversa ("vamos treinar") usa essas perguntas,
+  da aula mais recente primeiro.
+
+### Conferência com o vocabulário (na prévia)
+
+A prévia mostra **"Conversa com o seu vocabulário"**. São alertas: nada aqui bloqueia a importação.
+
+| Conferência | Regra | Por quê |
+|---|---|---|
+| Cobertura | ≥ 95% das palavras de cada aula (exemplos, exercícios, escuta, fala, missão, treino) são do vocabulário ou novas daquela aula | entender sem travar pede 95% a 98% de palavras conhecidas (Hu & Nation, 2000) |
+| Repetição | cada palavra nova aparece em pelo menos 3 sessões da semana | prática espaçada fixa mais (Kim & Webb, 2022) |
+| Revisão | toda palavra `quase_esquecida` volta em alguma sessão | revisar antes de esquecer (curva do esquecimento, FSRS) |
+| Habilidades | cada aula treina pelo menos 3 das 5 habilidades | saber uma palavra tem níveis (Nation) |
+
+Repetição e revisão só são conferidas quando o arquivo traz uma semana inteira (5 dias ou mais).
 
 Campos que começam com `$` (como `$leia_me` e `$plataforma`) são ignorados na importação —
 servem de instrução para quem (ou o que) escreve o arquivo.

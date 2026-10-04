@@ -713,7 +713,7 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
         {(etapa.tipo === 'aquecimento' || etapa.tipo === 'pratica') && (
           <>
             {etapa.dica && <p className="aula-dica">{etapa.dica}</p>}
-            <ExerciseView ex={etapa.exercicio} onResult={registrar(etapa.id, respostaDe(etapa.exercicio), etapa.exercicio.options?.length || etapa.exercicio.pairs?.length ? 'reconhecer' : 'lembrar')} />
+            <ExerciseView ex={etapa.exercicio} onResult={registrar(etapa.id, respostaDe(etapa.exercicio), etapa.exercicio.habilidade ?? (etapa.exercicio.options?.length || etapa.exercicio.pairs?.length ? 'reconhecer' : 'lembrar'))} />
           </>
         )}
         {etapa.tipo === 'escuta' && <CartaoEscuta e={etapa} onResultado={registrar(etapa.id, etapa.exemplo.en, 'ouvir')} />}
