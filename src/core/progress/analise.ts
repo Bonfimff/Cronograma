@@ -60,7 +60,7 @@ export async function analisar(r: Relatorio, forcar = false): Promise<Analise> {
   const guardada = analiseGuardada();
   // refaz no dia seguinte, ou no mesmo dia se entraram 20 respostas novas desde a última
   const base = r.memoria.palavras.reduce((s, p) => s + p.respostas, 0);
-  if (!forcar && guardada?.dia === today() && Math.abs(base - (guardada.base ?? 0)) < 20) return guardada;
+  if (!forcar && guardada?.dia === today() && guardada.base !== undefined && Math.abs(base - (guardada.base ?? 0)) < 20) return guardada;
   let nova: Analise = { texto: analisePorRegras(r), fonte: 'regras', dia: today(), base };
   if (session.signedIn && api.configured) {
     try {

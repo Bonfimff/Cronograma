@@ -31,6 +31,9 @@ export interface GlossaryItem {
 
 export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat' | 'activity';
 
+export interface Pessoa { id: number; email: string }
+export interface Acessos { professores: Pessoa[]; alunos: Pessoa[] }
+
 export interface SyncRecord {
   kind: SyncKind;
   id: string;
@@ -157,6 +160,24 @@ export class Api {
   }
 
   /** A IA lê o resumo dos números do progresso e escreve a análise (5 tópicos). */
+  /** Quem pode ver o meu histórico, e de quem eu posso ver (professor). */
+  acessos(token: string): Promise<Acessos> {
+    return this.call('/acesso', {}, token);
+  }
+
+  autorizarProfessor(token: string, email: string): Promise<Acessos> {
+    return this.call('/acesso', { method: 'POST', body: JSON.stringify({ email }) }, token);
+  }
+
+  revogarProfessor(token: string, professorId: number): Promise<Acessos> {
+    return this.call(`/acesso/${professorId}`, { method: 'DELETE' }, token);
+  }
+
+  /** Os registros de um aluno que me autorizou (só leitura). */
+  dadosDoAluno(token: string, alunoId: number): Promise<SyncRecord[]> {
+    return this.call(`/acesso/alunos/${alunoId}`, {}, token);
+  }
+
   analiseProgresso(token: string, resumo: string): Promise<{ texto: string; fonte: string }> {
     return this.call('/progresso/analise', { method: 'POST', body: JSON.stringify({ resumo }) }, token);
   }

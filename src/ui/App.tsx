@@ -1,4 +1,8 @@
+import { useSyncExternalStore } from 'react';
 import { useRoute } from './hooks';
+import { session } from '../core/api/session';
+import { api } from '../core/api/client';
+import { ProfessorPage } from './pages/ProfessorPage';
 import { Today } from './pages/Today';
 import { WeekPage } from './pages/WeekPage';
 import { SessionPage } from './pages/SessionPage';
@@ -33,8 +37,19 @@ const NAV = [
 
 export function App() {
   const route = useRoute();
+  const conta = useSyncExternalStore((cb) => session.subscribe(cb), () => session.get());
   const [head, ...rest] = route.path;
   const section = head ?? '';
+
+  // o app só abre com conta: sem login, toda tela vira a de entrar
+  if (!conta.tokens && api.configured) {
+    return (
+      <div className="app">
+        <DoodleDefs />
+        <main className="main"><AccountPage /></main>
+      </div>
+    );
+  }
 
   let page;
   switch (section) {
@@ -66,6 +81,7 @@ export function App() {
     case 'dados': page = <DataPage />; break;
     case 'conta': page = <AccountPage />; break;
     case 'progresso': page = <ProgressPage />; break;
+    case 'professor': page = <ProfessorPage aluno={rest[0]} />; break;
     case 'ajustes': page = <SettingsPage />; break;
     case 'conversa': page = <ChatPage />; break;
     case 'montar': page = <BuilderPage week={route.query.get('semana') ?? undefined} />; break;

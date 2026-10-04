@@ -132,7 +132,8 @@ function momentos(data: UserData): Momento[] {
   for (const s of data.sessions) {
     if (s.status !== 'done' || !s.result) continue;
     const quando = s.finishedAt ?? `${s.date}T12:00:00`;
-    out.push({ quando, minutos: s.result.durationMin || 0, acertos: s.result.exercises?.correct ?? 0,
+    // sessão esquecida aberta marca horas: uma folha conta no máximo 2 horas
+    out.push({ quando, minutos: Math.min(s.result.durationMin || 0, 120), acertos: s.result.exercises?.correct ?? 0,
       erros: Math.max(0, (s.result.exercises?.total ?? 0) - (s.result.exercises?.correct ?? 0)), tipo: 'folha' });
   }
   for (const c of conversas(data)) out.push({ quando: c.inicio, minutos: c.minutos, acertos: 0, erros: 0, tipo: 'chat' });

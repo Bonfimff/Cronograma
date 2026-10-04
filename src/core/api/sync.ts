@@ -45,10 +45,21 @@ function registrosLocais(d: UserData): SyncRecord[] {
   return saida;
 }
 
+/** Monta os dados de outra pessoa (o aluno, na tela do professor), sem tocar nos deste aparelho. */
+export function dadosDeRegistros(itens: SyncRecord[]): UserData {
+  const d: UserData = { version: 1, counter: {}, weeks: [], sessions: [], worksheets: [], history: [], chat: [], atividades: [] };
+  juntar(d, itens);
+  return d;
+}
+
 /** Aplica no aparelho o que veio do servidor. */
 function aplicar(itens: SyncRecord[]): void {
   if (!itens.length) return;
-  store.update((d) => {
+  store.update((d) => juntar(d, itens));
+}
+
+function juntar(d: UserData, itens: SyncRecord[]): void {
+  {
     d.content ??= {};
     for (const item of itens) {
       const dados = item.data as Record<string, unknown> & { id?: string };
@@ -78,7 +89,7 @@ function aplicar(itens: SyncRecord[]): void {
         d.atividades = item.deleted ? atual : [...atual, dados as unknown as Atividade].sort((a, b) => a.quando.localeCompare(b.quando));
       }
     }
-  });
+  }
 }
 
 const NOME_APARELHO = (() => {

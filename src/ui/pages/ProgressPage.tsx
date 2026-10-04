@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useData } from '../hooks';
+import type { UserData } from '../../core/types';
 import { GAME_KEYS } from '../../core/storage/backup';
 import type { WordStats } from '../../core/games/wordTetris';
 import { byWeek, frequency, hardestWords, bestWords, learningSpeed } from '../../core/progress/progress';
@@ -89,19 +90,23 @@ function doTetris(stats: WordStats, melhores: boolean): PalavraPlacar[] {
   return lista.map((w) => ({ en: w.en, acertos: w.certos, erros: w.errados, taxa: w.taxa, ultima: w.ultima ?? w.estreia ?? '' }));
 }
 
-export function ProgressPage() {
-  const data = useData();
+/** Sem `dados`: o meu progresso. Com `dados`: o de um aluno, na tela do professor (só leitura). */
+export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: string } = {}) {
+  const meus = useData();
+  const data = dados ?? meus;
   const r = useMemo(() => relatorio(data), [data]);
-  const stats = loadStats();
+  const stats = dados ? {} : loadStats();
   const freq = frequency(data);
   const ritmo = learningSpeed(data);
   const semanasEstudo = byWeek(freq);
   const ultimos = freq.dias.slice(-84);
-  const [analise, setAnalise] = useState<Analise | null>(() => analiseGuardada());
+  const [analise, setAnalise] = useState<Analise | null>(() => (dados ? null : analiseGuardada()));
   const [analisando, setAnalisando] = useState(false);
 
   // revisão diária: ao abrir a aba, se a análise não é de hoje, pede uma nova
+  // (na tela do professor, a análise é a automática: a guardada é a deste aparelho)
   useEffect(() => {
+    if (dados) return;
     let vivo = true;
     setAnalisando(true);
     analisar(r).then((a) => { if (vivo) setAnalise(a); }).finally(() => { if (vivo) setAnalisando(false); });
@@ -124,8 +129,8 @@ export function ProgressPage() {
     <>
       <section className="hero">
         <p className="eyebrow">Progresso</p>
-        <h1>Meu progresso <CatTeacher className="cut-title" width="74" /></h1>
-        <p className="lead">Tudo o que você fez: aulas, folhas, jogos, fala e conversa.</p>
+        <h1>{aluno ? `Progresso de ${aluno}` : 'Meu progresso'} <CatTeacher className="cut-title" width="74" /></h1>
+        <p className="lead">{aluno ? 'Visão do professor, só leitura: aulas, folhas, jogos, fala e conversa.' : 'Tudo o que você fez: aulas, folhas, jogos, fala e conversa.'}</p>
       </section>
 
       <section className="prog-cartoes">
@@ -151,9 +156,11 @@ export function ProgressPage() {
         ) : (
           analisePorRegras(r).split('\n').map((l) => <p key={l}>{l}</p>)
         )}
-        <button type="button" className="ghost small" onClick={atualizar} disabled={analisando}>
-          {analisando ? 'Analisando…' : 'Atualizar análise'}
-        </button>
+        {!dados && (
+          <button type="button" className="ghost small" onClick={atualizar} disabled={analisando}>
+            {analisando ? 'Analisando…' : 'Atualizar análise'}
+          </button>
+        )}
       </section>
 
       {(r.plano.revisar.length > 0 || r.plano.subir.length > 0) && (
@@ -180,7 +187,7 @@ export function ProgressPage() {
       )}
 
       <section>
-        <h2>Memória e domínio <small>{m.estabilidadeMediana !== null && `cada palavra dura ~${Math.round(m.estabilidadeMediana)} dias`}</small></h2>
+        <h2>Memória e domínio <small>{m.estabilidadeMediana !== null && (m.estabilidadeMediana < 1 ? 'memórias ainda novas (menos de 1 dia)' : `cada palavra dura ~${Math.round(m.estabilidadeMediana)} dias`)}</small></h2>
         <p className="muted">
           A escada de saber uma palavra: reconhecer o sentido, lembrar sozinho, entender ouvindo, pronunciar e usar.
           A chance de lembrar cai com o tempo; cada revisão no momento certo faz a memória durar mais.

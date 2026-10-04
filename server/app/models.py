@@ -62,3 +62,15 @@ class Record(Base):
     device: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="records")
+
+
+class Acesso(Base):
+    """O aluno autorizou um professor a ver (só ver) o seu histórico e o relatório."""
+
+    __tablename__ = "acessos"
+    __table_args__ = (UniqueConstraint("aluno_id", "professor_id", name="uq_acesso"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    aluno_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    professor_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
