@@ -30,7 +30,7 @@ def test_rota_adiciona_expressao_e_usa_inteira(client, conta, monkeypatch):
     from app import chat_slot
     a = conta()
     r = client.post("/chat", json={"messages": [{"role": "user", "content": "Adicionar a palavra thank you = obrigado a minha lista de vocabulário"}]}, headers=a.headers)
-    assert "thank you (obrigado)" in r.json()["reply"]
+    assert "[[thank you]] (obrigado)" in r.json()["reply"]
     # a expressão volta inteira nas respostas do amigo
     monkeypatch.setattr(chat_slot, "_chamar", lambda *x, **k: ("Muito bem, obrigado por contar!", []))
     r = client.post("/chat", json={"messages": [{"role": "user", "content": "Hoje estudei bastante"}]}, headers=a.headers)
@@ -51,7 +51,7 @@ def test_rota_completa_a_traducao_pendente(client, conta):
 def test_se_nao_tiver_adiciona(client, conta):
     a = conta()
     r = client.post("/chat", json={"messages": [{"role": "user", "content": "Já tem obrigado da minha lista de vocabulário se não tiver pode adicionar"}]}, headers=a.headers)
-    assert "thank you (obrigado)" in r.json()["reply"]
+    assert "[[thank you]] (obrigado)" in r.json()["reply"]
 
 
 def test_troca_expressao_antes_das_palavras():

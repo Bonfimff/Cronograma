@@ -184,13 +184,18 @@ def _marcar_com_traducao(texto: str, vocabulario: list[Palavra]) -> tuple[str, l
     glossario = {}
 
     def troca(m: re.Match) -> str:
-        p = por_palavra.get(m.group(1).lower())
-        if not p:
-            return m.group(0)
-        glossario[p.en.lower()] = {"en": p.en, "pt": p.pt, "id": p.id}
-        return f"[[{m.group(1)}]] ("
+        # a expressão mais longa que termina antes do "(": "thank you (obrigado)" marca as duas palavras
+        termos = m.group(1).split()
+        for k in range(len(termos)):
+            candidato = " ".join(termos[k:])
+            p = por_palavra.get(candidato.lower())
+            if p:
+                glossario[p.en.lower()] = {"en": p.en, "pt": p.pt, "id": p.id}
+                antes = " ".join(termos[:k])
+                return (antes + " " if antes else "") + f"[[{candidato}]] ("
+        return m.group(0)
 
-    return re.sub(r"\b([A-Za-z][A-Za-z'-]*) \(", troca, texto), list(glossario.values())
+    return re.sub(r"\b((?:[A-Za-z][A-Za-z'-]* ){0,4}[A-Za-z][A-Za-z'-]*) \(", troca, texto), list(glossario.values())
 
 
 def _marcar_linhas_em_ingles(texto: str, vocabulario: list[Palavra]) -> tuple[str, list[dict]]:
