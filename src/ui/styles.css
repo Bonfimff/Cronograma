@@ -2122,3 +2122,18 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 
 .conversa-enviar { width: 48px; padding: 0; }
 
+
+/* calendário de frequência */
+.calendario { display: grid; grid-template-columns: 2.4em repeat(12, minmax(0, 1fr)); gap: 4px; max-width: 640px; }
+.calendario i { aspect-ratio: 1; border-radius: 5px; border: 1px solid var(--line, #d2c5a9); display: grid; place-items: center; font-style: normal; font-size: .7rem; color: rgba(36, 31, 24, .55); }
+.calendario i.futuro { border-style: dashed; opacity: .4; }
+.calendario-dia, .calendario-mes { font-size: .72rem; opacity: .7; align-self: center; }
+.calendario-mes { text-transform: capitalize; }
+.calendario .n0, .calendario-legenda .n0 { background: transparent; }
+.calendario .n1, .calendario-legenda .n1 { background: #f2c9a0; }
+.calendario .n2, .calendario-legenda .n2 { background: #e59a5c; color: #3a2210; }
+.calendario .n3, .calendario-legenda .n3 { background: #c95f1c; color: #fff; }
+.calendario .n4, .calendario-legenda .n4 { background: #8f3d0c; color: #fff; }
+.calendario-resumo b { font-size: 1.05em; }
+.calendario-legenda { display: flex; align-items: center; gap: 4px; font-size: .75rem; opacity: .8; }
+.calendario-legenda i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line, #d2c5a9); display: inline-block; }

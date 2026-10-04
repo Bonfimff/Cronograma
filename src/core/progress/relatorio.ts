@@ -86,6 +86,8 @@ export interface Relatorio {
     palavrasPorMensagem: number | null; variedade: number; vocabularioProprio: number;
   };
   memoria: Memoria;
+  /** minutos estudados em cada dia (AAAA-MM-DD, hora local), de todas as atividades */
+  minutosPorDia: Record<string, number>;
   /** últimos 30 dias contra os 30 anteriores */
   mes: { atual: Comparacao; anterior: Comparacao };
   plano: { revisar: MemoriaPalavra[]; subir: { en: string; proximo: string }[] };
@@ -318,6 +320,11 @@ export function relatorio(data: UserData, hoje = today()): Relatorio {
       vocabularioProprio: proprias.size,
     },
     memoria: mem,
+    minutosPorDia: ms.reduce<Record<string, number>>((acc, m) => {
+      const k = diaLocal(m.quando);
+      acc[k] = Math.round((acc[k] ?? 0) + m.minutos);
+      return acc;
+    }, {}),
     mes: { atual: janela(addDays(hoje, -29), amanha), anterior: janela(addDays(hoje, -59), addDays(hoje, -29)) },
     plano: { revisar: mem.emRisco.slice(0, 8), subir },
     folhas: {

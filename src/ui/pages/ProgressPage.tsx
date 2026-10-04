@@ -84,6 +84,76 @@ function TabelaPalavras({ lista }: { lista: PalavraPlacar[] }) {
   );
 }
 
+/** Uma cor por faixa de minutos: nada, até 15, até 30, até 60, mais de 60. */
+const NIVEIS = [0, 15, 30, 60];
+const nivelDe = (min: number) => (min <= 0 ? 0 : NIVEIS.filter((n) => min > n).length);
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/**
+ * Frequência como um calendário: cada coluna é uma semana (seg a dom, de cima para baixo),
+ * cada quadrado um dia com o número do dia, mais escuro quanto mais minutos de estudo.
+ */
+function Calendario({ minutos }: { minutos: Record<string, number> }) {
+  const SEMANAS = 12;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const segunda = new Date(hoje);
+  segunda.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7) - 7 * (SEMANAS - 1));
+  const chave = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const colunas: { inicio: Date; dias: { d: Date; min: number; futuro: boolean }[] }[] = [];
+  for (let s = 0; s < SEMANAS; s++) {
+    const inicio = new Date(segunda);
+    inicio.setDate(segunda.getDate() + s * 7);
+    colunas.push({
+      inicio,
+      dias: Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(inicio);
+        d.setDate(inicio.getDate() + i);
+        return { d, min: minutos[chave(d)] ?? 0, futuro: d > hoje };
+      }),
+    });
+  }
+  const todos = colunas.flatMap((c) => c.dias).filter((x) => !x.futuro);
+  const estudados = todos.filter((x) => x.min > 0);
+  const total = estudados.reduce((s, x) => s + x.min, 0);
+  const estaSemana = colunas[SEMANAS - 1].dias.filter((x) => x.min > 0).length;
+
+  return (
+    <>
+      <h2>Frequência <small>últimas {SEMANAS} semanas</small></h2>
+      <p className="calendario-resumo">
+        <b>{estudados.length}</b> dias de estudo · <b>{(estudados.length / SEMANAS).toFixed(1).replace('.', ',')}</b> dias por semana em média ·
+        {' '}<b>{estaSemana}</b> {estaSemana === 1 ? 'dia' : 'dias'} nesta semana · <b>{horas(total)}</b> no total
+      </p>
+      <div className="calendario" role="img" aria-label={`${estudados.length} dias de estudo nas últimas ${SEMANAS} semanas`}>
+        <span />
+        {colunas.map((c, i) => (
+          <span key={i} className="calendario-mes">{i === 0 || c.inicio.getDate() <= 7 ? MESES[c.inicio.getMonth()] : ''}</span>
+        ))}
+        {DIAS.map((nome, linha) => (
+          <span key={nome} style={{ display: 'contents' }}>
+            <span className="calendario-dia">{nome}</span>
+            {colunas.map((c) => {
+              const x = c.dias[linha];
+              return (
+                <i key={chave(x.d)} className={`n${nivelDe(x.min)}${x.futuro ? ' futuro' : ''}`}
+                  title={`${fmtShort(chave(x.d))} (${weekdayShort(chave(x.d))}): ${x.min ? `${x.min} min de estudo` : 'sem estudo'}`}>
+                  {x.futuro ? '' : x.d.getDate()}
+                </i>
+              );
+            })}
+          </span>
+        ))}
+      </div>
+      <p className="calendario-legenda">
+        <span>Menos</span>
+        {['sem estudo', 'até 15 min', 'até 30 min', 'até 1 h', 'mais de 1 h'].map((t, i) => <i key={t} className={`n${i}`} title={t} />)}
+        <span>Mais</span>
+      </p>
+    </>
+  );
+}
+
 /** O placar antigo do Tetris (antes do registro de atividades) entra no mesmo formato. */
 function doTetris(stats: WordStats, melhores: boolean): PalavraPlacar[] {
   const lista = melhores ? bestWords(stats) : hardestWords(stats);
@@ -334,14 +404,7 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
       </section>
 
       <section>
-        <h2>Frequência <small>{freq.porSemana} dias por semana</small></h2>
-        <SketchLine valores={semanasEstudo.map((w) => w.dias)} />
-        <div className="calor" role="img" aria-label={`${freq.diasEstudados} dias de estudo nas últimas 12 semanas`}>
-          {ultimos.map((d) => (
-            <i key={d.date} className={d.sessoes ? 'on' : ''} style={d.sessoes ? { opacity: Math.min(1, 0.45 + d.sessoes * 0.25) } : undefined}
-              title={`${fmtShort(d.date)} (${weekdayShort(d.date)}): ${d.sessoes ? `${d.sessoes} sessão(ões), ${d.minutos} min` : 'sem estudo'}`} />
-          ))}
-        </div>
+        <Calendario minutos={r.minutosPorDia} />
       </section>
 
       <section>
