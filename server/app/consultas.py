@@ -186,8 +186,48 @@ def resposta_wiki(assunto: str) -> str | None:
     return f"{_frases(texto)} (Wikipédia)" if texto else None
 
 
-# ---------- quem decide ----------
+# ---------- cotação e notícias ----------
 
+COTACAO = re.compile(r"cota[cç][aã]o|\bd[oó]lar\b|\beuro\b|\bbitcoin\b|\bbtc\b|c[aâ]mbio", re.IGNORECASE)
+NOTICIAS = re.compile(r"\bnot[ií]cias?\b|\bmanchetes?\b|o que (?:est[aá] )?acontecendo", re.IGNORECASE)
+
+
+def _reais(v: float) -> str:
+    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def resposta_cotacao(fala: str) -> str:
+    quer = [m for m, r in (("USD", r"d[oó]lar"), ("EUR", r"euro"), ("BTC", r"bitcoin|btc")) if re.search(r, fala, re.I)] or ["USD", "EUR", "BTC"]
+    nomes = {"USD": "Dólar", "EUR": "Euro", "BTC": "Bitcoin"}
+    valores: dict[str, float] = {}
+    try:  # AwesomeAPI: cotação comercial do momento
+        d = _buscar_json("https://economia.awesomeapi.com.br/json/last/" + ",".join(f"{m}-BRL" for m in quer), 300)
+        valores = {m: float(d[f"{m}BRL"]["bid"]) for m in quer}
+    except (OSError, ValueError, KeyError, TypeError):
+        # reserva: taxa do dia (open.er-api) e bitcoin (CoinGecko)
+        if {"USD", "EUR"} & set(quer):
+            taxas = _buscar_json("https://open.er-api.com/v6/latest/USD", 3600)["rates"]
+            if "USD" in quer:
+                valores["USD"] = taxas["BRL"]
+            if "EUR" in quer:
+                valores["EUR"] = taxas["BRL"] / taxas["EUR"]
+        if "BTC" in quer:
+            valores["BTC"] = float(_buscar_json("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl", 300)["bitcoin"]["brl"])
+    return "Cotação agora: " + " · ".join(f"{nomes[m]}: {_reais(valores[m])}" for m in quer if m in valores) + "."
+
+
+def resposta_noticias() -> str:
+    import xml.etree.ElementTree as ET
+    pedido = urllib.request.Request("https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml", headers={"User-Agent": AGENTE})
+    with urllib.request.urlopen(pedido, timeout=8) as r:
+        raiz = ET.fromstring(r.read())
+    titulos = [x for x in ((i.findtext("title") or "").strip() for i in raiz.iter("item")) if x][:3]
+    if not titulos:
+        return "Não achei notícias agora."
+    return "Últimas notícias:\n" + "\n".join(f"• {x}" for x in titulos) + "\n(Agência Brasil)"
+
+
+# ---------- quem decide ----------
 def responder_consulta(conversa: list[dict], sobre_o_app: bool = False) -> str | None:
     """A resposta de uma consulta de verdade, ou None se a mensagem não pede uma."""
     if not conversa or conversa[-1].get("role") != "user":
@@ -202,6 +242,10 @@ def responder_consulta(conversa: list[dict], sobre_o_app: bool = False) -> str |
             return resposta_data()
         if TEMPO.search(fala):
             return resposta_tempo(fala, conversa)
+        if COTACAO.search(fala):
+            return resposta_cotacao(fala)
+        if NOTICIAS.search(fala):
+            return resposta_noticias()
         if CURIOSIDADE.search(fala):
             return resposta_curiosidade()
         m = WIKI.search(fala)
