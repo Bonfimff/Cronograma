@@ -89,7 +89,7 @@ export function Today() {
         <section>
           <h2 className="head-row">
             <Sparkle className="doodle mark" width="14" />
-            Para revisar <a className="more" href="#/revisao">ver tudo</a>
+            Revisão das sessões <a className="more" href="#/revisao">ver tudo</a>
           </h2>
           <p className="chips">
             {due.slice(0, 12).map((i) => (
