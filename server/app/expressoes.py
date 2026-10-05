@@ -36,6 +36,10 @@ SEGURAS = {
 }
 
 
+# Uma palavra só em português, mas sem outro sentido possível: pode virar a expressão inteira.
+UMA_PALAVRA = {"thank you"}
+
+
 def portugues_de(en: str) -> str:
     """ "boa noite (despedida)" → "boa noite": o português que aparece na frase."""
     pt = EXPRESSOES.get(en, "")

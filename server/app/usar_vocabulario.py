@@ -18,7 +18,7 @@ Aqui a troca é por regras, sem depender do modelo:
 
 import re
 
-from .expressoes import EXPRESSOES, SEGURAS, portugues_de
+from .expressoes import EXPRESSOES, SEGURAS, UMA_PALAVRA, portugues_de
 from .sinonimos import sinonimos_de
 from .vocabulario import FUNCAO, Palavra
 
@@ -103,7 +103,7 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
     # 1b. expressões comuns que a pessoa ainda não gravou (as gravadas já estão no vocabulário)
     for en in sorted(SEGURAS, key=lambda e: -len(portugues_de(e))):
         pt = portugues_de(en)
-        if en in tem or " " not in pt:
+        if en in tem or (" " not in pt and en not in UMA_PALAVRA):
             continue
         for m in _padrao(re.escape(pt)).finditer(texto):
             if any(tomado[m.start():m.end()]):
