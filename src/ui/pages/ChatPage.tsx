@@ -177,7 +177,14 @@ export function ChatPage() {
         )}
         {falas.map((f) => <Fala key={f.id} turno={f} />)}
         {pensando && (parcial
-        ? <div className="conversa-fala assistant escrevendo">{parcial}<span className="cursor" /></div>
+        ? (
+          <div className="conversa-fala assistant escrevendo">
+            <p>
+              {recortar(parcial).map((p, i) => (p.palavra ? <span key={i} className="viva"><button tabIndex={-1}>{p.texto}</button></span> : <span key={i}>{p.texto}</span>))}
+              <span className="cursor" />
+            </p>
+          </div>
+        )
         : <div className="conversa-fala assistant pensando"><span /><span /><span /></div>)}
         {erro && <p className="aviso">{erro}</p>}
         <div ref={fim} />

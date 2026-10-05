@@ -52,3 +52,19 @@ def test_rota_stream_manda_parciais_e_final(client, conta, monkeypatch):
     linhas = [json.loads(x) for x in r.text.strip().splitlines()]
     assert [x["parcial"] for x in linhas if "parcial" in x][-1] == "Estou cansado hoje."
     assert "final" in linhas[-1] and "cansado" in linhas[-1]["final"]["reply"]
+
+
+def test_parciais_ja_chegam_com_as_palavras_em_ingles(client, conta, monkeypatch):
+    def falso(url, modelo, sistema, historico, palavras, limite, temp, seed, timeout, ao_vivo=None):
+        for parte in ("Você está cans", "Você está cansado ", "Você está cansado hoje."):
+            if ao_vivo:
+                ao_vivo(parte)
+        return "Você está cansado hoje.", []
+
+    a = conta()
+    client.post("/chat", json={"messages": [{"role": "user", "content": "adicione tired = cansado"}]}, headers=a.headers)
+    monkeypatch.setattr(chat_slot, "_chamar", falso)
+    r = client.post("/chat/stream", json={"messages": [{"role": "user", "content": "Como estou?"}]}, headers=a.headers)
+    parciais = [json.loads(x)["parcial"] for x in r.text.strip().splitlines() if "parcial" in json.loads(x)]
+    assert parciais[0].endswith("cans")  # palavra pela metade: ainda sem troca
+    assert "[[tired]]" in parciais[1]

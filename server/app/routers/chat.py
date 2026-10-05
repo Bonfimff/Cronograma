@@ -138,6 +138,15 @@ async def _conversar_slot(
     pergunta repetida fica lá dentro.
     """
     cfg = settings()
+    if ao_vivo and vocab_completo:
+        bruto_ao_vivo = ao_vivo
+
+        def ao_vivo(texto: str) -> None:  # noqa: F811 — a mesma tela, já com as palavras em inglês
+            # só as palavras já completas: "trabalh" ainda pode virar "trabalho" ou "trabalhar"
+            corte = max(texto.rfind(c) for c in " .,!?;:\n")
+            pronto, resto = (texto[: corte + 1], texto[corte + 1:]) if corte >= 0 else ("", texto)
+            marcado, _ = usar_vocabulario(pronto, vocab_completo, marcas=True)
+            bruto_ao_vivo(marcado + resto)
     async with FILA:
         try:
             resposta = await asyncio.to_thread(
