@@ -92,6 +92,10 @@ class ChatMessage(BaseModel):
 class ChatIn(BaseModel):
     messages: list[ChatMessage] = Field(min_length=1, max_length=40)
     limit: int = Field(default=200, ge=16, le=600, description="tamanho máximo da resposta")
+    foco: list[str] = Field(
+        default_factory=list, max_length=40,
+        description="palavras em inglês que o app quer ver na conversa agora (aula de hoje, quase esquecidas)",
+    )
 
 
 class GlossaryItem(BaseModel):

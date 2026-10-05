@@ -10,6 +10,7 @@ import { FinishForm } from '../components/FinishForm';
 import { Empty, Kind, MASTERY_LABEL, UNDERSTOOD_LABEL, USAGE_LABEL } from '../components/common';
 import { RefCardView } from '../components/RefCardView';
 import { getTopic } from '../../core/content/repository';
+import { ProximosPassos, passosDepoisDaAula } from '../components/Foco';
 
 export function SessionPage({ id }: { id: string }) {
   const data = useData();
@@ -62,6 +63,8 @@ export function SessionPage({ id }: { id: string }) {
           <button className="ghost" onClick={() => setMode('edit')}>Editar</button>
         </div>
       </section>
+
+      {s.status === 'done' && mode === 'view' && <ProximosPassos titulo="E agora?" passos={passosDepoisDaAula(s)} />}
 
       {mode === 'finish' && (
         <section className="inset">

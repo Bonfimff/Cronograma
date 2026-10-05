@@ -16,6 +16,8 @@ import { IconeKit } from '../../components/Doodles';
 import { useData } from '../../hooks';
 import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
+import { FocoAviso, useFocoDoEndereco } from '../../components/Foco';
+import { comFoco } from '../../../core/estudo/foco';
 
 const BEST_KEY = GAME_KEYS.fastSpeechBest;
 /** Respiro entre a palavra aparecer e o microfone começar a valer (o toque do botão faz barulho). */
@@ -44,8 +46,9 @@ const STATUS: Record<Stage, string> = {
  */
 export function FastSpeech() {
   const data = useData();
+  const { palavras: foco } = useFocoDoEndereco();
   const pool = useMemo(
-    () => [...buildVocabPool(), ...sheetsOf(data).flatMap((s) => s.items)],
+    () => comFoco([...buildVocabPool(), ...sheetsOf(data).flatMap((s) => s.items)], foco, (x) => x.en, 10),
     [], // eslint-disable-line react-hooks/exhaustive-deps -- a rodada usa o que havia ao abrir o jogo
   );
   const [words, setWords] = useState<FastWord[]>(() => newFastRound(pool));
@@ -208,7 +211,7 @@ export function FastSpeech() {
     <>
       <section className="hero wt-hero">
         <p className="eyebrow"><a href="#/jogos">Jogos</a> · Fala-Rápida</p>
-        <h1>Desafio Fala-Rápida</h1>
+        <h1>Desafio Fala-Rápida</h1><FocoAviso jogo="fala" />
       </section>
 
       <GameTabs on="fala" />

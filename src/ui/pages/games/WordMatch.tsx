@@ -12,6 +12,8 @@ import { useData } from '../../hooks';
 import { Crown, IconeKit, Praise } from '../../components/Doodles';
 import { Empty } from '../../components/common';
 import { GameTabs } from './GameTabs';
+import { FocoAviso, useFocoDoEndereco } from '../../components/Foco';
+import { comFoco } from '../../../core/estudo/foco';
 
 const BEST_KEY = GAME_KEYS.matchBestStreak;
 /** Duração da chicotada inteira: toma impulso, golpeia, estala, recolhe. */
@@ -144,8 +146,9 @@ function drawLash(el: SVGGElement, pts: Pt[], p: number) {
 export function WordMatch() {
   const data = useData();
   // vocabulário do conteúdo + o que o usuário anotou nas folhas da Biblioteca
+  const { palavras: foco } = useFocoDoEndereco();
   const pool = useMemo(
-    () => [...buildVocabPool(), ...sheetsOf(data).flatMap((s) => s.items)],
+    () => comFoco([...buildVocabPool(), ...sheetsOf(data).flatMap((s) => s.items)], foco, (x) => x.en, 10),
     [], // eslint-disable-line react-hooks/exhaustive-deps -- a rodada usa o que havia ao abrir o jogo
   );
   const [round, setRound] = useState<MatchRound>(() => newRound(pool));
@@ -306,7 +309,7 @@ export function WordMatch() {
     <>
       <section className="hero wt-hero">
         <p className="eyebrow"><a href="#/jogos">Jogos</a> · Ligar palavras</p>
-        <h1>Ligue cada palavra à tradução</h1>
+        <h1>Ligue cada palavra à tradução</h1><FocoAviso jogo="palavras" />
       </section>
 
       <GameTabs on="palavras" />

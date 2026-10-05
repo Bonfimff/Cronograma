@@ -244,6 +244,13 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
                 ))}
               </ul>
             ) : <p className="muted">Nada perto de ser esquecido agora.</p>}
+            {!dados && r.plano.revisar.length > 0 && (
+              <p className="atalhos">
+                <a href="#/jogos/flashcards?foco=revisar">Revisar nos Flashcards</a>
+                <a href="#/jogos/fala?foco=revisar">Falar no Fala-Rápida</a>
+                <a href="#/conversa?foco=revisar">Conversar com elas</a>
+              </p>
+            )}
           </div>
           <div>
             <h2>Suba um degrau</h2>
@@ -252,6 +259,12 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
                 {r.plano.subir.map((p) => <li key={p.en}><b className="en">{p.en}</b>: agora, {p.proximo}</li>)}
               </ul>
             ) : <p className="muted">Firme algumas palavras para aparecerem aqui.</p>}
+            {!dados && r.plano.subir.length > 0 && (
+              <p className="atalhos">
+                <a href={`#/conversa?foco=${encodeURIComponent(`palavras:${r.plano.subir.map((p) => p.en).join(',')}`)}`}>Usar no chat</a>
+                <a href={`#/jogos/fala?foco=${encodeURIComponent(`palavras:${r.plano.subir.map((p) => p.en).join(',')}`)}`}>Pronunciar</a>
+              </p>
+            )}
           </div>
         </section>
       )}

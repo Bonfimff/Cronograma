@@ -1,5 +1,7 @@
 import { useData } from '../hooks';
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
+import { focoDeEstudo } from '../../core/estudo/foco';
+import { ProximosPassos, type Passo } from '../components/Foco';
 import { favoritas } from '../../core/library/favoritas';
 import { nomes } from '../../core/library/nomes';
 import { sheetsOf } from '../../core/library/sheets';
@@ -58,6 +60,8 @@ export function Today() {
         </div>
       </section>
 
+      <Agora />
+
       <section>
         <h2 className="head-row">
           <Bolt className="doodle mark" width="20" />
@@ -107,6 +111,37 @@ export function Today() {
         <CrowRaincoat className="cut-foot" width="76" />
       </footer>
 
+    </>
+  );
+}
+
+/**
+ * O que fazer agora, numa linha de cartões: continuar ou começar a aula, revisar as palavras
+ * quase esquecidas, treinar a conversa da aula. Vem da mesma memória que os jogos e o chat usam.
+ */
+function Agora() {
+  const data = useData();
+  const foco = useMemo(() => focoDeEstudo(data), [data]);
+  const a = foco.aula;
+  const n = foco.revisar.length;
+  const passos: Passo[] = [];
+  if (a?.continuar) passos.push({ href: `#/aula/${a.sessao.id}`, titulo: 'Continuar a aula', detalhe: a.sessao.title, icone: 'raio' });
+  else if (a?.sessao.status === 'planned') passos.push({ href: `#/sessao/${a.sessao.id}`, titulo: 'Começar a aula', detalhe: a.sessao.title, icone: 'raio' });
+  if (n) passos.push({ href: '#/jogos/flashcards?foco=revisar', titulo: `Revisar ${n} ${n === 1 ? 'palavra' : 'palavras'}`, detalhe: 'quase esquecidas · uns 5 minutos', icone: 'flashcards' });
+  if (a?.sessao.treino?.length) {
+    passos.push({ href: `#/conversa?enviar=${encodeURIComponent('Vamos treinar uma conversa')}`, titulo: 'Treinar a conversa', detalhe: 'perguntas da aula', icone: 'conversa' });
+  } else {
+    passos.push({ href: '#/conversa', titulo: 'Conversar', detalhe: foco.palavras.length ? `usando ${foco.palavras.slice(0, 3).join(', ')}` : 'com o amigo de treino', icone: 'conversa' });
+  }
+  if (a?.sessao.status === 'done') passos.push({ href: `#/jogos/fala?foco=aula:${a.sessao.id}`, titulo: 'Falar as palavras', detalhe: `da aula "${a.sessao.title}"`, icone: 'microfone2' });
+  return (
+    <>
+      <ProximosPassos titulo="Agora" passos={passos.slice(0, 4)} />
+      {foco.lembradasHoje > 0 && (
+        <p className="agora-memoria muted">
+          Hoje você deve lembrar cerca de <b>{foco.lembradasHoje}</b> {foco.lembradasHoje === 1 ? 'palavra' : 'palavras'}. <a href="#/progresso">Ver progresso</a>
+        </p>
+      )}
     </>
   );
 }

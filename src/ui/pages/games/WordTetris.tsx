@@ -13,6 +13,8 @@ import { Empty } from '../../components/common';
 import { StarBadge } from '../../components/Doodles';
 import { GoatTalking } from '../../components/Cutouts';
 import { GameTabs } from './GameTabs';
+import { FocoAviso, useFocoDoEndereco } from '../../components/Foco';
+import { comFoco } from '../../../core/estudo/foco';
 
 const BEST_KEY = GAME_KEYS.tetrisBest;
 const STATS_KEY = GAME_KEYS.tetrisWordStats;
@@ -32,7 +34,8 @@ function loadStats(): WordStats {
 }
 
 export function WordTetris() {
-  const [pool] = useState(buildVocabPool);
+  const { palavras: foco } = useFocoDoEndereco();
+  const [pool] = useState(() => comFoco(buildVocabPool(), foco, (x) => x.en, 12));
   const [board, setBoard] = useState<Board>(emptyBoard);
   const [falling, setFalling] = useState<Falling | null>(null);
   const [score, setScore] = useState(0);
@@ -224,7 +227,7 @@ export function WordTetris() {
     <>
       <section className="hero wt-hero">
         <p className="eyebrow"><a href="#/jogos">Jogos</a> · Tetris de vocabulário</p>
-        <h1>Traduza antes que a peça caia</h1>
+        <h1>Traduza antes que a peça caia</h1><FocoAviso jogo="tetris" />
       </section>
 
       <GameTabs on="tetris" />

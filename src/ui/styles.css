@@ -2143,3 +2143,27 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .conversa-fala .cursor { display: inline-block; width: .5em; height: 1em; margin-left: 2px; vertical-align: -2px; background: currentColor; opacity: .5; animation: piscar 1s steps(2) infinite; }
 @keyframes piscar { 50% { opacity: 0; } }
 
+
+/* ---------- fluidez: Agora, próximos passos e foco ---------- */
+.proximos h2 { margin-bottom: 10px; }
+.proximos-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 720px) { .proximos-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.proximo {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0;
+  padding: 14px; text-decoration: none; color: var(--ink);
+  background: var(--paper-2); border: 1px solid var(--rule); border-radius: 16px;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.proximo:hover, .proximo:focus-visible { transform: translateY(-2px); border-color: var(--accent); background: var(--paper-3); }
+.proximo-titulo { font-weight: 700; line-height: 1.2; }
+.proximo small { opacity: .75; line-height: 1.25; overflow-wrap: anywhere; }
+.agora-memoria { margin: 8px 0 0; font-size: .9rem; }
+.foco-aviso {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0;
+  padding: 8px 12px; border: 1px dashed var(--accent); border-radius: 12px; background: var(--accent-soft); font-size: .9rem;
+}
+.foco-aviso a { margin-left: auto; }
+.foco-escolha { margin-bottom: 4px; }
+.foco-escolha .muted { margin: 0 0 6px; font-size: .85rem; }
+.chip.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.conversa-foco { margin: 4px 0 0; font-size: .85rem; overflow-wrap: anywhere; }

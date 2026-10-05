@@ -39,7 +39,7 @@ def test_chamar_ao_vivo_manda_o_texto_parcial(monkeypatch):
 
 
 def test_rota_stream_manda_parciais_e_final(client, conta, monkeypatch):
-    def falso(url, modelo, sistema, historico, palavras, limite, temp, seed, timeout, ao_vivo=None):
+    def falso(url, modelo, sistema, historico, palavras, limite, temp, seed, timeout, ao_vivo=None, **k):
         for parte in ("Estou ", "Estou cansado ", "Estou cansado hoje."):
             if ao_vivo:
                 ao_vivo(parte)
@@ -55,7 +55,7 @@ def test_rota_stream_manda_parciais_e_final(client, conta, monkeypatch):
 
 
 def test_parciais_ja_chegam_com_as_palavras_em_ingles(client, conta, monkeypatch):
-    def falso(url, modelo, sistema, historico, palavras, limite, temp, seed, timeout, ao_vivo=None):
+    def falso(url, modelo, sistema, historico, palavras, limite, temp, seed, timeout, ao_vivo=None, **k):
         for parte in ("Você está cans", "Você está cansado ", "Você está cansado hoje."):
             if ao_vivo:
                 ao_vivo(parte)

@@ -159,7 +159,7 @@ export class Api {
    * texto até ali (sem as palavras em inglês, que entram na versão final).
    */
   async chatAoVivo(
-    token: string, messages: ChatMessage[], aoVivo: (texto: string) => void,
+    token: string, messages: ChatMessage[], aoVivo: (texto: string) => void, foco: string[] = [],
   ): Promise<{ reply: string; glossary: GlossaryItem[] }> {
     if (!this.configured) throw new ApiError('Este aplicativo foi publicado sem servidor de conta.', 0);
     let res: Response;
@@ -167,7 +167,8 @@ export class Api {
       res = await this.fetcher(`${this.baseUrl}/chat/stream`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-        body: JSON.stringify({ messages }),
+        // foco: as palavras da aula e as quase esquecidas, que o servidor põe primeiro na conversa
+        body: JSON.stringify({ messages, ...(foco.length ? { foco: foco.slice(0, 40) } : {}) }),
       });
     } catch {
       throw new ApiError('Servidor fora do ar ou sem internet.', 0);

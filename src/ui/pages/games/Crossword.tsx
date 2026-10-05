@@ -10,6 +10,8 @@ import { Praise } from '../../components/Doodles';
 import { NewspaperManLive } from '../../components/Cutouts';
 import { ROUND_POINTS, shares } from '../../../core/games/scoring';
 import { GameTabs } from './GameTabs';
+import { FocoAviso, useFocoDoEndereco } from '../../components/Foco';
+import { comFoco } from '../../../core/estudo/foco';
 
 type Pos = { row: number; col: number };
 
@@ -44,8 +46,9 @@ const keyOf = (e: Entry) => `${e.num}${e.dir}`;
  */
 export function Crossword() {
   const data = useData();
+  const { palavras: foco } = useFocoDoEndereco();
   const pool = useMemo(
-    () => [...buildVocabPool(), ...sheetsOf(data).flatMap((s) => s.items)],
+    () => comFoco([...buildVocabPool(), ...sheetsOf(data).flatMap((s) => s.items)], foco, (x) => x.en, 18),
     [], // eslint-disable-line react-hooks/exhaustive-deps -- usa o vocabulário de quando o jogo abriu
   );
   const [board, setBoard] = useState<Board>(() => buildCrossword(pool));
@@ -197,7 +200,7 @@ export function Crossword() {
     <>
       <section className="hero wt-hero">
         <p className="eyebrow"><a href="#/jogos">Jogos</a> · Cruzadas</p>
-        <h1>Palavras cruzadas</h1>
+        <h1>Palavras cruzadas</h1><FocoAviso jogo="cruzadas" />
       </section>
 
       <GameTabs on="cruzadas" />

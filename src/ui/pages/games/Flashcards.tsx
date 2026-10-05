@@ -7,6 +7,8 @@ import { speak } from '../../../core/lessons/lesson';
 import { Empty } from '../../components/common';
 import { ROUND_POINTS, shares } from '../../../core/games/scoring';
 import { GameTabs } from './GameTabs';
+import { FocoAviso, useFocoDoEndereco } from '../../components/Foco';
+import { comFoco } from '../../../core/estudo/foco';
 
 /** Quanto precisa arrastar pro lado pra valer como resposta. */
 const SWIPE_PX = 60;
@@ -33,7 +35,9 @@ function shuffle<T>(arr: T[]): T[] {
  * lados do cartão) e passa pro próximo. As setas só navegam.
  */
 export function Flashcards() {
-  const deck = useMemo(() => shuffle(content.words), []);
+  const { palavras: foco } = useFocoDoEndereco();
+  // com foco (aula, quase esquecidas), o baralho é só delas, completado até 8 cartões
+  const deck = useMemo(() => comFoco(shuffle(content.words), foco, (w) => w.word, 8), [foco]);
   const [i, setI] = useState(0);
   const [open, setOpen] = useState(false);
   const [drag, setDrag] = useState(0);
@@ -77,6 +81,7 @@ export function Flashcards() {
       <section className="hero wt-hero">
         <p className="eyebrow"><a href="#/jogos">Jogos</a> · Flashcards</p>
         <h1>Lembra o que significa?</h1>
+        <FocoAviso jogo="flashcards" />
       </section>
 
       <GameTabs on="flashcards" />

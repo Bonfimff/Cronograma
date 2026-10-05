@@ -42,16 +42,18 @@ REGRAS = """You are "Amigo de treino", a friendly Brazilian friend inside an Eng
 RULE 1, above everything else: write every reply in Brazilian Portuguese. Even when the
 other person writes in English, you answer in Portuguese.
 
-RULE 2: keep it short, two sentences at most, like a text message (three if the person
-asks about the app).
+RULE 2: write like a good friend in a text chat: two to four sentences (up to five when the
+person asks about the app or asks you to explain something).
 
-RULE 3: react like a friend: give an opinion, a related thought or a short answer. Never
-repeat the person's sentence back to them. Never start with "Entendi", "Peço desculpas" or
-a summary of what they said. Ask a short question only when it really fits, and never
-repeat a question you already asked.
+RULE 3: have real substance. React to what the person actually said with a genuine opinion,
+a relevant detail, a short story, a practical tip or a curiosity connected to the topic.
+Then, when it fits, ask one question that moves the conversation forward. Never repeat the
+person's sentence back to them. Never start with "Entendi", "Peço desculpas" or a summary of
+what they said. Never repeat a question you already asked.
 
-RULE 4: you are a friend, not an assistant and not a teacher. Never offer help, never
-teach, never correct the other person, never explain a word.
+RULE 4: you are a friend, not a teacher. Do not correct the person's English and do not
+explain grammar or words unless they ask. When they do ask for an explanation, a
+translation or help, answer clearly and briefly, in Portuguese.
 
 RULE 5: tell the truth about what you are. You are a small AI that only sees this
 conversation. You cannot remember anything once the history is cleared, you cannot save or
@@ -75,6 +77,17 @@ TODAY'S WORDS, written in Portuguese inside your sentence: {lista}.
 Try to use one of these words in your reply whenever it fits. In the field "trocar", list up
 to 2 of the words you used that Brazilians would naturally say in English. If none sounds
 natural, leave "trocar" empty. Never list the words as a reply."""
+
+# texto livre (sem JSON): o servidor troca as palavras por conta própria (usar_vocabulario.py)
+COM_PALAVRAS_TEXTO = """
+
+TODAY'S WORDS (Portuguese meaning; the app shows them in English inside your text): {lista}.
+Use one or two of them naturally in your sentences when they fit. Never force them and never
+list them. Write only your reply: no quotes, no name before it, no bullet points."""
+
+SEM_PALAVRAS_TEXTO = """
+
+Write only your reply, in Portuguese: no quotes, no name before it, no bullet points."""
 
 CONHECIDAS = """
 
@@ -120,7 +133,8 @@ def conhecidas(vocabulario: list | None, quantas: int = 30) -> list[str]:
     return vistas
 
 
-def instrucao(palavras: list, lembrete: bool = False, sobre_o_app: str = "", vocabulario: list | None = None) -> str:
+def instrucao(palavras: list, lembrete: bool = False, sobre_o_app: str = "", vocabulario: list | None = None,
+              texto_livre: bool = False) -> str:
     """
     A ordem importa para o cache do modelo: o que muda a cada resposta (as palavras do dia)
     vai por último, depois do que quase nunca muda (regras e notas do app).
@@ -129,8 +143,23 @@ def instrucao(palavras: list, lembrete: bool = False, sobre_o_app: str = "", voc
     corpo = REGRAS + (SOBRE_O_APP.format(notas=sobre_o_app) if sobre_o_app else "")
     sabidas = conhecidas(vocabulario)
     corpo += CONHECIDAS.format(lista=", ".join(sabidas)) if sabidas else ""
-    corpo += COM_PALAVRAS.format(lista=", ".join(p.pt.strip() for p in sel)) if sel else SEM_PALAVRAS
+    lista = ", ".join(p.pt.strip() for p in sel)
+    if texto_livre:
+        corpo += COM_PALAVRAS_TEXTO.format(lista=lista) if sel else SEM_PALAVRAS_TEXTO
+    else:
+        corpo += COM_PALAVRAS.format(lista=lista) if sel else SEM_PALAVRAS
     return corpo + LEMBRETE if lembrete else corpo
+
+
+ROTULO = re.compile(r'^\s*(?:\*\*)?(?:amigo(?: de treino)?|resposta|reply|assistente)(?:\*\*)?\s*:\s*', re.IGNORECASE)
+
+
+def limpar_texto_livre(texto: str) -> str:
+    """Tira o que o modelo às vezes põe em volta da resposta: aspas, "Amigo:", espaços."""
+    t = ROTULO.sub("", texto.strip())
+    if len(t) >= 2 and t[0] in "\"“'" and t[-1] in "\"”'":
+        t = t[1:-1]
+    return t.lstrip("\"“").strip()
 
 
 def esquema(palavras: list) -> dict:
@@ -354,17 +383,18 @@ def reply_parcial(bruto: str) -> str:
 
 def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras: list,
             limite: int, temperatura: float, seed: int | None, timeout: int,
-            ao_vivo: Callable[[str], None] | None = None) -> tuple[str, list[str]]:
+            ao_vivo: Callable[[str], None] | None = None, texto_livre: bool = False) -> tuple[str, list[str]]:
     corpo: dict[str, Any] = {
         "model": modelo,
         "stream": ao_vivo is not None,
-        "format": esquema(palavras),
         "messages": [{"role": "system", "content": sistema}] + historico,
         # o JSON precisa caber inteiro, e o modelo escreve acentos como é (vários tokens cada):
         # com limite curto ele chegava cortado. Respostas normais usam 30 a 80 tokens; a folga só custa
-        # quando o modelo se perde.
-        "options": {"num_predict": max(limite, 320), "temperature": temperatura},
+        # quando o modelo se perde. Em texto livre, 4 frases cabem em ~150 tokens.
+        "options": {"num_predict": max(limite, 260 if texto_livre else 320), "temperature": temperatura},
     }
+    if not texto_livre:
+        corpo["format"] = esquema(palavras)
     if seed is not None:
         corpo["options"]["seed"] = seed
     req = urllib.request.Request(
@@ -384,13 +414,15 @@ def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras
                     continue
                 pedaco = json.loads(linha.decode("utf-8"))
                 partes.append((pedaco.get("message") or {}).get("content", ""))
-                parcial = reply_parcial("".join(partes))
+                parcial = limpar_texto_livre("".join(partes)) if texto_livre else reply_parcial("".join(partes))
                 if parcial != mostrado:
                     mostrado = parcial
                     ao_vivo(parcial)
                 if pedaco.get("done"):
                     break
             bruto = "".join(partes)
+        if texto_livre:
+            return limpar_texto_livre(bruto), []
         dados = _ler_json(bruto)
     return dados["reply"].strip(), [str(w) for w in dados.get("trocar", [])]
 
@@ -413,12 +445,20 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
     ultima_da_pessoa = next((m["content"] for m in reversed(historico) if m["role"] == "user"), "")
     problema = None
     reply, trocar, usadas = "", [], 0
+    # com o vocabulário inteiro, quem troca as palavras é o servidor: o modelo escreve texto livre,
+    # sem JSON (sai mais natural, o texto ao vivo chega limpo e a resposta termina antes)
+    texto_livre = vocab_completo is not None
+    extras: dict[str, Any] = {}
+    if ao_vivo:
+        extras["ao_vivo"] = ao_vivo
+    if texto_livre:
+        extras["texto_livre"] = True
     for t in range(tentativas + 1):
         usadas = t + 1
         reply, trocar = _chamar(
-            url, modelo, instrucao(palavras, t > 0, sobre_o_app, palavras if vocab_completo is not None else None), historico, palavras, limite,
-            0.3 + 0.2 * t, None if seed is None else seed + t, timeout,
-            **({"ao_vivo": ao_vivo} if ao_vivo else {}),
+            url, modelo, instrucao(palavras, t > 0, sobre_o_app, palavras if texto_livre else None, texto_livre), historico,
+            palavras, limite, (0.6 + 0.15 * t) if texto_livre else (0.3 + 0.2 * t), None if seed is None else seed + t,
+            timeout, **extras,
         )
         if reply and not parece_portugues(reply):
             problema = "ingles"

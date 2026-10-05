@@ -277,8 +277,20 @@ async def conversar_ao_vivo(
                              headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"})
 
 
+def em_foco(vocabulario: list[Palavra], foco: list[str]) -> list[Palavra]:
+    """
+    As palavras que o app mandou como foco (aula de hoje, quase esquecidas) vão para a frente,
+    na ordem do app: viram as "palavras do dia" da conversa sem a pessoa pedir nada.
+    """
+    if not foco:
+        return vocabulario
+    ordem = {w.strip().lower(): i for i, w in enumerate(foco) if w.strip()}
+    primeiro = sorted((p for p in vocabulario if p.en.lower() in ordem), key=lambda p: ordem[p.en.lower()])
+    return primeiro + [p for p in vocabulario if p.en.lower() not in ordem]
+
+
 async def _conversar(entrada: ChatIn, user: User, db: Session, ao_vivo=None) -> ChatOut:
-    vocabulario = carregar(db, user, 400)  # o vocabulário todo: a troca consulta todas as fichas
+    vocabulario = em_foco(carregar(db, user, 400), entrada.foco)  # o vocabulário todo: a troca consulta todas as fichas
     # o histórico volta sem as marcas: elas são enfeite nosso, o modelo não precisa vê-las
     conversa = [{"role": m.role, "content": limpar(m.content)} for m in entrada.messages]
 

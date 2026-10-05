@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { focoDeEstudo } from '../../core/estudo/foco';
 import { go, useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import type { ContentRef } from '../../core/types';
 import { reviewBoard, STATE_LABEL, SUGGESTED_KIND, type ReviewState } from '../../core/reviews/reviews';
 import { entriesFor, EVENT_LABEL } from '../../core/history/history';
-import { copyBlock, refLabel } from '../../core/content/repository';
+import { content, copyBlock, refLabel } from '../../core/content/repository';
 import { createSession } from '../../core/sessions/sessions';
 import { addDays, fmtShort, today } from '../../core/dates';
 import { KIND_LABEL } from '../../core/planning/weeks';
@@ -17,6 +18,8 @@ const ORDER: ReviewState[] = ['reinforce', 'review', 'not_reviewed', 'scheduled'
 export function ReviewPage() {
   const data = useData();
   const board = reviewBoard(data);
+  // a mesma memória do relatório e dos jogos: o que está escapando, de todas as atividades
+  const escapando = useMemo(() => focoDeEstudo(data).revisar, [data]);
   const [sel, setSel] = useState<ContentRef[]>([]);
   const [date, setDate] = useState(addDays(today(), 1));
   const total = ORDER.reduce((n, k) => n + board[k].length, 0);
@@ -55,7 +58,34 @@ export function ReviewPage() {
         </div>
       </section>
 
-      {!total && (
+      {escapando.length > 0 && (
+        <section className="paper-card">
+          <h2><span className="dot s-reinforce" /> Quase esquecidas <small>{escapando.length}</small></h2>
+          <p className="muted">
+            Pela sua memória (jogos, aulas, fala, folhas e chat), estas estão com menos de 85% de chance de você lembrar hoje.
+            Revisar agora faz a memória durar mais.
+          </p>
+          <ul className="prog-barras">
+            {escapando.map((p) => {
+              const w = content.words.find((x) => x.word.toLowerCase() === p.en);
+              return (
+                <li key={p.en}>
+                  {w ? <a className="en" href={`#/conteudo/word:${w.id}`}>{p.en}</a> : <b className="en">{p.en}</b>}
+                  <span className="barra"><i style={{ width: `${Math.round(p.retencao * 100)}%` }} /></span>
+                  <small>{Math.round(p.retencao * 100)}%</small>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="actions left">
+            <a className="primary" href="#/jogos/flashcards?foco=revisar">Revisar nos Flashcards</a>
+            <a className="ghost" href="#/jogos/fala?foco=revisar">Falar no Fala-Rápida</a>
+            <a className="ghost" href="#/conversa?foco=revisar">Conversar com elas</a>
+          </div>
+        </section>
+      )}
+
+      {!total && !escapando.length && (
         <>
           <GhostFloat className="ghost-float" width={104} />
           <Empty>O histórico começa quando você finaliza a primeira sessão.</Empty>

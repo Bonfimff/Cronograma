@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { focoDeEstudo, palavrasDoFoco } from '../../core/estudo/foco';
 import { ApiError, api, type GlossaryItem } from '../../core/api/client';
 import { session } from '../../core/api/session';
 import { acrescentar, apagarConversa, lerConversa, paraOModelo } from '../../core/chat/conversa';
 import { recortar } from '../../core/chat/marcas';
 import { lerFala, pararLeitura } from '../../core/chat/leitura';
-import { useData } from '../hooks';
+import { go, useData, useRoute } from '../hooks';
 import { falaAtual, falar as falarVoz } from '../../core/lessons/vozes';
 import { ditadoDisponivel, ditar, type Ditado } from '../../core/speech/ditado';
 import { IconeKit } from '../components/Doodles';
@@ -39,7 +40,7 @@ function Palavra({ texto, pt, ficha }: { texto: string; pt?: string; ficha?: str
       {aberta && pt && (
         <span className="viva-balao" role="tooltip">
           {pt}
-          {ficha && <a href={`#/conteudo/word:${ficha.split(':')[1]}`}>ver ficha</a>}
+          {ficha && <a href={`#/conteudo/${ficha.startsWith('expressions:') ? 'expression' : 'word'}:${ficha.split(':')[1]}`}>ver ficha</a>}
         </span>
       )}
     </span>
@@ -84,8 +85,15 @@ const SUGESTOES = ['Oi! Tudo bem?', 'Quer saber como foi meu dia?', 'Me conta um
  */
 export function ChatPage() {
   const estado = useSyncExternalStore((cb) => session.subscribe(cb), () => session.get());
-  useData(); // redesenha quando a conversa muda, inclusive vinda de outro aparelho
+  const data = useData(); // redesenha quando a conversa muda, inclusive vinda de outro aparelho
   const falas = lerConversa();
+  const route = useRoute();
+  const focoParam = route.query.get('foco');
+  // as palavras em foco (aula de hoje, quase esquecidas, ou o que o endereço pediu): calculadas ao
+  // abrir a conversa, mostradas no topo e mandadas ao servidor a cada mensagem
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const foco = useMemo(() => (focoParam ? palavrasDoFoco(data, focoParam) : focoDeEstudo(data).palavras), [focoParam]);
+  const jaEnviou = useRef(false);
   const [texto, setTexto] = useState('');
   const [pensando, setPensando] = useState(false);
   /** a resposta enquanto o modelo escreve (some quando chega a versão final) */
@@ -127,7 +135,7 @@ export function ChatPage() {
     setErro('');
     setPensando(true);
     try {
-      const r = await session.withToken((t) => api.chatAoVivo(t, paraOModelo(lerConversa()), setParcial));
+      const r = await session.withToken((t) => api.chatAoVivo(t, paraOModelo(lerConversa()), setParcial, foco));
       acrescentar({ role: 'assistant', content: r.reply, glossary: r.glossary });
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o amigo de treino.');
@@ -136,6 +144,15 @@ export function ChatPage() {
       setParcial('');
     }
   };
+
+  // ?enviar=…: outra tela abriu a conversa com um pedido pronto ("Vamos treinar uma conversa")
+  useEffect(() => {
+    const pedido = route.query.get('enviar');
+    if (!pedido || jaEnviou.current || !estado.tokens) return;
+    jaEnviou.current = true;
+    go(focoParam ? `/conversa?foco=${encodeURIComponent(focoParam)}` : '/conversa');
+    void enviar(pedido);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!api.configured || !estado.tokens) {
     return (
@@ -155,6 +172,11 @@ export function ChatPage() {
       <section className="hero conversa-topo">
         <p className="eyebrow">Conversa</p>
         <h1>Amigo de treino</h1>
+        {foco.length > 0 && (
+          <p className="conversa-foco muted" title="O amigo dá preferência a estas palavras: a aula em foco e as que estão escapando">
+            Em foco: {foco.slice(0, 6).join(', ')}{foco.length > 6 ? ` e mais ${foco.length - 6}` : ''}
+          </p>
+        )}
         {falas.length > 0 && (
           <button
             className="conversa-apagar"
