@@ -480,9 +480,10 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
         # o texto volta já marcado, com as palavras vivas no lugar exato
         # cumprimentou? a resposta abre com bom dia, boa tarde ou boa noite do horário de Brasília
         limpo = ajustar_saudacao(limpar_abertura(reply), ultima_da_pessoa)
-        marcado, inglesas = usar_vocabulario(limpo, vocab_completo, marcas=True) if problema is None else (limpo, [])
+        novas: list[tuple[str, str]] = []  # expressões usadas que a pessoa ainda não tinha gravado
+        marcado, inglesas = usar_vocabulario(limpo, vocab_completo, marcas=True, novas=novas) if problema is None else (limpo, [])
         return {"texto": marcado.replace("[[", "").replace("]]", ""), "marcado": marcado, "trocadas": inglesas,
-                "tentativas": usadas, "problema": problema}
+                "tentativas": usadas, "problema": problema, "novas": novas}
     texto, feitas = aplicar_troca(reply, trocar, palavras)
     if minimo_trocas > 0 and problema is None:
         texto, feitas = completar_trocas(texto, feitas, palavras, minimo_trocas)

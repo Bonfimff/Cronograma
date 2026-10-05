@@ -33,7 +33,7 @@ from ..deps import current_user
 from ..idioma import parece_portugues
 from ..marcacao import limpar, marcar, marcar_lista
 from ..treino import correcao_fora_do_treino, responder_treino
-from ..vocab_chat import responder_vocabulario
+from ..vocab_chat import adicionar, responder_vocabulario
 from ..consultas import responder_consulta
 from ..usar_vocabulario import usar_vocabulario
 from ..models import User
@@ -130,7 +130,7 @@ def _pedir(mensagens: list[dict], limite: int) -> str:
 
 async def _conversar_slot(
     limite: int, conversa: list[dict], vocabulario: list[Palavra], sobre_o_app: str,
-    vocab_completo: list[Palavra] | None = None, ao_vivo=None,
+    vocab_completo: list[Palavra] | None = None, ao_vivo=None, gravar=None,
 ) -> ChatOut:
     """
     O modelo escreve em português e marca as palavras que ficariam naturais em inglês; o
@@ -172,6 +172,11 @@ async def _conversar_slot(
         por_palavra = {p.en.lower(): p for p in vocab_completo}
         usadas = {w.lower() for w in re.findall(r"\[\[([^\]]+)\]\]", resposta["marcado"])}
         glossario = [{"en": por_palavra[w].en, "pt": por_palavra[w].pt, "id": por_palavra[w].id} for w in usadas if w in por_palavra]
+        # expressões que a resposta usou inteiras ("bom dia" → good morning) e ainda não estavam gravadas
+        for en, pt in resposta.get("novas") or []:
+            if gravar:
+                gravar(en, pt)
+            glossario.append({"en": en, "pt": pt, "id": ""})
         return ChatOut(reply=resposta["marcado"], glossary=glossario)
     # se mesmo depois de pedir de novo veio em inglês, entrega sem marcar (como no modo livre)
     if not parece_portugues(texto):
@@ -322,7 +327,8 @@ async def _conversar(entrada: ChatIn, user: User, db: Session, ao_vivo=None) -> 
             return ChatOut(reply=marcado, glossary=glossario)
         # o guia do app só entra quando a pessoa pergunta do app: em toda conversa, ele atrapalha
         sobre = contexto_do_app(db, user, pergunta_sobre_vocabulario(conversa)) if pergunta_sobre_o_app(conversa) else ""
-        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre, carregar(db, user, 100000, todas=True), ao_vivo)
+        resposta = await _conversar_slot(entrada.limit, conversa, vocabulario, sobre, carregar(db, user, 100000, todas=True), ao_vivo,
+                                         gravar=lambda en, pt: adicionar(db, user, en, pt))
         # escreveu em inglês com algo a acertar? a correção vem antes da conversa
         correcao = correcao_fora_do_treino(db, user, conversa)
         if correcao:

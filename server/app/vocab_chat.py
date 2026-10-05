@@ -28,6 +28,7 @@ import unicodedata
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .expressoes import EXPRESSOES
 from .models import Record, User
 from .vocabulario import carregar
 
@@ -97,22 +98,6 @@ GLOSSARIO = {
     "you": "você", "are": "são / está", "do": "fazer", "today's": "de hoje",
 }
 
-# expressões comuns: mais de uma palavra em inglês para uma ideia em português
-EXPRESSOES = {
-    "thank you": "obrigado", "thank you very much": "muito obrigado", "thanks a lot": "muito obrigado",
-    "you're welcome": "de nada", "good morning": "bom dia", "good afternoon": "boa tarde",
-    "good evening": "boa noite", "good night": "boa noite (despedida)", "excuse me": "com licença",
-    "see you": "até mais", "see you later": "até mais tarde", "see you tomorrow": "até amanhã",
-    "how are you": "como você está", "i'm fine": "estou bem", "nice to meet you": "prazer em conhecer",
-    "of course": "claro", "no problem": "sem problema", "let's go": "vamos", "take care": "se cuida",
-    "what's up": "e aí", "i don't know": "eu não sei", "me too": "eu também", "good luck": "boa sorte",
-    "happy birthday": "feliz aniversário", "how much": "quanto", "what time": "que horas",
-    "right now": "agora mesmo", "a lot": "muito", "i'm sorry": "sinto muito", "never mind": "deixa pra lá",
-    "how old are you": "quantos anos você tem", "what's your name": "qual é o seu nome",
-    "where are you from": "de onde você é", "i love you": "eu te amo", "have a nice day": "tenha um bom dia",
-    "good job": "bom trabalho", "well done": "muito bem", "all right": "tudo bem", "i agree": "eu concordo",
-    "at home": "em casa", "at work": "no trabalho", "day off": "dia de folga",
-}
 
 # o caminho de volta: obrigado → thank you (só traduções sem barra, para não haver dúvida)
 REVERSO = {pt: en for en, pt in {**GLOSSARIO, **EXPRESSOES}.items() if "/" not in pt and "(" not in pt}

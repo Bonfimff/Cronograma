@@ -18,6 +18,7 @@ Aqui a troca é por regras, sem depender do modelo:
 
 import re
 
+from .expressoes import EXPRESSOES, SEGURAS, portugues_de
 from .sinonimos import sinonimos_de
 from .vocabulario import FUNCAO, Palavra
 
@@ -69,11 +70,16 @@ def _com_caixa(original: str, en: str) -> str:
     return en[:1].upper() + en[1:] if original[:1].isupper() else en
 
 
-def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = False) -> tuple[str, list[str]]:
+def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = False,
+                     novas: list[tuple[str, str]] | None = None) -> tuple[str, list[str]]:
     """
     Troca no texto (português) todas as palavras do vocabulário que couberem. Devolve o texto
     e as palavras em inglês usadas. Com `marcas`, cada palavra do vocabulário trocada vem entre
     [[ ]] (as palavras vivas da tela), sem tocar no "do" ou "a" do português.
+
+    Expressões comuns ("bom dia") vêm antes das palavras: se a pessoa conhece todas as palavras
+    dela (good, morning), a frase usa a expressão inteira e ela entra em `novas` (en, pt), para
+    o chat gravar no vocabulário; se não conhece, a expressão fica em português, inteira.
     """
     if not texto or not vocabulario:
         return texto, []
@@ -93,6 +99,24 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
         for m in _padrao(pt).finditer(texto):
             if not any(tomado[m.start():m.end()]):
                 marcar(m.start(), m.end(), en)
+
+    # 1b. expressões comuns que a pessoa ainda não gravou (as gravadas já estão no vocabulário)
+    for en in sorted(SEGURAS, key=lambda e: -len(portugues_de(e))):
+        pt = portugues_de(en)
+        if en in tem or " " not in pt:
+            continue
+        for m in _padrao(re.escape(pt)).finditer(texto):
+            if any(tomado[m.start():m.end()]):
+                continue
+            palavras_en = re.findall(r"[a-z']+", en)
+            if all(w in tem or w in FUNCAO for w in palavras_en) and any(w in tem for w in palavras_en):
+                marcar(m.start(), m.end(), en)  # conhece as palavras: usa a expressão inteira
+                tem.add(en)
+                if novas is not None and all(n[0] != en for n in novas):
+                    novas.append((en, EXPRESSOES[en]))
+            else:
+                for i in range(m.start(), m.end()):  # não conhece: fica em português, sem "good dia"
+                    tomado[i] = True
 
     # 2. palavras soltas, das traduções mais longas para as mais curtas ("fim de semana" antes de "fim")
     candidatas: list[tuple[str, str]] = []
