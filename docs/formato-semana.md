@@ -76,6 +76,25 @@ Degrau: 0 vista, 1 reconhece, 2 lembra sozinho, 3 entende ouvindo, 4 pronuncia, 
 Com mais de 600 palavras, vão as que não estão firmes e as firmes mais praticadas. O bloco é
 ignorado na importação: não precisa voltar na resposta.
 
+**Ritmo (`aluno.ritmo`)**: quantas palavras novas cabem na semana é decisão do app, não da IA.
+Cada pessoa fixa num ritmo, e o que ainda está em treino precisa de espaço para firmar. A conta é
+semanal: até 10 novas, uma a menos a cada 3 palavras em treino (estudando ou quase esquecida);
+com 8 ou mais quase esquecidas, no máximo 2; com retenção média abaixo de 75%, metade. Com o treino
+cheio, `novas_na_semana` é 0 e a semana é só de reforço. As novas não precisam vir todo dia; as
+aulas sem novidade aprofundam o que está em treino. A prévia avisa quando o arquivo passa do teto.
+
+```jsonc
+"ritmo": { "novas_na_semana": 4, "em_treino": 18, "quase_esquecidas": 3, "retencao_media": 0.86,
+           "motivo": "Até 4 palavras ou expressões novas na semana: 18 palavras ainda em treino." }
+```
+
+**Profundidade**: o modelo traz uma aula completa ("Where do you work?") como referência de tamanho:
+palavras novas com pronúncia, uso e 3 exemplos; 8 a 12 exercícios de todos os tipos; escuta, fala e
+missão com frases diferentes; dicas com os erros comuns de quem fala português. A prévia avisa sobre
+aulas com poucos exercícios, frases repetidas entre os cartões, exercícios repetidos entre aulas e
+palavras novas com menos de 3 exemplos. `build` sem `tokens` e `match` com pares em objeto são
+corrigidos sozinhos na importação.
+
 ### `palavras`, `aula`, `habilidade` e `chat.treino` na sessão
 
 ```jsonc
