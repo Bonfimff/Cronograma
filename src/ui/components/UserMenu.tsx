@@ -62,7 +62,7 @@ export function UserMenu() {
             <>
               <p className="usuario-email">{estado.email}</p>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Minha conta</a>
-              <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
+              <a href="#/progresso" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="progresso" width={20} />Meu progresso</a>
               <a href="#/professor" role="menuitem" onClick={() => setAberto(false)}>Professores e alunos</a>
               <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
               <button role="menuitem" className="com-icone" onClick={trocarTema}><IconeKit nome={tema === 'claro' ? 'tema-escuro' : 'tema-claro'} width={20} />{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
@@ -78,7 +78,7 @@ export function UserMenu() {
             <>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Entrar</a>
               <a href="#/conta" role="menuitem" onClick={() => setAberto(false)}>Criar conta</a>
-              <a href="#/progresso" role="menuitem" onClick={() => setAberto(false)}>Meu progresso</a>
+              <a href="#/progresso" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="progresso" width={20} />Meu progresso</a>
               <a href="#/professor" role="menuitem" onClick={() => setAberto(false)}>Professores e alunos</a>
               <a href="#/ajustes" role="menuitem" className="com-icone" onClick={() => setAberto(false)}><IconeKit nome="ajustes" width={20} />Ajustes</a>
               <button role="menuitem" className="com-icone" onClick={trocarTema}><IconeKit nome={tema === 'claro' ? 'tema-escuro' : 'tema-claro'} width={20} />{tema === 'claro' ? 'Tema escuro' : 'Tema claro'}</button>
