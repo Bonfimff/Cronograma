@@ -24,6 +24,44 @@ export interface ContextoAluno {
   vocabulario: LinhaVocabulario[];
   dificuldades: { palavras: string[]; pronuncia: string[] };
   ja_estudado: ContentRef[];
+  ritmo: Ritmo;
+}
+
+/**
+ * Quantas palavras novas cabem na semana: decidido pelo app, não pela IA.
+ *
+ * Aprender não é somar palavras por dia: cada pessoa fixa num ritmo, e o que ainda está em
+ * treino (estudando, quase esquecida) precisa de espaço para firmar. A conta é por semana:
+ * quanto mais palavras em treino e quanto menor a retenção, menos palavras novas. Com o treino
+ * cheio, a semana é só de reforço (0 novas).
+ */
+export interface Ritmo {
+  novas_na_semana: number;
+  em_treino: number;
+  quase_esquecidas: number;
+  retencao_media: number | null;
+  motivo: string;
+}
+
+/** Teto de palavras novas numa semana, quando nada está pendente. */
+export const NOVAS_MAXIMO = 10;
+
+export function calcularRitmo(vocab: LinhaVocabulario[], retencaoMedia: number | null): Ritmo {
+  const quase = vocab.filter((l) => l[2] === 'quase_esquecida').length;
+  const emTreino = vocab.filter((l) => l[2] === 'estudando' || l[2] === 'quase_esquecida').length;
+  let novas = Math.max(0, NOVAS_MAXIMO - Math.floor(emTreino / 3));
+  const motivos = [`${emTreino} ${emTreino === 1 ? 'palavra' : 'palavras'} ainda em treino`];
+  if (quase >= 8) { novas = Math.min(novas, 2); motivos.push(`${quase} quase esquecidas pedem reforço antes de novidade`); }
+  if (retencaoMedia !== null && retencaoMedia < 0.75) { novas = Math.floor(novas / 2); motivos.push(`retenção média de ${Math.round(retencaoMedia * 100)}%`); }
+  return {
+    novas_na_semana: novas,
+    em_treino: emTreino,
+    quase_esquecidas: quase,
+    retencao_media: retencaoMedia === null ? null : Math.round(retencaoMedia * 100) / 100,
+    motivo: novas === 0
+      ? `Semana de reforço, sem palavras novas: ${motivos.join('; ')}.`
+      : `Até ${novas} palavras ou expressões novas na semana: ${motivos.join('; ')}.`,
+  };
 }
 
 /** Acima disso, vão as palavras que mais importam (em estudo, quase esquecidas e as firmes mais usadas). */
@@ -37,6 +75,7 @@ export const LEIA_ME_ALUNO = [
   'estado "quase_esquecida": coloque em palavras.revisar de alguma sessão da semana (de preferência no aquecimento).',
   'estado "nao_praticada": está na lista do aluno, mas ainda não foi praticada; pode virar palavra nova.',
   'Palavra fora desta lista é desconhecida: só use se ela estiver em palavras.novas daquela sessão.',
+  'ritmo.novas_na_semana: quantas palavras ou expressões NOVAS cabem nesta semana inteira, calculado pelo app a partir do que ainda está em treino. Não passe desse número. Distribua as novas pela semana como fizer sentido (não precisa ser todo dia); as outras aulas reforçam e usam o que está em treino. Se for 0, a semana é só de reforço.',
 ];
 
 export function estadoDe(retencao: number, degrau: number, praticada: boolean): EstadoPalavra {
@@ -80,5 +119,7 @@ export function contextoDoAluno(data: UserData, hoje = new Date().toISOString().
       pronuncia: r.fala.padroes.filter((p) => p.padrao !== 'outro').slice(0, 4).map((p) => p.nome),
     },
     ja_estudado: [...new Set(data.history.map((h) => h.ref))],
+    // o ritmo olha o vocabulário inteiro, não só a parte que coube no arquivo
+    ritmo: calcularRitmo(linhas, r.memoria.retencaoMedia),
   };
 }

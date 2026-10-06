@@ -51,7 +51,18 @@
           "type": "object",
           "properties": { "palavras": { "type": "array", "items": { "type": "string" } }, "pronuncia": { "type": "array", "items": { "type": "string" } } }
         },
-        "ja_estudado": { "type": "array", "items": { "$ref": "#/$defs/ref" } }
+        "ja_estudado": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
+        "ritmo": {
+          "type": "object",
+          "description": "Calculado pelo app: quantas palavras/expressões novas cabem nesta semana. Não passe de novas_na_semana.",
+          "properties": {
+            "novas_na_semana": { "type": "integer", "minimum": 0 },
+            "em_treino": { "type": "integer" },
+            "quase_esquecidas": { "type": "integer" },
+            "retencao_media": { "type": ["number", "null"] },
+            "motivo": { "type": "string" }
+          }
+        }
       }
     },
     "content": {

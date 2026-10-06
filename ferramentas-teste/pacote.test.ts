@@ -1,6 +1,7 @@
 // Teste rápido do pacote semana@2 (rodado com esbuild + node; não faz parte do app).
 import { checkPackage, applyPackage, templatePackage, exportPackage } from '../src/core/planning/weekPackage';
 import type { UserData } from '../src/core/types';
+import { calcularRitmo } from '../src/core/planning/contextoAluno';
 
 const vazio = (): UserData => ({ version: 1, counter: {}, weeks: [], sessions: [], worksheets: [], history: [], chat: [], atividades: [] });
 let falhas = 0;
@@ -17,7 +18,7 @@ console.log('   integração do modelo:', c1.integracao.map((i) => (i.ok ? '✓ 
 applyPackage(data, modelo, { replacePlanned: false });
 const s = data.sessions.find((x) => x.title === 'Where do you work?')!;
 confere('palavras gravadas', s.palavras?.novas?.[0] === 'word:work', s.palavras);
-confere('aula gravada', s.aula?.missao?.tarefas.length === 2, s.aula);
+confere('aula gravada', s.aula?.missao?.tarefas.length === 3, s.aula);
 confere('treino gravado', s.treino?.[0].resposta === 'I work at ____.', s.treino);
 confere('refs = refs + novas + revisar', ['pattern:pergunta-com-do', 'word:work', 'word:where'].every((r) => s.refs.includes(r as never)), s.refs);
 const total = data.sessions.length;
@@ -62,6 +63,13 @@ confere('export com aula/palavras', exp.days.some((d) => d.sessions?.some((x) =>
 // 9. arquivo @1 continua valendo
 const c9 = checkPackage(vazio(), { ...modelo, format: 'ingles-hibrido/semana@1' }, { replacePlanned: false });
 confere('@1 aceito sem aviso de formato', c9.ok && !c9.warnings.some((w) => w.includes('"format"')), c9.warnings);
+
+// 10. ritmo: o app decide quantas novas cabem na semana
+const linha = (en: string, estado: 'firme' | 'estudando' | 'quase_esquecida'): [string, string, typeof estado, number, number] => [en, en, estado, estado === 'firme' ? 0.95 : 0.6, 2];
+const leve = calcularRitmo([linha('a', 'firme'), linha('b', 'estudando')], 0.9);
+const cheio = calcularRitmo(Array.from({ length: 30 }, (_, i) => linha(`w${i}`, i < 10 ? 'quase_esquecida' : 'estudando')), 0.7);
+confere('ritmo leve: perto do teto', leve.novas_na_semana === 10, leve);
+confere('ritmo cheio: semana de reforço', cheio.novas_na_semana === 0 && cheio.motivo.includes('reforço'), cheio);
 
 console.log(falhas ? `\n${falhas} falha(s)` : '\ntudo certo');
 if (falhas) process.exit(1);
