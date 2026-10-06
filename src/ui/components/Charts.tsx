@@ -107,6 +107,39 @@ export function SketchDots({ valores, maximo }: { valores: number[]; maximo?: nu
   );
 }
 
+export interface Coluna {
+  rotulo: string;
+  valor: number;
+  /** o número escrito em cima da coluna ("42 min", "78%"); vazio = sem dado */
+  texto: string;
+  destaque?: boolean;
+}
+
+/**
+ * Colunas com o valor escrito em cima e o nome embaixo, cada um alinhado à sua coluna.
+ * Feito para ler de relance: nada de eixo para decifrar nem linha que some quando há zeros.
+ */
+export function Colunas({ itens, altura = 140, legenda }: { itens: Coluna[]; altura?: number; legenda?: string }) {
+  if (!itens.length) return null;
+  const maior = Math.max(...itens.map((c) => c.valor), 1);
+  return (
+    <figure className="colunas" aria-label={legenda}>
+      <div className="colunas-area" style={{ height: altura }}>
+        {itens.map((c, i) => (
+          <div key={`${c.rotulo}-${i}`} className={`coluna${c.destaque ? ' destaque' : ''}${c.valor ? '' : ' vazia'}`}>
+            <span className="coluna-valor">{c.texto || '—'}</span>
+            <span className="coluna-barra" style={{ height: `${Math.max(c.valor ? 6 : 2, (c.valor / maior) * 100)}%` }} />
+          </div>
+        ))}
+      </div>
+      <div className="colunas-rotulos">
+        {itens.map((c, i) => <span key={`${c.rotulo}-${i}`} className={c.destaque ? 'destaque' : ''}>{c.rotulo}</span>)}
+      </div>
+      {legenda && <figcaption>{legenda}</figcaption>}
+    </figure>
+  );
+}
+
 /** Anel rabiscado: o traço dá quase a volta e não fecha certinho. */
 export function SketchRing({ valor, centro }: { valor: number; centro: string }) {
   const R = 46, c = 60, volta = 2 * Math.PI * R;

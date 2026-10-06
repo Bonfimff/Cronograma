@@ -6,7 +6,9 @@ import type { WordStats } from '../../core/games/wordTetris';
 import { byWeek, frequency, hardestWords, bestWords, learningSpeed } from '../../core/progress/progress';
 import { relatorio, type LinhaTipo, type PalavraPlacar } from '../../core/progress/relatorio';
 import { analiseGuardada, analisar, analisePorRegras, type Analise } from '../../core/progress/analise';
-import { SketchBars, SketchDots, SketchLine } from '../components/Charts';
+import { Colunas } from '../components/Charts';
+
+const diasTexto = (n: number) => `${n} ${n === 1 ? 'dia' : 'dias'}`;
 import { refLabel } from '../../core/content/repository';
 import { fmtShort, weekdayShort } from '../../core/dates';
 import { Empty } from '../components/common';
@@ -306,24 +308,29 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
       {semDados ? (
         <Empty>Ainda não há atividades registradas. Jogue, faça uma aula ou converse com o amigo e os números aparecem aqui.</Empty>
       ) : (
-        <>
+        <div className="painel">
           <section>
             <h2>Evolução <small>últimas 8 semanas</small></h2>
-            <p className="muted">Minutos de estudo por semana</p>
-            <SketchLine valores={r.semanas.map((s) => s.minutos)} />
-            <div className="grafico-rotulos">{r.semanas.map((s, i) => <span key={s.inicio}>{i % 2 === 0 ? fmtShort(s.inicio) : ''}</span>)}</div>
+            <Colunas
+              legenda="Minutos de estudo por semana (a semana atual em destaque)"
+              itens={r.semanas.map((s, i) => ({
+                rotulo: fmtShort(s.inicio), valor: s.minutos, texto: s.minutos ? horas(s.minutos) : '', destaque: i === r.semanas.length - 1,
+              }))}
+            />
             {r.semanas.filter((s) => s.taxa !== null).length >= 2 && (
-              <>
-                <p className="muted">Acerto por semana</p>
-                <SketchLine valores={r.semanas.map((s) => Math.round((s.taxa ?? 0) * 100))} />
-              </>
+              <Colunas
+                altura={110}
+                legenda="Acerto nas respostas, por semana"
+                itens={r.semanas.map((s, i) => ({
+                  rotulo: fmtShort(s.inicio), valor: s.taxa ?? 0, texto: s.taxa === null ? '' : pct(s.taxa), destaque: i === r.semanas.length - 1,
+                }))}
+              />
             )}
           </section>
 
           <section>
             <h2>Por tipo de atividade</h2>
-            <SketchBars itens={r.porTipo.map((t) => ({ label: t.rotulo, valor: t.minutos / Math.max(1, ...r.porTipo.map((x) => x.minutos)) }))} />
-            <div className="grafico-rotulos">{r.porTipo.map((t) => <span key={t.chave}>{t.rotulo}</span>)}</div>
+            <Colunas legenda="Tempo em cada tipo de atividade" itens={r.porTipo.map((t) => ({ rotulo: t.rotulo, valor: t.minutos, texto: horas(t.minutos) }))} />
             <TabelaTipos linhas={r.porTipo} />
           </section>
 
@@ -336,8 +343,10 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
 
           <section>
             <h2>Horários {r.melhorFaixa && <small>melhor: {r.melhorFaixa.nome.toLowerCase()}</small>}</h2>
-            <SketchBars itens={r.faixas.map((f) => ({ label: f.nome, valor: f.minutos / Math.max(1, ...r.faixas.map((x) => x.minutos)) }))} />
-            <div className="grafico-rotulos">{r.faixas.map((f) => <span key={f.nome}>{f.nome}</span>)}</div>
+            <Colunas
+              legenda="Tempo por período do dia (o de melhor acerto em destaque)"
+              itens={r.faixas.map((f) => ({ rotulo: f.nome, valor: f.minutos, texto: f.minutos ? horas(f.minutos) : '', destaque: r.melhorFaixa?.nome === f.nome }))}
+            />
             <dl className="facts">
               {r.faixas.filter((f) => f.vezes).map((f) => (
                 <span key={f.nome} style={{ display: 'contents' }}>
@@ -345,9 +354,11 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
                 </span>
               ))}
             </dl>
-            <p className="muted">Por dia da semana</p>
-            <SketchBars itens={r.minutosPorDiaDaSemana.map((m, i) => ({ label: DIAS[i], valor: m / Math.max(1, ...r.minutosPorDiaDaSemana) }))} altura={90} />
-            <div className="grafico-rotulos">{DIAS.map((d) => <span key={d}>{d}</span>)}</div>
+            <Colunas
+              altura={100}
+              legenda="Tempo por dia da semana"
+              itens={r.minutosPorDiaDaSemana.map((min, i) => ({ rotulo: DIAS[i], valor: min, texto: min ? horas(min) : '' }))}
+            />
             {m.retencaoPorFaixa.some((f) => f.testes >= 5) && (
               <>
                 <p className="muted">O que você lembrou no dia seguinte, pelo horário em que estudou</p>
@@ -361,18 +372,20 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
               </>
             )}
           </section>
-        </>
+        </div>
       )}
 
-      <section>
-        <h2>Palavras que ainda escapam</h2>
-        {dificeis.length ? <TabelaPalavras lista={dificeis} /> : <Empty>Nada errado por aqui ainda.</Empty>}
-      </section>
+      <div className="painel">
+        <section>
+          <h2>Palavras que ainda escapam</h2>
+          {dificeis.length ? <TabelaPalavras lista={dificeis} /> : <Empty>Nada errado por aqui ainda.</Empty>}
+        </section>
 
-      <section>
-        <h2>Palavras que já grudaram</h2>
-        {firmes.length ? <TabelaPalavras lista={firmes} /> : <Empty>Pratique um pouco para o placar encher.</Empty>}
-      </section>
+        <section>
+          <h2>Palavras que já grudaram</h2>
+          {firmes.length ? <TabelaPalavras lista={firmes} /> : <Empty>Pratique um pouco para o placar encher.</Empty>}
+        </section>
+      </div>
 
       {r.fala.confusoes.length > 0 && (
         <section>
@@ -428,10 +441,19 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
           <>
             <dl className="facts">
               <dt>Tempo típico</dt><dd>{ritmo.mediana} {ritmo.mediana === 1 ? 'dia' : 'dias'} do primeiro contato até firmar</dd>
-              {ritmo.maisRapido && (<><dt>Mais rápido</dt><dd>{refLabel(ritmo.maisRapido.ref)} em {ritmo.maisRapido.dias} dias</dd></>)}
-              {ritmo.maisLento && (<><dt>Mais demorado</dt><dd>{refLabel(ritmo.maisLento.ref)} em {ritmo.maisLento.dias} dias</dd></>)}
+              {ritmo.maisRapido && (<><dt>Mais rápido</dt><dd>{refLabel(ritmo.maisRapido.ref)} em {diasTexto(ritmo.maisRapido.dias)}</dd></>)}
+              {ritmo.maisLento && (<><dt>Mais demorado</dt><dd>{refLabel(ritmo.maisLento.ref)} em {diasTexto(ritmo.maisLento.dias)}</dd></>)}
             </dl>
-            <SketchDots valores={ritmo.concluidos.map((c) => c.dias)} />
+            <p className="muted">Quanto tempo cada conteúdo levou do primeiro contato até firmar</p>
+            <ul className="prog-barras">
+              {[...ritmo.concluidos].sort((a, b) => a.dias - b.dias).slice(0, 12).map((c) => (
+                <li key={c.ref}>
+                  <span className="en">{refLabel(c.ref)}</span>
+                  <span className="barra"><i style={{ width: `${Math.max(6, (c.dias / Math.max(1, ...ritmo.concluidos.map((x) => x.dias))) * 100)}%` }} /></span>
+                  <small>{diasTexto(c.dias)}</small>
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </section>

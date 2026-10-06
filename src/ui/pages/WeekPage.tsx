@@ -6,7 +6,7 @@ import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from
 import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
 import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
-import { CalendarDoodle } from '../components/Doodles';
+import { CalendarDoodle, IconeKit } from '../components/Doodles';
 import { SignpostLive } from '../components/Cutouts';
 import { saveUserContent } from '../../core/content/novos';
 
@@ -70,11 +70,18 @@ export function WeekPage({ start }: { start?: string }) {
             </span>
           </SignpostLive>
         </div>
-        {/* atalhos discretos, depois da frase: são de uso eventual */}
-        <p className="atalhos">
-          <a href={`#/montar?semana=${ws}`}>Montar semana</a>
-          <a href={`#/imprimir?modo=week&semana=${ws}`}>Imprimir plano</a>
-        </p>
+        {/* montar a semana (JSON, pedido à IA) é o caminho principal para planejar: botão à vista */}
+        <div className="actions left semana-acoes">
+          <a className="primary with-icon" href={`#/montar?semana=${ws}`}>
+            <IconeKit nome="upload" width={20} />
+            Montar semana
+            <small>com JSON ou IA</small>
+          </a>
+          <a className="ghost with-icon" href={`#/imprimir?modo=week&semana=${ws}`}>
+            <IconeKit nome="salvar" width={18} />
+            Imprimir plano
+          </a>
+        </div>
       </section>
 
       <nav className="daystrip">
@@ -91,6 +98,7 @@ export function WeekPage({ start }: { start?: string }) {
         ))}
       </nav>
 
+      <div className="dias-grade">
       {week.days.map((day) => {
         const list = sessionsOn(data, day.date);
         const isToday = day.date === today();
@@ -147,6 +155,7 @@ export function WeekPage({ start }: { start?: string }) {
           </section>
         );
       })}
+      </div>
     </>
   );
 }
