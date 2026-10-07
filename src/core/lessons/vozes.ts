@@ -124,6 +124,52 @@ export const falaAtual = {
     return () => { ouvintesFala.delete(o); };
   },
 };
+/**
+ * A palavra que está sendo dita agora: o texto da parte e o índice da palavra nele (contando
+ * só as palavras, como as telas recortam o texto). A tela acende a palavra enquanto ela soa.
+ *
+ * A voz do aparelho avisa cada palavra (onboundary), quando o navegador manda; a voz natural
+ * (Piper) não tem marcação de tempo, então a posição é estimada pelo tamanho de cada palavra
+ * dentro da duração do áudio: fica bem perto, e nunca atrasa o som.
+ */
+export interface PalavraFalada { texto: string; indice: number }
+let palavraAtual: PalavraFalada | null = null;
+const ouvintesPalavra = new Set<() => void>();
+function marcarPalavra(p: PalavraFalada | null) {
+  if (p?.texto === palavraAtual?.texto && p?.indice === palavraAtual?.indice) return;
+  palavraAtual = p;
+  ouvintesPalavra.forEach((o) => o());
+}
+export const palavraFalada = {
+  get: () => palavraAtual,
+  subscribe(o: () => void) {
+    ouvintesPalavra.add(o);
+    return () => { ouvintesPalavra.delete(o); };
+  },
+};
+
+const PALAVRA_RE = /[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]*/g;
+const palavrasDe = (texto: string) => [...texto.matchAll(PALAVRA_RE)].map((m) => ({ ini: m.index ?? 0, fim: (m.index ?? 0) + m[0].length }));
+let relogios: number[] = [];
+function pararRelogios() {
+  relogios.forEach((r) => window.clearTimeout(r));
+  relogios = [];
+}
+
+/** Agenda o acender de cada palavra, dividindo a duração pelo tamanho de cada uma. */
+function estimarPalavras(texto: string, inicioMs: number, duracaoMs: number, minha: number) {
+  pararRelogios();
+  const ps = palavrasDe(texto);
+  if (!ps.length || duracaoMs <= 0) return;
+  const pesos = ps.map((p) => p.fim - p.ini + 2); // +2: o respiro entre palavras
+  const total = pesos.reduce((a, b) => a + b, 0);
+  let t = inicioMs;
+  ps.forEach((_, i) => {
+    relogios.push(window.setTimeout(() => { if (minha === geracao) marcarPalavra({ texto, indice: i }); }, t));
+    t += (duracaoMs * pesos[i]) / total;
+  });
+}
+
 let fonte: AudioBufferSourceNode | undefined;
 let contexto: AudioContext | undefined;
 
@@ -141,10 +187,12 @@ export function pararFala(): void {
   try { fonte?.stop(); } catch { /* já tinha parado */ }
   fonte = undefined;
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  pararRelogios();
+  marcarPalavra(null);
   marcarFala(null);
 }
 
-function tocarAmostras(amostras: Float32Array, taxa: number, minha: number): Promise<void> {
+function tocarAmostras(amostras: Float32Array, taxa: number, minha: number, texto = ''): Promise<void> {
   const ctx = (contexto ??= new AudioContext());
   // um respiro de silêncio antes: alguns aparelhos (e o Bluetooth) engolem o começo do som
   const folga = Math.round(taxa * 0.12);
@@ -160,6 +208,8 @@ function tocarAmostras(amostras: Float32Array, taxa: number, minha: number): Pro
     s.onended = () => { window.clearTimeout(reserva); if (fonte === s) fonte = undefined; ok(); };
     fonte = s;
     s.start();
+    // a voz natural começa e termina com um pouco de silêncio: tira ~0,12 s de cada ponta
+    if (texto) estimarPalavras(texto, 120 + 120, Math.max(0, buffer.duration * 1000 - 120 - 240), minha);
   });
 }
 
@@ -167,8 +217,22 @@ function falarNoAparelho(p: Parte, fator: number, minha: number): Promise<void> 
   return new Promise((ok) => {
     if (typeof speechSynthesis === 'undefined' || minha !== geracao) { ok(); return; }
     const u = prepararFala(p.texto, p.lingua, fator);
-    u.onend = () => ok();
-    u.onerror = () => ok();
+    const ps = palavrasDe(p.texto);
+    let marcadoPeloAparelho = false;
+    // estimativa até o aparelho mandar a primeira marca (alguns navegadores nunca mandam)
+    u.onstart = () => {
+      if (marcadoPeloAparelho) return;
+      const letrasPorSegundo = 14 * u.rate;
+      estimarPalavras(p.texto, 0, (p.texto.length / letrasPorSegundo) * 1000, minha);
+    };
+    u.onboundary = (e) => {
+      if (e.name && e.name !== 'word') return;
+      if (!marcadoPeloAparelho) { marcadoPeloAparelho = true; pararRelogios(); }
+      const i = ps.findIndex((w) => e.charIndex < w.fim);
+      if (i >= 0 && minha === geracao) marcarPalavra({ texto: p.texto, indice: i });
+    };
+    u.onend = () => { pararRelogios(); ok(); };
+    u.onerror = () => { pararRelogios(); ok(); };
     speechSynthesis.speak(u);
   });
 }
@@ -214,8 +278,9 @@ export async function falar(
     const audio = await esta;
     if (minha !== geracao) return;
     opcoes.aoParte?.(lista[i]);
-    if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha);
+    if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha, lista[i].texto);
     else await falarNoAparelho(lista[i], fator, minha);
+    if (minha === geracao) { pararRelogios(); marcarPalavra(null); }
   }
   if (minha === geracao) { marcarFala(null); opcoes.aoParte?.(null); }
 }

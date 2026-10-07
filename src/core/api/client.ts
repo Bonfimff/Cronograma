@@ -229,9 +229,9 @@ export class Api {
   }
 
   /** Reconhece um trecho de áudio (PCM float32, 16 kHz, mono) no servidor. */
-  transcrever(token: string, samples: Float32Array): Promise<{ text: string }> {
+  transcrever(token: string, samples: Float32Array, sinal?: AbortSignal): Promise<{ text: string }> {
     const body = samples.buffer.slice(samples.byteOffset, samples.byteOffset + samples.byteLength) as ArrayBuffer;
-    return this.call('/fala/transcrever', { method: 'POST', body, headers: { 'content-type': 'application/octet-stream' } }, token);
+    return this.call('/fala/transcrever', { method: 'POST', body, signal: sinal, headers: { 'content-type': 'application/octet-stream' } }, token);
   }}
 
 export const api = new Api({ baseUrl: import.meta.env.VITE_API_URL ?? '' });

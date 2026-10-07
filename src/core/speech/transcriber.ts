@@ -65,11 +65,19 @@ function prepareLocal(onProgress?: (fraction: number) => void): Promise<void> {
   return ready.finally(() => { if (onProgress) progressListeners.delete(onProgress); });
 }
 
-export async function transcribe(samples: Float32Array): Promise<string> {
+/** A pessoa cancelou a análise: não é falha do servidor. */
+export class Cancelado extends Error {
+  constructor() { super('cancelado'); this.name = 'Cancelado'; }
+}
+
+/** `sinal`: cancela a análise já enviada (o botão "Cancelar" enquanto confere). */
+export async function transcribe(samples: Float32Array, sinal?: AbortSignal): Promise<string> {
+  if (sinal?.aborted) throw new Cancelado();
   if (remote) {
     try {
-      return (await session.withToken((t) => api.transcrever(t, samples))).text;
-    } catch {
+      return (await session.withToken((t) => api.transcrever(t, samples, sinal))).text;
+    } catch (e) {
+      if (sinal?.aborted) throw new Cancelado(); // cancelou: o servidor continua valendo
       remote = false; // servidor caiu no meio do jogo: segue no aparelho
     }
   }
@@ -77,6 +85,8 @@ export async function transcribe(samples: Float32Array): Promise<string> {
   const id = nextId++;
   return new Promise<string>((ok, fail) => {
     pending.set(id, { ok, fail });
+    // no aparelho o Worker termina a conta, mas a resposta é descartada
+    sinal?.addEventListener('abort', () => { pending.delete(id); fail(new Cancelado()); }, { once: true });
     start().postMessage({ type: 'transcribe', id, samples }, [samples.buffer]);
   });
 }

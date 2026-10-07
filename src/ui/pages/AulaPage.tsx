@@ -9,10 +9,10 @@ import {
   type Etapa, type EtapaConceito, type EtapaEscuta, type EtapaFala, type EtapaFechamento,
   type EtapaMissao, type EtapaPalavra, type FraseJulgada, type Modo, type Montador,
 } from '../../core/lessons/aula';
-import { falaAtual, falar, pararFala, type Parte } from '../../core/lessons/vozes';
+import { falaAtual, falar, palavraFalada, pararFala, type Parte } from '../../core/lessons/vozes';
 import { refLabel } from '../../core/content/repository';
-import { Mic } from '../../core/speech/mic';
-import { prepare, transcribe } from '../../core/speech/transcriber';
+import { Mic, pausaParaFrase, tempoMaximoParaFrase } from '../../core/speech/mic';
+import { Cancelado, prepare, transcribe } from '../../core/speech/transcriber';
 import type { Example } from '../../core/types';
 import { Empty } from '../components/common';
 import { ExerciseView } from '../components/ExerciseView';
@@ -73,7 +73,7 @@ let proximoBalao = 0;
  * Palavra viva: pontilhada; tocar fala a palavra e abre a tradução (do vocabulário ou
  * do básico). Tocar de novo, ou fora, fecha.
  */
-function PalavraViva({ palavra }: { palavra: string }) {
+function PalavraViva({ palavra, falando = false }: { palavra: string; falando?: boolean }) {
   const [id] = useState(() => `b${proximoBalao++}`);
   const aberto = useSyncExternalStore(balao.subscribe, balao.get) === id;
   const traducao = useMemo(() => traduzirPalavra(palavra), [palavra]);
@@ -84,7 +84,7 @@ function PalavraViva({ palavra }: { palavra: string }) {
     return () => document.removeEventListener('pointerdown', fechar);
   }, [aberto]);
   return (
-    <span className="viva">
+    <span className={`viva${falando ? ' falando' : ''}`}>
       <button
         type="button"
         onPointerDown={(e) => e.stopPropagation()}
@@ -105,7 +105,10 @@ function PalavraViva({ palavra }: { palavra: string }) {
 /** Texto em inglês com cada palavra viva; pontuação e espaços ficam como estão. */
 function InglesVivo({ texto }: { texto: string }) {
   const pedacos = texto.split(/([A-Za-z][A-Za-z'’-]*)/);
-  return <>{pedacos.map((p, i) => (i % 2 === 1 ? <PalavraViva key={i} palavra={p} /> : p))}</>;
+  // enquanto o áudio desta frase toca, a palavra dita agora fica acesa (vozes.ts)
+  const falada = useSyncExternalStore(palavraFalada.subscribe, palavraFalada.get);
+  const acesa = falada?.texto === texto ? falada.indice : -1;
+  return <>{pedacos.map((p, i) => (i % 2 === 1 ? <PalavraViva key={i} palavra={p} falando={(i - 1) / 2 === acesa} /> : p))}</>;
 }
 
 /** Tradução que se revela ao toque: tentar entender antes de ver ajuda a fixar. */
@@ -246,10 +249,22 @@ function Repetir({ alvo, obterMic, onResultado, rotulo = 'Repetir' }: {
   const [res, setRes] = useState<FraseJulgada | null>(null);
   const barra = useRef<HTMLSpanElement>(null);
   const cancelar = useRef<() => void>(() => {});
-  useEffect(() => () => cancelar.current(), []);
+  const concluir = useRef<() => void>(() => {});
+  const analise = useRef<AbortController | null>(null);
+  useEffect(() => () => { cancelar.current(); analise.current?.abort(); }, []);
+
+  /** Desiste: para de ouvir ou cancela a análise já enviada. */
+  const desistir = () => {
+    cancelar.current();
+    analise.current?.abort();
+    if (barra.current) barra.current.style.transform = 'scaleX(0)';
+    setEstado('parado');
+    setAviso(estado === 'julgando' ? 'Análise cancelada. Toque no microfone para tentar de novo.' : '');
+  };
 
   const tentar = async () => {
-    if (estado === 'ouvindo') { cancelar.current(); setEstado('parado'); return; }
+    if (estado === 'ouvindo') { concluir.current(); return; } // tocar de novo = "terminei"
+    if (estado === 'julgando') { desistir(); return; }
     if (estado !== 'parado') return;
     pararFala();
     setRes(null);
@@ -259,21 +274,28 @@ function Repetir({ alvo, obterMic, onResultado, rotulo = 'Repetir' }: {
       const mic = await obterMic(setAviso);
       setAviso('');
       setEstado('ouvindo');
+      // frase longa: a pessoa para para pensar no meio; a pausa que encerra cresce com a frase
       const l = mic.listen({
-        waitMs: 7000, maxMs: 9000,
+        waitMs: 7000, maxMs: tempoMaximoParaFrase(alvo), pausaMs: pausaParaFrase(alvo),
         onLevel: (v) => { if (barra.current) barra.current.style.transform = `scaleX(${v})`; },
       });
       cancelar.current = l.cancel;
+      concluir.current = l.concluir;
       const got = await l.result;
       if (barra.current) barra.current.style.transform = 'scaleX(0)';
       if (got.kind === 'cancelled') return;
       if (got.kind === 'silence') { setEstado('parado'); setAviso('Não ouvi nada. Toque no microfone e fale.'); return; }
       setEstado('julgando');
-      const j = julgarFrase(alvo, await transcribe(got.samples));
+      const ctl = new AbortController();
+      analise.current = ctl;
+      const texto = await transcribe(got.samples, ctl.signal);
+      if (ctl.signal.aborted) return;
+      const j = julgarFrase(alvo, texto);
       setRes(j);
       setEstado('parado');
       if (j.verdict !== 'unclear') onResultado?.(j.verdict === 'ok' || j.verdict === 'close', j.ouvido);
     } catch (e) {
+      if (e instanceof Cancelado) return; // a pessoa cancelou: a tela já voltou ao começo
       setEstado('parado');
       setAviso(erroDoMic(e));
     }
@@ -281,13 +303,22 @@ function Repetir({ alvo, obterMic, onResultado, rotulo = 'Repetir' }: {
 
   return (
     <div className="aula-repetir">
-      <button type="button" className={`aula-mic ${estado}`} onClick={tentar} aria-label={estado === 'ouvindo' ? 'Parar de ouvir' : rotulo}>
+      <button type="button" className={`aula-mic ${estado}`} onClick={tentar}
+        aria-label={estado === 'ouvindo' ? 'Terminei de falar' : estado === 'julgando' ? 'Cancelar a análise' : rotulo}>
         <IconeKit nome="microfone2" width={34} />
         <span>
-          {estado === 'preparando' ? 'Preparando…' : estado === 'ouvindo' ? 'Ouvindo… fale agora' : estado === 'julgando' ? 'Conferindo…' : res ? 'Tentar de novo' : rotulo}
+          {estado === 'preparando' ? 'Preparando…' : estado === 'ouvindo' ? 'Ouvindo… toque quando terminar' : estado === 'julgando' ? 'Conferindo… toque para cancelar' : res ? 'Tentar de novo' : rotulo}
         </span>
       </button>
+      {(estado === 'ouvindo' || estado === 'julgando') && (
+        <button type="button" className="ghost small aula-cancelar" onClick={desistir}>
+          {estado === 'ouvindo' ? 'Cancelar' : 'Cancelar análise'}
+        </button>
+      )}
       {estado === 'ouvindo' && <span className="aula-nivel"><span ref={barra} /></span>}
+      {estado === 'ouvindo' && alvo.trim().split(/\s+/).length > 3 && (
+        <p className="aula-aviso">Pode pausar para pensar: eu espero você terminar a frase.</p>
+      )}
       {aviso && <p className="aula-aviso">{aviso}</p>}
       {res && (
         <div className={`aula-resultado ${res.verdict}`}>

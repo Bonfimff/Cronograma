@@ -26,6 +26,27 @@ export interface ListenOptions {
   onStart?: () => void;
   /** duração máxima da fala (ms); frases inteiras precisam de mais que uma palavra */
   maxMs?: number;
+  /**
+   * quanto silêncio (ms) encerra a fala. Uma palavra solta pede pouco; numa frase longa a
+   * pessoa para para pensar no meio, e cortar ali perdia o resto (ver pausaParaFrase)
+   */
+  pausaMs?: number;
+}
+
+/**
+ * A pausa que encerra a fala, pelo tamanho do que a pessoa vai dizer: uma palavra, 0,55 s;
+ * uma frase, de 1,2 s a 2,4 s (cada palavra a mais dá mais tempo para pensar no meio).
+ */
+export function pausaParaFrase(texto: string): number {
+  const palavras = texto.trim().split(/\s+/).filter(Boolean).length;
+  if (palavras <= 1) return END_SILENCE_MS;
+  return Math.min(2400, Math.max(1200, 800 + palavras * 160));
+}
+
+/** Tempo máximo de fala para a frase: frases longas, ditas com calma, passam de 9 s. */
+export function tempoMaximoParaFrase(texto: string): number {
+  const palavras = texto.trim().split(/\s+/).filter(Boolean).length;
+  return Math.min(30000, Math.max(9000, palavras * 1500));
 }
 
 const FRAME_MS = 30;
@@ -127,14 +148,15 @@ export class Mic {
   }
 
   /** Espera a pessoa falar e devolve o trecho com a voz. */
-  listen(opts: ListenOptions): { result: Promise<Heard>; cancel: () => void } {
+  listen(opts: ListenOptions): { result: Promise<Heard>; cancel: () => void; concluir: () => void } {
     const per = Math.round((this.rate * FRAME_MS) / 1000);
     const preFrames = Math.ceil(PREROLL_MS / FRAME_MS);
-    const endFrames = Math.ceil(END_SILENCE_MS / FRAME_MS);
+    const endFrames = Math.ceil((opts.pausaMs ?? END_SILENCE_MS) / FRAME_MS);
     const maxFrames = Math.ceil((opts.maxMs ?? MAX_SPEECH_MS) / FRAME_MS);
     const low = this.threshold * 0.6; // histerese: pra continuar "falando" basta menos que pra começar
 
     let cancel = () => {};
+    let concluir = () => {};
     const result = new Promise<Heard>((resolve) => {
       let buf: number[] = [];
       const ring: Float32Array[] = [];
@@ -153,6 +175,13 @@ export class Mic {
         resolve(h);
       };
       cancel = () => finish({ kind: 'cancelled' });
+      // "Terminei": entrega o que já foi dito, sem esperar o silêncio do fim
+      concluir = () => {
+        if (!speaking || voicedFrames * FRAME_MS < MIN_SPEECH_MS) { finish({ kind: 'silence' }); return; }
+        const all = new Float32Array(voice.length * per);
+        voice.forEach((v, i) => all.set(v, i * per));
+        finish({ kind: 'speech', samples: resample(all, this.rate, SAMPLE_RATE) });
+      };
 
       this.onBlock = (block) => {
         buf.push(...block);
@@ -190,7 +219,7 @@ export class Mic {
         }
       };
     });
-    return { result, cancel };
+    return { result, cancel, concluir };
   }
 
   close(): void {
