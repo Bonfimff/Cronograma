@@ -157,11 +157,12 @@ function pararRelogios() {
 }
 
 /** Agenda o acender de cada palavra, dividindo a duração pelo tamanho de cada uma. */
-function estimarPalavras(texto: string, inicioMs: number, duracaoMs: number, minha: number) {
+function estimarPalavras(texto: string, inicioMs: number, duracaoMs: number, minha: number, comPausas = false) {
   pararRelogios();
   const ps = palavrasDe(texto);
   if (!ps.length || duracaoMs <= 0) return;
-  const pesos = ps.map((p) => p.fim - p.ini + 2); // +2: o respiro entre palavras
+  // +2: o respiro entre palavras; no lento, a vírgula entre elas vale uma pausa bem maior
+  const pesos = ps.map((p, i) => p.fim - p.ini + (comPausas && i < ps.length - 1 ? 9 : 2));
   const total = pesos.reduce((a, b) => a + b, 0);
   let t = inicioMs;
   ps.forEach((_, i) => {
@@ -192,7 +193,7 @@ export function pararFala(): void {
   marcarFala(null);
 }
 
-function tocarAmostras(amostras: Float32Array, taxa: number, minha: number, texto = ''): Promise<void> {
+function tocarAmostras(amostras: Float32Array, taxa: number, minha: number, texto = '', comPausas = false): Promise<void> {
   const ctx = (contexto ??= new AudioContext());
   // um respiro de silêncio antes: alguns aparelhos (e o Bluetooth) engolem o começo do som
   const folga = Math.round(taxa * 0.12);
@@ -209,15 +210,41 @@ function tocarAmostras(amostras: Float32Array, taxa: number, minha: number, text
     fonte = s;
     s.start();
     // a voz natural começa e termina com um pouco de silêncio: tira ~0,12 s de cada ponta
-    if (texto) estimarPalavras(texto, 120 + 120, Math.max(0, buffer.duration * 1000 - 120 - 240), minha);
+    if (texto) estimarPalavras(texto, 120 + 120, Math.max(0, buffer.duration * 1000 - 120 - 240), minha, comPausas);
   });
 }
+
+/** Fator a partir do qual a fala é "lenta": as palavras ganham pausa entre elas. */
+const LIMITE_LENTO = 0.8;
+const palavraSolta = (texto: string) => palavrasDe(texto).length === 1;
+
+/**
+ * O texto que vai de fato para a voz. Testado com a voz natural e o Whisper (06/10):
+ * - palavra solta: vai com ponto final e na velocidade normal; esticada ela sai deformada
+ *   ("are" virava "okay"; "work", "what"), então no lento ela é repetida, não esticada;
+ * - frase no lento: uma vírgula entre as palavras dá a pausa pedida, e cada palavra continua
+ *   bem articulada ("Where, do, you, work?").
+ */
+export function textoParaFalar(texto: string, lingua: Lingua, fator: number): string {
+  const t = texto.trim();
+  if (lingua !== 'en') return t;
+  if (palavraSolta(t)) return /[.!?]$/.test(t) ? t : `${t}.`;
+  if (fator >= LIMITE_LENTO) return t;
+  const final = /[.!?]$/.test(t) ? t.slice(-1) : '.';
+  return t.replace(/[.!?]+$/, '').split(/\s*,?\s+/).filter(Boolean).join(', ') + final;
+}
+
+/** Palavra solta não é esticada (deforma): no lento ela toca na velocidade normal, duas vezes. */
+const fatorReal = (p: Parte, fator: number) => (p.lingua === 'en' && palavraSolta(p.texto) ? Math.max(fator, 1) : fator);
+const repeticoes = (p: Parte, fator: number) => (p.lingua === 'en' && palavraSolta(p.texto) && fator < LIMITE_LENTO ? 2 : 1);
 
 function falarNoAparelho(p: Parte, fator: number, minha: number): Promise<void> {
   return new Promise((ok) => {
     if (typeof speechSynthesis === 'undefined' || minha !== geracao) { ok(); return; }
-    const u = prepararFala(p.texto, p.lingua, fator);
-    const ps = palavrasDe(p.texto);
+    const falado = textoParaFalar(p.texto, p.lingua, fator);
+    const u = prepararFala(falado, p.lingua, fatorReal(p, fator));
+    // as marcas do aparelho vêm em posições do texto falado (com as vírgulas do lento)
+    const ps = palavrasDe(falado);
     let marcadoPeloAparelho = false;
     // estimativa até o aparelho mandar a primeira marca (alguns navegadores nunca mandam)
     u.onstart = () => {
@@ -263,9 +290,9 @@ export async function falar(
   const gerar = (p: Parte) => {
     const id = vozNatural(p.lingua);
     if (!id) return Promise.resolve(null);
-    const vel = Math.max(0.35, Math.min(2, atual.velocidade[p.lingua] * fator));
+    const vel = Math.max(0.35, Math.min(2, atual.velocidade[p.lingua] * fatorReal(p, fator)));
     return vozBaixada(id)
-      .then((ok) => (ok ? sintetizar(id, p.texto, vel) : null))
+      .then((ok) => (ok ? sintetizar(id, textoParaFalar(p.texto, p.lingua, fator), vel) : null))
       .catch(() => null);
   };
 
@@ -278,8 +305,11 @@ export async function falar(
     const audio = await esta;
     if (minha !== geracao) return;
     opcoes.aoParte?.(lista[i]);
-    if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha, lista[i].texto);
-    else await falarNoAparelho(lista[i], fator, minha);
+    for (let r = 0; r < repeticoes(lista[i], fator) && minha === geracao; r++) {
+      if (r) await esperar(550); // a pausa entre as duas vezes da palavra, no lento
+      if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha, lista[i].texto, lista[i].lingua === 'en' && fator < LIMITE_LENTO);
+      else await falarNoAparelho(lista[i], fator, minha);
+    }
     if (minha === geracao) { pararRelogios(); marcarPalavra(null); }
   }
   if (minha === geracao) { marcarFala(null); opcoes.aoParte?.(null); }
