@@ -227,6 +227,11 @@ function MontadorFrases({ m, chave }: { m: Montador; chave: string }) {
 
 type ObterMic = (aviso: (m: string) => void) => Promise<Mic>;
 
+/** O reconhecedor acabou de ser instalado: um toque novo no microfone começa a ouvir. */
+class ReconhecedorInstalado extends Error {
+  constructor() { super('Reconhecedor de voz pronto! Toque no microfone para falar.'); this.name = 'ReconhecedorInstalado'; }
+}
+
 const VEREDITO: Record<string, string> = {
   ok: 'Muito bem!',
   close: 'Quase lá! Ouça de novo e repita.',
@@ -236,6 +241,7 @@ const VEREDITO: Record<string, string> = {
 
 function erroDoMic(e: unknown): string {
   const nome = (e as Error)?.name;
+  if (nome === 'ReconhecedorInstalado') return (e as Error).message;
   if (nome === 'NotAllowedError') return 'O microfone foi bloqueado. Permita o acesso nas configurações do navegador.';
   if (nome === 'NotFoundError') return 'Nenhum microfone encontrado.';
   return `Não consegui usar o microfone: ${(e as Error)?.message ?? e}`;
@@ -630,6 +636,7 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
   const tocando = useSyncExternalStore(falaAtual.subscribe, falaAtual.get);
   const mic = useRef<Mic>(new Mic());
   const transcritorPronto = useRef(false);
+  const calibrado = useRef(false);
 
   useEffect(() => {
     if (modo === 'estudo' && s?.status === 'planned') store.update((d) => startSession(d, s.id));
@@ -642,16 +649,28 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
 
   const obterMic: ObterMic = async (aviso) => {
     const m = mic.current;
+    // o microfone abre dentro do toque (o iPhone só libera assim); se já estava aberto, acorda
+    let calibrar = false;
     if (!m.isOpen) {
       aviso('Pedindo acesso ao microfone…');
       await m.open();
-      aviso('Fique em silêncio um instante…');
-      await m.calibrate(700);
+      calibrar = true;
+    } else {
+      calibrar = await m.acordar();
     }
     if (!transcritorPronto.current) {
       aviso('Preparando o reconhecedor de voz…');
-      await prepare((f) => aviso(`Baixando o reconhecedor de voz… ${Math.round(f * 100)}%`));
+      const inicio = performance.now();
+      await prepare((f) => aviso(`Baixando o reconhecedor de voz… ${Math.round(f * 100)}% (só na primeira vez)`));
       transcritorPronto.current = true;
+      // depois de um download longo o navegador pode ter pausado o áudio, e o toque que abriu o
+      // microfone já passou: pede um toque novo, que acorda tudo (antes, só recarregando a página)
+      if (performance.now() - inicio > 3000) throw new ReconhecedorInstalado();
+    }
+    if (calibrar || !calibrado.current) {
+      aviso('Fique em silêncio um instante…');
+      await m.calibrate(700);
+      calibrado.current = true;
     }
     return m;
   };

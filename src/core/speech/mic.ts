@@ -102,6 +102,33 @@ export class Mic {
   /** Pede o microfone (com cancelamento de ruído do navegador) e liga o tap de áudio. */
   async open(): Promise<void> {
     if (this.stream) return;
+    try {
+      await this.abrir();
+    } catch (e) {
+      // abriu pela metade: fecha tudo, senão "isOpen" mentia e só recarregando a página voltava
+      this.close();
+      throw e;
+    }
+  }
+
+  /**
+   * Antes de cada escuta: o áudio pode ter sido pausado pelo navegador (um download longo do
+   * reconhecedor, a tela apagada, outra aba usando o som). Retoma, ou reabre o microfone se ele
+   * caiu. Era isso que deixava o microfone mudo na primeira vez, até recarregar a página.
+   */
+  /** Devolve true se precisou reabrir (aí vale calibrar o ruído de novo). */
+  async acordar(): Promise<boolean> {
+    const trilha = this.stream?.getAudioTracks()[0];
+    if (!this.stream || !this.ctx || !trilha || trilha.readyState === 'ended' || this.ctx.state === 'closed') {
+      this.close();
+      await this.open();
+      return true;
+    }
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    return false;
+  }
+
+  private async abrir(): Promise<void> {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Este navegador não tem acesso ao microfone (precisa de HTTPS).');
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true, channelCount: 1 },

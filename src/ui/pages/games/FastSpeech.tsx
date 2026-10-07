@@ -92,7 +92,16 @@ export function FastSpeech() {
       setLoadingMsg('Pedindo acesso ao microfone…');
       await mic.current.open(); // dentro do toque, senão o navegador nega
       setLoadingMsg('Preparando o reconhecedor de voz…');
+      const inicio = performance.now();
       await prepare(setProgress);
+      if (performance.now() - inicio > 3000) {
+        // primeira vez: o download foi longo e o navegador pode ter pausado o áudio; um toque novo
+        // em Começar acorda o microfone (antes, ficava mudo até recarregar a página)
+        setError('Reconhecedor de voz instalado! Toque em Começar para jogar.');
+        setPhase('intro');
+        return;
+      }
+      await mic.current.acordar();
       setLoadingMsg('Fique em silêncio um instante…');
       await mic.current.calibrate();
       setI(0); setHits(0); setScore(0); setAttempt(0);
@@ -146,6 +155,7 @@ export function FastSpeech() {
     (async () => {
       await new Promise((r) => setTimeout(r, SETTLE_MS));
       if (!alive()) return;
+      try { await mic.current.acordar(); } catch { /* segue: se o microfone caiu, o listen avisa em silêncio */ }
       const t0 = performance.now();
       let heardVoice = false;
       const tick = window.setInterval(() => {
