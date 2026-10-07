@@ -43,6 +43,9 @@ const tocar = (partes: Parte[], chave: string, fator = 1) =>
   falar(partes, fator, chave, { aoParte: (p) => lendo.set(p?.texto ?? null) });
 
 /** Botão de ouvir com o alto-falante do kit, animado enquanto toca. */
+/** Fator do "ouvir devagar": cerca de metade da velocidade escolhida nos Ajustes. */
+const LENTO = 0.5;
+
 function Ouvir({ partes, chave, rotulo = 'Ouvir', lento = false }: { partes: Parte[]; chave: string; rotulo?: string; lento?: boolean }) {
   const atual = useSyncExternalStore(falaAtual.subscribe, falaAtual.get);
   const tocando = atual === chave;
@@ -50,7 +53,7 @@ function Ouvir({ partes, chave, rotulo = 'Ouvir', lento = false }: { partes: Par
     <button
       type="button"
       className={`aula-ouvir${lento ? ' lento' : ''}${tocando ? ' tocando' : ''}`}
-      onClick={() => (tocando ? pararFala() : void tocar(partes, chave, lento ? 0.7 : 1))}
+      onClick={() => (tocando ? pararFala() : void tocar(partes, chave, lento ? LENTO : 1))}
       aria-label={tocando ? 'Parar' : rotulo}
       title={rotulo}
     >
@@ -456,7 +459,7 @@ function CartaoEscuta({ e, onResultado }: { e: EtapaEscuta; onResultado: (ok: bo
           <IconeKit nome="ouvir" width={44} />
           <span>Tocar</span>
         </button>
-        <button type="button" className="aula-play lento" onClick={() => void tocar(partes, `${e.id}:pl`, 0.7)} aria-label="Tocar devagar">
+        <button type="button" className="aula-play lento" onClick={() => void tocar(partes, `${e.id}:pl`, LENTO)} aria-label="Tocar devagar">
           <span aria-hidden>🐢</span>
           <span>Devagar</span>
         </button>

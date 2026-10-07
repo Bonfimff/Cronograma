@@ -98,7 +98,7 @@ export function prepararFala(texto: string, lingua: Lingua, fator = 1): SpeechSy
   } else {
     u.lang = lingua === 'en' ? 'en-US' : 'pt-BR';
   }
-  u.rate = Math.max(0.5, Math.min(2, atual.velocidade[lingua] * fator));
+  u.rate = Math.max(0.35, Math.min(2, atual.velocidade[lingua] * fator));
   return u;
 }
 
@@ -263,7 +263,7 @@ export async function falar(
   const gerar = (p: Parte) => {
     const id = vozNatural(p.lingua);
     if (!id) return Promise.resolve(null);
-    const vel = Math.max(0.5, Math.min(2, atual.velocidade[p.lingua] * fator));
+    const vel = Math.max(0.35, Math.min(2, atual.velocidade[p.lingua] * fator));
     return vozBaixada(id)
       .then((ok) => (ok ? sintetizar(id, p.texto, vel) : null))
       .catch(() => null);
