@@ -57,6 +57,13 @@ export class Store {
     this.listeners.forEach((l) => l(draft));
   }
 
+  /** Troca tudo (outra conta): nada do que estava aqui fica. */
+  replaceAll(data: UserData): void {
+    this.data = data;
+    this.adapter.save(data);
+    this.listeners.forEach((l) => l(data));
+  }
+
   replace(data: UserData): void {
     this.update((d) => Object.assign(d, data));
   }

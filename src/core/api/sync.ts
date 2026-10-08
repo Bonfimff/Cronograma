@@ -15,7 +15,7 @@
 import type { Atividade, ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
 import type { SyncRecord } from './client';
 import { session } from './session';
-import { store } from '../storage/store';
+import { emptyData, store } from '../storage/store';
 
 const CONTENT_KEYS: (keyof ContentBundle)[] = ['words', 'expressions', 'patterns', 'grammar', 'examples', 'topics', 'exercises'];
 
@@ -107,19 +107,31 @@ const NOME_APARELHO = (() => {
  * O que este aparelho já mandou ao servidor, para não reenviar tudo a cada vez:
  * código do registro -> conteúdo dele quando foi aceito.
  */
-const VISTO_KEY = 'ingles-hibrido:sync-visto';
+// por conta: com a lista de outra conta, o que é dela parecia "apagado aqui" e o
+// aparelho mandava apagar (ou ressuscitava) mensagens na conta errada
+const vistoKey = (conta: string) => `ingles-hibrido:sync-visto:${conta}`;
 
-function lerVisto(): Record<string, string> {
+function lerVisto(conta: string): Record<string, string> {
   try {
-    const raw = localStorage.getItem(VISTO_KEY);
+    const raw = localStorage.getItem(vistoKey(conta));
     return raw ? (JSON.parse(raw) as Record<string, string>) : {};
   } catch {
     return {};
   }
 }
 
-function guardarVisto(v: Record<string, string>): void {
-  try { localStorage.setItem(VISTO_KEY, JSON.stringify(v)); } catch { /* sem armazenamento */ }
+function guardarVisto(conta: string, v: Record<string, string>): void {
+  try { localStorage.setItem(vistoKey(conta), JSON.stringify(v)); } catch { /* sem armazenamento */ }
+}
+
+/** De quem são os dados guardados neste aparelho (o e-mail da conta). */
+const DONO_KEY = 'ingles-hibrido:dono-dos-dados';
+const lerDono = () => { try { return localStorage.getItem(DONO_KEY); } catch { return null; } };
+const guardarDono = (conta: string) => { try { localStorage.setItem(DONO_KEY, conta); } catch { /* sem armazenamento */ } };
+
+/** Conta ligada agora, segundo o armazenamento (outra aba pode ter trocado de conta). */
+function contaGuardada(): string | null {
+  try { return (JSON.parse(localStorage.getItem('ingles-hibrido:conta:v1') ?? 'null') as { email?: string } | null)?.email ?? null; } catch { return null; }
 }
 
 const codigo = (r: { kind: string; id: string }) => `${r.kind}/${r.id}`;
@@ -156,11 +168,23 @@ export const sincronizando = () => rodando !== null;
 export function sincronizar(): Promise<ResultadoSync> {
   if (rodando) return rodando;
   rodando = (async () => {
+    const conta = session.get().email ?? '';
+    // esta aba ficou para trás: outra aba entrou em outra conta; não mistura as duas
+    const guardada = contaGuardada();
+    if (guardada && guardada !== conta) return { baixados: 0, enviados: 0, revisao: session.get().revision };
+    // os dados do aparelho são de outra conta: começa do zero e traz tudo desta
+    const dono = lerDono();
+    if (dono && dono !== conta) {
+      store.replaceAll(emptyData());
+      session.setRevision(0);
+    }
+    guardarDono(conta);
+
     const antes = session.get().revision;
     const baixado = await session.withToken((t) => session.api.pull(t, antes));
     aplicar(baixado.items);
 
-    const visto = lerVisto();
+    const visto = lerVisto(conta);
     const locais = registrosLocais(store.get());
     const mandar = pendentes(locais, visto);
 
@@ -176,7 +200,7 @@ export function sincronizar(): Promise<ResultadoSync> {
 
     // o que está no aparelho agora é o que o servidor conhece
     const depois = registrosLocais(store.get());
-    guardarVisto(Object.fromEntries(depois.map((r) => [codigo(r), JSON.stringify(r.data)])));
+    guardarVisto(conta, Object.fromEntries(depois.map((r) => [codigo(r), JSON.stringify(r.data)])));
     session.setRevision(revisao);
 
     return { baixados: baixado.items.length, enviados, revisao };

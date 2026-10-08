@@ -34,6 +34,13 @@ export function ligarSincronizacaoAutomatica(): void {
   store.subscribe(() => { if (!sincronizando()) tentar(); });
   session.subscribe(() => tentar());
   window.addEventListener('focus', tentar);
+  // outra aba entrou em outra conta (ou saiu): esta recarrega para seguir a mesma conta
+  window.addEventListener('storage', (e) => {
+    if (e.key !== 'ingles-hibrido:conta:v1') return;
+    let email: string | null = null;
+    try { email = (JSON.parse(e.newValue ?? 'null') as { email?: string } | null)?.email ?? null; } catch { /* ignora */ }
+    if (email !== session.get().email) location.reload();
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') tentar();
   });

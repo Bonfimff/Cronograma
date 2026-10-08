@@ -71,5 +71,19 @@ const cheio = calcularRitmo(Array.from({ length: 30 }, (_, i) => linha(`w${i}`, 
 confere('ritmo leve: perto do teto', leve.novas_na_semana === 10, leve);
 confere('ritmo cheio: semana de reforço', cheio.novas_na_semana === 0 && cheio.motivo.includes('reforço'), cheio);
 
+// 11. palavra citada sem cadastro: aceita (aviso), pelo nome acha o id certo, e o que não existe sai da aula
+const comNome = vazio();
+applyPackage(comNome, templatePackage('2026-10-05'), { replacePlanned: false });
+comNome.content!.words = comNome.content!.words!.map((w) => (w.id === 'work' ? { ...w, id: 'w-123' } : w));
+const solto = { format: 'ingles-hibrido/semana@2', days: [{ date: '2026-10-08', sessions: [{ kind: 'new', title: 'Good afternoon!',
+  refs: ['word:work', 'word:nada-disso'], palavras: { revisar: ['word:office-xyz', 'word:WORK'], apoio: ['word:you'] } }] }] };
+const c11 = checkPackage(comNome, solto as never, { replacePlanned: false });
+confere('palavra sem cadastro não bloqueia', c11.ok, c11.errors);
+confere('aviso só do que não existe', c11.warnings.some((w) => w.includes('nada-disso')) && !c11.warnings.some((w) => w.includes('"word:work"')), c11.warnings);
+applyPackage(comNome, solto as never, { replacePlanned: false });
+const s11 = comNome.sessions.find((x) => x.title === 'Good afternoon!')!;
+confere('refs pelo nome viram o id certo', s11.refs.includes('word:w-123' as never) && !s11.refs.includes('word:nada-disso' as never), s11.refs);
+confere('palavras.apoio sem cadastro sai', (s11.palavras?.apoio ?? []).length === 0, s11.palavras);
+
 console.log(falhas ? `\n${falhas} falha(s)` : '\ntudo certo');
 if (falhas) process.exit(1);

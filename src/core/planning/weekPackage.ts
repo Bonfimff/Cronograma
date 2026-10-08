@@ -132,6 +132,35 @@ function known(user: Partial<ContentBundle> | undefined, pkg: Partial<ContentBun
   return Object.fromEntries(CONTENT_KEYS.map((k) => [k, ids(k)])) as Record<keyof ContentBundle, Set<unknown>>;
 }
 
+const textoDoRef = (id: string) => id.toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+/**
+ * Acha o conteúdo de uma referência mesmo quando o id não bate: "word:office" encontra a
+ * palavra "office" do aluno, qualquer que seja o id dela (a IA vê o vocabulário pelo texto,
+ * não pelos ids). Devolve a referência certa, ou undefined quando não há nada com aquele nome.
+ */
+export function resolvedorDeRefs(user: Partial<ContentBundle> | undefined, pkg: Partial<ContentBundle> | undefined) {
+  const porTexto = new Map<string, ContentRef>();
+  const ids = known(user, pkg);
+  const lista = <T>(k: keyof ContentBundle, b?: Partial<ContentBundle>) => (Array.isArray(b?.[k]) ? (b![k] as unknown[]) : []).filter(isObj) as T[];
+  (['words', 'expressions'] as const).forEach((k) => {
+    const kind = k === 'words' ? 'word' : 'expression';
+    [...lista<Record<string, unknown>>(k, baseContent), ...lista<Record<string, unknown>>(k, user), ...lista<Record<string, unknown>>(k, pkg)].forEach((x) => {
+      const t = String((k === 'words' ? x.word : x.text) ?? '');
+      if (t && typeof x.id === 'string') porTexto.set(`${kind}|${textoDoRef(t)}`, `${kind}:${x.id}` as ContentRef);
+    });
+  });
+  return (r: ContentRef): ContentRef | undefined => {
+    const { kind, id } = parseRef(r);
+    const key = KIND_KEY[kind];
+    if (key && ids[key].has(id)) return r;
+    if (kind !== 'word' && kind !== 'expression') return undefined;
+    const t = textoDoRef(id);
+    // palavra escrita como expressão (ou o contrário) também vale
+    return porTexto.get(`${kind}|${t}`) ?? porTexto.get(`${kind === 'word' ? 'expression' : 'word'}|${t}`);
+  };
+}
+
 export function parsePackage(text: string): WeekPackage | string {
   try {
     const p = JSON.parse(text);
@@ -212,6 +241,7 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
   for (const k of Object.keys(c)) if (!CONTENT_KEYS.includes(k as keyof ContentBundle) && !k.startsWith('$')) warn(`content.${k} não é reconhecido e será ignorado.`);
   const lists = Object.fromEntries(CONTENT_KEYS.map((k) => [k, listOf<Record<string, unknown>>(c[k], `content.${k}`, err)])) as Record<keyof ContentBundle, Record<string, unknown>[]>;
   const ids = known(data.content, lists as unknown as Partial<ContentBundle>);
+  const resolver = resolvedorDeRefs(data.content, lists as unknown as Partial<ContentBundle>);
 
   CONTENT_KEYS.forEach((k) => {
     const seen = new Set<unknown>();
@@ -230,7 +260,10 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
     const { kind, id } = parseRef(r as ContentRef);
     const key = KIND_KEY[kind];
     if (!key) return err(`${where}: tipo "${kind}" desconhecido em "${r}".`);
-    if (!ids[key].has(id)) err(`${where}: "${r}" não existe (adicione em content.${key}).`);
+    if (ids[key].has(id) || resolver(r as ContentRef)) return;
+    // palavra ou expressão sem cadastro não bloqueia o arquivo: só fica de fora daquela aula
+    if (kind === 'word' || kind === 'expression') warn(`${where}: "${r}" não está no vocabulário nem em content.${key}; fica de fora desta aula.`);
+    else err(`${where}: "${r}" não existe (adicione em content.${key}).`);
   };
 
   lists.words.filter(isObj).forEach((w) => {
@@ -538,6 +571,17 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
 
   if (p.sheets?.length) mergeSheets(draft, p.sheets);
 
+  // referências pelo nome viram o id certo; as que não existem em lugar nenhum saem da aula
+  const resolver = resolvedorDeRefs(uc, undefined);
+  const refsOk = (l: ContentRef[] | undefined) => (l ? [...new Set(l.map(resolver).filter((r): r is ContentRef => !!r))] : l);
+  const corrigir = (ps: PackageSession): PackageSession => ({
+    ...ps,
+    refs: refsOk(ps.refs),
+    copyRefs: refsOk(ps.copyRefs),
+    ...(ps.palavras && { palavras: Object.fromEntries(Object.entries(ps.palavras).map(([k, v]) => [k, Array.isArray(v) ? refsOk(v) : v])) as PalavrasDaSessao }),
+    ...(ps.aula && { aula: { ...ps.aula, aquecimento: ps.aula.aquecimento && resolver(ps.aula.aquecimento) } }),
+  });
+
   plan.remove.forEach((id) => deleteSession(draft, id));
   if (p.goals !== undefined && ws) saveWeekGoals(draft, ws, p.goals);
 
@@ -549,7 +593,7 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
       ...(d.objective !== undefined && { objective: d.objective }),
       ...(d.minutes !== undefined && { minutes: d.minutes }),
     });
-    (d.sessions ?? []).forEach((ps) => {
+    (d.sessions ?? []).map(corrigir).forEach((ps) => {
       const cur = sessaoCorrespondente(draft, d.date, ps, usados);
       if (cur) usados.add(cur.id);
       if (cur && cur.status !== 'planned') return; // já iniciada/feita: não mexe

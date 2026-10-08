@@ -245,6 +245,12 @@ A semana exportada traz o **código** de cada sessão (`id`, o mesmo do QR da fo
 | tem `id` de uma sessão **iniciada ou feita** | fica **como está** (nada é duplicado nem sobrescrito) |
 | tem `id` que não existe neste aparelho | é criada com código novo (com aviso) |
 
+**Palavras citadas pelo nome.** Uma referência como `"word:office"` vale mesmo que o id da palavra
+seja outro: o app procura a palavra (ou expressão) pelo texto no vocabulário do aluno e no `content`
+do arquivo. Se ela não existir em lugar nenhum, o arquivo é aceito do mesmo jeito: a prévia avisa e
+essa palavra só fica de fora daquela aula. Para ensinar uma palavra nova, ela precisa estar em
+`content.words`.
+
 Com **"Nos dias do arquivo, tirar as aulas não iniciadas que não estão nele"** marcado, as aulas
 planejadas desses dias que não vieram no arquivo são removidas. Dias fora do arquivo nunca são tocados. A prévia mostra exatamente quantas
 sessões serão criadas, atualizadas, mantidas e removidas antes de importar.
