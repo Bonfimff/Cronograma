@@ -42,6 +42,15 @@ export class Store {
 
   constructor(private adapter: StorageAdapter) {
     this.data = adapter.load() ?? emptyData();
+    // outra aba gravou: esta passa a usar os mesmos dados (senão regravaria a cópia velha,
+    // e uma conversa apagada lá voltava daqui)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key !== KEY) return;
+        this.data = adapter.load() ?? emptyData();
+        this.listeners.forEach((l) => l(this.data));
+      });
+    }
   }
 
   get(): UserData {

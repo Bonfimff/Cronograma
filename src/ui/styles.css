@@ -105,7 +105,14 @@ code, .mono { font-family: var(--mono); font-size: .85em; }
 .nav a.on { color: var(--accent); font-weight: 600; }
 .nav a.on .nav-icon { opacity: 1; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), .5)); }
 @media (min-width: 760px) {
-  .app { padding-bottom: 0; }
+  .app { padding-bottom: 0; --topo: 57px; }
+  /* menu do topo fixo: a página rola por baixo dele */
+  .topbar {
+    position: sticky; top: 0; z-index: 15; background: var(--barra); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule); padding-bottom: 8px;
+  }
+  .app.bare { --topo: 0px; }
+  .lesson-head { top: var(--topo); }
   .nav { position: static; border: 0; gap: 4px; background: none; backdrop-filter: none; padding: 12px 16px 0; max-width: 760px; margin: 0 auto; justify-content: flex-end; }
   .nav a { flex: none; flex-direction: row; gap: 6px; font-size: .88rem; padding: 8px 14px; border-radius: 999px; }
   .nav a i { font-size: .95rem; }

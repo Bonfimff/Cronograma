@@ -174,7 +174,16 @@ export function sincronizar(): Promise<ResultadoSync> {
     if (guardada && guardada !== conta) return { baixados: 0, enviados: 0, revisao: session.get().revision };
     // os dados do aparelho são de outra conta: começa do zero e traz tudo desta
     const dono = lerDono();
-    if (dono && dono !== conta) {
+    // aparelho que já sincronizava antes da separação por conta: os dados podem estar
+    // misturados entre contas; recomeça e traz tudo do servidor
+    let antigo = false;
+    try {
+      antigo = localStorage.getItem('ingles-hibrido:dados-por-conta') === null
+        && (!!dono || localStorage.getItem('ingles-hibrido:sync-visto') !== null);
+      localStorage.setItem('ingles-hibrido:dados-por-conta', '1');
+    } catch { /* sem armazenamento */ }
+    if ((dono && dono !== conta) || antigo) {
+      try { localStorage.removeItem('ingles-hibrido:sync-visto'); localStorage.removeItem(vistoKey(conta)); } catch { /* sem armazenamento */ }
       store.replaceAll(emptyData());
       session.setRevision(0);
     }
