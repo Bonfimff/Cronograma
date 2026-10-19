@@ -598,7 +598,7 @@ function Titulo({ chave, falas, children }: { chave?: string; falas?: Fala[]; ch
   );
 }
 
-/** Estrela que marca a folha para ela aparecer na página Hoje. */
+/** Estrela que marca a folha para ela aparecer na capa da Biblioteca e na página Hoje. */
 function Estrela({ chave }: { chave: string }) {
   const marcadas = useSyncExternalStore((cb) => favoritas.subscribe(cb), () => favoritas.get());
   const marcada = marcadas.includes(chave);
@@ -607,7 +607,7 @@ function Estrela({ chave }: { chave: string }) {
       className={`lib-estrela ${marcada ? 'on' : ''}`}
       onClick={() => favoritas.alternar(chave)}
       aria-pressed={marcada}
-      title={marcada ? 'Tirar da página Hoje' : 'Mostrar na página Hoje'}
+      title={marcada ? 'Tirar da capa e da página Hoje' : 'Mostrar na capa e na página Hoje'}
     >
       {marcada ? '★' : '☆'}
     </button>
@@ -620,13 +620,11 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
   const achados = buscar(data, termo);
   const buscando = termo.trim().length >= 2;
 
-  // a capa mostra só as folhas marcadas com estrela (as outras continuam a um
-  // deslize ou a uma busca de distância); sem nenhuma marcada, mostra todas
+  // a capa mostra só as folhas marcadas com estrela; as outras continuam a um
+  // deslize ou a uma busca de distância
   const marcadas = useSyncExternalStore((cb) => favoritas.subscribe(cb), () => favoritas.get());
   const escolhidas = tabs.filter((t) => marcadas.includes(t.key));
-  const lista = escolhidas.length
-    ? [...escolhidas, ...tabs.filter((t) => t.key === NEW_TAB)]
-    : tabs;
+  const lista = [...escolhidas, ...tabs.filter((t) => t.key === NEW_TAB)];
 
   return (
     <>
@@ -666,6 +664,9 @@ function Capa({ data, tabs, onOpen }: { data: UserData; tabs: Tab[]; onOpen: (ke
         )
       ) : (
         <ul className="lib-list">
+          {!escolhidas.length && (
+            <li><p className="lib-note">Nenhuma folha marcada. Abra uma folha (deslize para o lado) e toque na ☆ ao lado do nome para ela aparecer aqui.</p></li>
+          )}
           {lista.map((t) => (
             <li key={t.key}>
               <button className={`lib-row ${t.key === NEW_TAB ? 'lib-nova' : ''}`} onClick={() => onOpen(t.key)}>
