@@ -13,6 +13,8 @@ import { refLabel } from '../../core/content/repository';
 import { Empty, SessionRow } from '../components/common';
 import { Bolt, Camera, Notebook, Plane, Praise, Sparkle, Swash } from '../components/Doodles';
 import { Capybara, CrowRaincoat } from '../components/Cutouts';
+import { proximasAulas } from '../../core/professor/montagem';
+import { horaDe } from './professor/Turma';
 
 /** Frase do dia — a mesma o dia inteiro, muda sozinha a cada data. */
 const QUOTES: [string, string][] = [
@@ -61,6 +63,8 @@ export function Today() {
       </section>
 
       <Agora />
+
+      <ProximaAula />
 
       <section>
         <h2 className="head-row">
@@ -180,6 +184,25 @@ function FolhasMarcadas() {
           </a>
         ))}
       </p>
+    </section>
+  );
+}
+
+/** A próxima aula marcada pelo professor, com o recado e a aula do app ligada a ela. */
+function ProximaAula() {
+  const data = useData();
+  const [a, ...depois] = proximasAulas(data.agenda);
+  if (!a) return null;
+  const dia = a.inicio.slice(0, 10);
+  const quando = dia === today() ? 'Hoje' : dia === addDays(today(), 1) ? 'Amanhã' : `${weekdayName(dia)} ${fmtShort(dia)}`;
+  return (
+    <section className="paper-card proxima-aula">
+      <p className="eyebrow">Próxima aula com o professor</p>
+      <h2>{quando}, {horaDe(a)}</h2>
+      <p>{a.assunto}</p>
+      {a.nota && <p className="muted">“{a.nota}”</p>}
+      {a.sessaoId && <p><a href={`#/sessao/${a.sessaoId}`}>Abrir a aula preparada</a></p>}
+      {depois.length > 0 && <p className="muted small-text">Depois: {depois.slice(0, 3).map((x) => `${fmtShort(x.inicio.slice(0, 10))} às ${x.inicio.slice(11)}`).join(' · ')}</p>}
     </section>
   );
 }

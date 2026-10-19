@@ -1,20 +1,15 @@
-import { useState } from 'react';
-import { go, useData } from '../hooks';
+import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import { getWeek, KIND_LABEL, KIND_ORDER, saveDayPlan, sessionsOn } from '../../core/planning/weeks';
 import { addDays, fmtShort, today, weekdayName, weekdayShort, weekStartOf } from '../../core/dates';
-import { createSession, saveUserExercises, updateSession } from '../../core/sessions/sessions';
-import { SessionForm } from '../components/SessionForm';
 import { SessionRow } from '../components/common';
 import { CalendarDoodle, IconeKit } from '../components/Doodles';
 import { SignpostLive } from '../components/Cutouts';
-import { saveUserContent } from '../../core/content/novos';
 
 export function WeekPage({ start }: { start?: string }) {
   const data = useData();
   const ws = weekStartOf(start ?? today());
   const week = getWeek(data, ws);
-  const [adding, setAdding] = useState<string | null>(null);
   const weekSessions = data.sessions.filter((s) => s.weekStart === ws);
   const counts = KIND_ORDER.map((k) => [k, weekSessions.filter((s) => s.kind === k).length] as const);
   // a primeira sessão ainda não concluída, de hoje em diante
@@ -81,6 +76,10 @@ export function WeekPage({ start }: { start?: string }) {
             <IconeKit nome="salvar" width={18} />
             Imprimir plano
           </a>
+          <a className="ghost with-icon" href="#/montar-aula">
+            <IconeKit nome="upload" width={18} />
+            Montar aula à mão
+          </a>
         </div>
       </section>
 
@@ -107,7 +106,7 @@ export function WeekPage({ start }: { start?: string }) {
             <header className="day-head">
               <h2>{weekdayName(day.date)} <small>{fmtShort(day.date)}</small></h2>
               {isToday && <span className="sticker">foco!</span>}
-              <button className="ghost small" onClick={() => setAdding(adding === day.date ? null : day.date)}>+ sessão</button>
+              <a className="ghost small" href={`#/montar-aula?dia=${day.date}`}>+ montar aula</a>
             </header>
             <div className="day-plan">
               <input
@@ -132,26 +131,6 @@ export function WeekPage({ start }: { start?: string }) {
               />
             </div>
             {list.map((s) => <SessionRow key={s.id} s={s} />)}
-            {adding === day.date && (
-              <div className="inset">
-                <SessionForm
-                  initial={{ date: day.date }}
-                  submitLabel="Criar sessão"
-                  onCancel={() => setAdding(null)}
-                  onSubmit={(v) => {
-                    let id = '';
-                    store.update((d) => {
-                      saveUserExercises(d, v.newExercises ?? []);
-                      saveUserContent(d, v.newContent ?? {});
-                      id = createSession(d, v).id;
-                      updateSession(d, id, { sheet: v.sheet, app: v.app, expected: v.expected, exerciseIds: v.exerciseIds });
-                    });
-                    setAdding(null);
-                    go(`/sessao/${id}`);
-                  }}
-                />
-              </div>
-            )}
           </section>
         );
       })}

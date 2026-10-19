@@ -279,6 +279,24 @@ export interface UserData {
   chat?: ChatTurn[];
   /** O que foi feito em cada atividade (jogos, aula, fala), para o relatório de progresso. */
   atividades?: Atividade[];
+  /** Aulas marcadas com o professor (data e hora), em ordem de tempo. */
+  agenda?: Agendamento[];
+}
+
+/** Uma aula marcada no calendário: quem marca é o professor, na conta do aluno. */
+export interface Agendamento {
+  id: string;
+  /** início no horário local: YYYY-MM-DDTHH:mm */
+  inicio: string;
+  /** duração em minutos */
+  duracao: number;
+  assunto: string;
+  nota?: string;
+  /** aula do app ligada a este horário, quando houver */
+  sessaoId?: string;
+  /** e-mail de quem marcou */
+  professor?: string;
+  criadoEm: string;
 }
 
 export type TipoAtividade = 'aula' | 'jogo' | 'fala' | 'leitura';

@@ -38,7 +38,7 @@ class User(Base):
 
 
 #: tipos que o app sincroniza — o mesmo nome que ele usa no `UserData`
-KINDS = ("week", "session", "worksheet", "history", "sheet", "content", "game", "chat", "activity")
+KINDS = ("week", "session", "worksheet", "history", "sheet", "content", "game", "chat", "activity", "agenda")
 
 
 class Record(Base):
@@ -65,7 +65,7 @@ class Record(Base):
 
 
 class Acesso(Base):
-    """O aluno autorizou um professor a ver (só ver) o seu histórico e o relatório."""
+    """O aluno autorizou um professor a ver o seu histórico, montar aulas e marcar a próxima aula."""
 
     __tablename__ = "acessos"
     __table_args__ = (UniqueConstraint("aluno_id", "professor_id", name="uq_acesso"),)

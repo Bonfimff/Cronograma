@@ -12,7 +12,7 @@
  * este aparelho aplicou.
  */
 
-import type { Atividade, ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
+import type { Agendamento, Atividade, ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
 import type { SyncRecord } from './client';
 import { session } from './session';
 import { emptyData, store } from '../storage/store';
@@ -26,7 +26,7 @@ export interface ResultadoSync {
 }
 
 /** Tudo o que este aparelho tem, no formato de registros do servidor. */
-function registrosLocais(d: UserData): SyncRecord[] {
+export function registrosLocais(d: UserData): SyncRecord[] {
   const saida: SyncRecord[] = [];
 
   CONTENT_KEYS.forEach((chave) => {
@@ -41,13 +41,14 @@ function registrosLocais(d: UserData): SyncRecord[] {
   d.worksheets.forEach((w) => saida.push({ kind: 'worksheet', id: w.id, data: w as unknown as Record<string, unknown> }));
   d.history.forEach((h) => saida.push({ kind: 'history', id: h.id, data: h as unknown as Record<string, unknown> }));
   (d.atividades ?? []).forEach((a) => saida.push({ kind: 'activity', id: a.id, data: a as unknown as Record<string, unknown> }));
+  (d.agenda ?? []).forEach((a) => saida.push({ kind: 'agenda', id: a.id, data: a as unknown as Record<string, unknown> }));
 
   return saida;
 }
 
 /** Monta os dados de outra pessoa (o aluno, na tela do professor), sem tocar nos deste aparelho. */
 export function dadosDeRegistros(itens: SyncRecord[]): UserData {
-  const d: UserData = { version: 1, counter: {}, weeks: [], sessions: [], worksheets: [], history: [], chat: [], atividades: [] };
+  const d: UserData = { version: 1, counter: {}, weeks: [], sessions: [], worksheets: [], history: [], chat: [], atividades: [], agenda: [] };
   juntar(d, itens);
   return d;
 }
@@ -87,6 +88,9 @@ function juntar(d: UserData, itens: SyncRecord[]): void {
       } else if (item.kind === 'activity') {
         const atual = (d.atividades ?? []).filter((a) => a.id !== item.id);
         d.atividades = item.deleted ? atual : [...atual, dados as unknown as Atividade].sort((a, b) => a.quando.localeCompare(b.quando));
+      } else if (item.kind === 'agenda') {
+        const atual = (d.agenda ?? []).filter((a) => a.id !== item.id);
+        d.agenda = item.deleted ? atual : [...atual, dados as unknown as Agendamento].sort((a, b) => a.inicio.localeCompare(b.inicio));
       }
     }
   }

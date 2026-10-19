@@ -1,33 +1,45 @@
 import { useEffect, useState } from 'react';
-import { api, type Acessos } from '../../core/api/client';
+import { api, type Acessos, type SyncRecord } from '../../core/api/client';
 import { session } from '../../core/api/session';
 import { dadosDeRegistros } from '../../core/api/sync';
 import type { UserData } from '../../core/types';
 import { Empty } from '../components/common';
 import { ProgressPage } from './ProgressPage';
+import { AgendaAluno, useGravar } from './professor/Turma';
+import { MontarAula } from './professor/MontarAula';
+
+const ABAS = [['progresso', 'Progresso'], ['aula', 'Montar aula'], ['agenda', 'Agenda']] as const;
 
 /**
  * Professores e alunos.
  *
  * Como aluno: autorizo o e-mail de um professor (a conta dele já precisa existir) e tiro
- * o acesso quando quiser. Como professor: vejo a lista de quem me autorizou e abro o
- * relatório de progresso de cada um, só para leitura.
+ * o acesso quando quiser. Como professor: vejo a lista de quem me autorizou, abro o
+ * relatório de progresso de cada um, monto aulas e marco a próxima no calendário.
  */
-export function ProfessorPage({ aluno }: { aluno?: string }) {
+export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; aba?: string }) {
   const [acessos, setAcessos] = useState<Acessos | null>(null);
   const [email, setEmail] = useState('');
   const [erro, setErro] = useState('');
-  const [dados, setDados] = useState<UserData | null>(null);
+  const [registros, setRegistros] = useState<SyncRecord[] | null>(null);
+  const dados: UserData | null = registros && dadosDeRegistros(registros);
+  const { gravar, erro: erroGravar, gravando } = useGravar(Number(aluno), (novos) => {
+    const chave = (r: SyncRecord) => `${r.kind}/${r.id}`;
+    const trocados = new Set(novos.map(chave));
+    setRegistros((atual) => [...(atual ?? []).filter((r) => !trocados.has(chave(r))), ...novos.filter((r) => !r.deleted)]);
+  });
+  const [eu, setEu] = useState('');
 
   useEffect(() => {
     session.withToken((t) => api.acessos(t)).then(setAcessos).catch((e) => setErro(String(e.message ?? e)));
+    setEu(session.get().email ?? '');
   }, []);
 
   useEffect(() => {
-    setDados(null);
+    setRegistros(null);
     if (!aluno) return;
     session.withToken((t) => api.dadosDoAluno(t, Number(aluno)))
-      .then((itens) => setDados(dadosDeRegistros(itens)))
+      .then(setRegistros)
       .catch((e) => setErro(String(e.message ?? e)));
   }, [aluno]);
 
@@ -36,8 +48,16 @@ export function ProfessorPage({ aluno }: { aluno?: string }) {
     return (
       <>
         <p className="no-print"><a href="#/professor">← Meus alunos</a></p>
-        {erro && <p className="erro">{erro}</p>}
-        {dados ? <ProgressPage dados={dados} aluno={quem ?? 'aluno'} /> : !erro && <p className="muted">Carregando o histórico…</p>}
+        <nav className="seg no-print" aria-label="Seções do aluno">
+          {ABAS.map(([id, nome]) => (
+            <button key={id} type="button" className={aba === id ? 'on' : ''} onClick={() => { location.hash = `#/professor/${aluno}/${id}`; }}>{nome}</button>
+          ))}
+        </nav>
+        {(erro || erroGravar) && <p className="erro">{erro || erroGravar}</p>}
+        {!dados ? !erro && <p className="muted">Carregando o histórico…</p>
+          : aba === 'aula' ? <MontarAula dados={dados} aluno={quem ?? 'aluno'} gravar={gravar} gravando={gravando} />
+          : aba === 'agenda' ? <AgendaAluno dados={dados} professor={eu} gravar={gravar} gravando={gravando} />
+          : <ProgressPage dados={dados} aluno={quem ?? 'aluno'} />}
       </>
     );
   }
@@ -61,7 +81,7 @@ export function ProfessorPage({ aluno }: { aluno?: string }) {
       <section className="hero">
         <p className="eyebrow">Professor</p>
         <h1>Professores e alunos</h1>
-        <p className="lead">Dê a um professor acesso ao seu histórico e ao relatório de progresso. Ele só vê, não muda nada.</p>
+        <p className="lead">Dê a um professor acesso ao seu histórico e ao relatório de progresso. Ele também pode montar aulas para você e marcar a próxima no calendário.</p>
       </section>
 
       {erro && <p className="erro">{erro}</p>}
@@ -86,7 +106,7 @@ export function ProfessorPage({ aluno }: { aluno?: string }) {
         <h2>Meus alunos</h2>
         {acessos?.alunos.length ? (
           <ul className="prog-confusoes">
-            {acessos.alunos.map((a) => <li key={a.id}><a href={`#/professor/${a.id}`}>{a.email}</a>: ver progresso</li>)}
+            {acessos.alunos.map((a) => <li key={a.id}><b>{a.email}</b>: <a href={`#/professor/${a.id}`}>progresso</a> · <a href={`#/professor/${a.id}/aula`}>montar aula</a> · <a href={`#/professor/${a.id}/agenda`}>agenda</a></li>)}
           </ul>
         ) : <Empty>Quando um aluno autorizar o seu e-mail, ele aparece aqui.</Empty>}
       </section>

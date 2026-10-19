@@ -61,6 +61,10 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
             <b>Exportar</b>
             <small>salva a semana de {fmtShort(week)}</small>
           </button>
+          <a href="#/montar-aula">
+            <b>Montar à mão</b>
+            <small>uma aula do seu jeito, sem IA</small>
+          </a>
           <a href="#/semana">
             <b>Planejamento</b>
             <small>voltar para a semana</small>

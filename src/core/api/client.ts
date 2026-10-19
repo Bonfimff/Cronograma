@@ -29,7 +29,7 @@ export interface GlossaryItem {
   id: string;
 }
 
-export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat' | 'activity';
+export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat' | 'activity' | 'agenda';
 
 export interface Pessoa { id: number; email: string }
 export interface Acessos { professores: Pessoa[]; alunos: Pessoa[] }
@@ -217,6 +217,11 @@ export class Api {
   /** Os registros de um aluno que me autorizou (só leitura). */
   dadosDoAluno(token: string, alunoId: number): Promise<SyncRecord[]> {
     return this.call(`/acesso/alunos/${alunoId}`, {}, token);
+  }
+
+  /** O professor grava na conta do aluno: aulas, plano da semana, conteúdo e agenda. */
+  gravarNoAluno(token: string, alunoId: number, items: SyncRecord[]): Promise<SyncRecord[]> {
+    return this.call(`/acesso/alunos/${alunoId}`, { method: 'POST', body: JSON.stringify({ items }) }, token);
   }
 
   analiseProgresso(token: string, resumo: string): Promise<{ texto: string; fonte: string }> {

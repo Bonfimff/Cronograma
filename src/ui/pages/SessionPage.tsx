@@ -60,7 +60,9 @@ export function SessionPage({ id }: { id: string }) {
           <a className="ghost" href={`#/leitura/${s.id}`}>Ler aula</a>
           <a className="ghost" href={`#/imprimir?ids=${s.id}`}>{sheet?.printedAt ? 'Reimprimir folha' : 'Gerar folha'}</a>
           {s.status !== 'planned' && <button className="ghost" onClick={() => setMode('finish')}>{s.status === 'done' ? 'Corrigir resultado' : 'Finalizar'}</button>}
-          <button className="ghost" onClick={() => setMode('edit')}>Editar</button>
+          {s.status === 'planned'
+            ? <a className="ghost" href={`#/montar-aula/${s.id}`}>Editar aula</a>
+            : <button className="ghost" onClick={() => setMode('edit')}>Editar</button>}
         </div>
       </section>
 

@@ -2219,3 +2219,53 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 }
 .viva button { transition: background .12s ease, transform .12s ease, box-shadow .12s ease; }
 .aula-cancelar { margin-left: 8px; }
+
+/* professor: montar aula e agenda */
+.prof-achados { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.prof-achados button { width: 100%; text-align: left; }
+.prof-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.prof-lista li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-2); }
+.prof-hora { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.calendario { max-width: 520px; }
+.cal-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-topo h2 { margin: 0; text-transform: capitalize; }
+.cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 12px 0 8px; }
+.cal-sem { text-align: center; font-size: .75rem; color: var(--ink-3); text-transform: uppercase; }
+.cal-dia { aspect-ratio: 1; min-height: 0; padding: 4px 0 0; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-2); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; font-size: .9rem; }
+.cal-dia.fora { opacity: .35; }
+.cal-dia.passado { color: var(--ink-3); }
+.cal-dia.hoje { border-color: var(--accent); }
+.cal-dia.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.cal-pontos { display: flex; gap: 3px; }
+.cal-pontos i, .cal-leg { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+.cal-pontos .marca, .cal-leg.marca { background: var(--marker); }
+.cal-pontos .aula, .cal-leg.aula { background: var(--ok); }
+.cal-leg { margin: 0 4px 0 8px; }
+.proxima-aula h2 { margin: 4px 0; }
+.prof-nova { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.prof-nova input { flex: 1; min-width: 160px; }
+
+/* editor de aula (aluno e professor) */
+.editor-aula h4 { margin: 8px 0 2px; font-size: .95rem; }
+.ed-parte { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2); }
+.ed-parte > summary { cursor: pointer; padding: 14px 16px; display: block; list-style: none; }
+.ed-parte > summary::-webkit-details-marker { display: none; }
+.ed-parte > summary::before { content: "▸ "; color: var(--accent); }
+.ed-parte[open] > summary::before { content: "▾ "; }
+.ed-parte > summary .muted { display: block; font-weight: 400; margin-top: 2px; }
+.ed-corpo { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.ed-dica { display: block; color: var(--ink-3); font-weight: 400; font-size: .8rem; margin-top: 2px; }
+.ed-lista { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.ed-lista > .ed-linha { width: 100%; }
+.ed-linha { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ed-linha > input, .ed-linha > select { flex: 1; min-width: 140px; }
+.ed-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.ed-papel { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--rule); }
+.ed-papel:first-child { border-top: 0; padding-top: 0; }
+.ed-papel h4 { margin: 0; }
+.ed-nova, .ed-exercicio { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); }
+.ed-conferencia { padding: 12px 16px; border: 1px solid var(--rule); border-radius: var(--radius); }
+.ed-conferencia h3 { margin: 0 0 6px; }
+.ed-passos { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 14px; }
+.ed-passos li > * { margin-top: 8px; }
+.prof-botoes { display: flex; gap: 6px; flex-shrink: 0; }

@@ -22,3 +22,22 @@ def test_professor_le_so_com_autorizacao(client, conta):
 
 def test_email_sem_conta(client, conta):
     assert client.post("/acesso", json={"email": "ninguem@exemplo.com"}, headers=conta().headers).status_code == 404
+
+
+def test_professor_monta_aula_e_agenda(client, conta):
+    aluno, prof = conta(), conta("prof2@exemplo.com")
+    eu = client.get("/auth/me", headers=prof.headers).json()
+    aluno_id = client.get("/auth/me", headers=aluno.headers).json()["id"]
+    aula = {"kind": "session", "id": "ENG-2026-0001", "data": {"title": "Aula 1"}}
+    assert client.post(f"/acesso/alunos/{aluno_id}", json={"items": [aula]}, headers=prof.headers).status_code == 403
+
+    client.post("/acesso", json={"email": eu["email"]}, headers=aluno.headers)
+    marca = {"kind": "agenda", "id": "ag-1", "data": {"inicio": "2026-10-20T15:00"}}
+    r = client.post(f"/acesso/alunos/{aluno_id}", json={"items": [aula, marca]}, headers=prof.headers)
+    assert r.status_code == 200 and len(r.json()) == 2
+
+    baixado = client.get("/sync/pull?since=0", headers=aluno.headers).json()["items"]
+    assert {(i["kind"], i["id"]) for i in baixado} >= {("session", "ENG-2026-0001"), ("agenda", "ag-1")}
+
+    historico = {"kind": "history", "id": "h-1", "data": {}}
+    assert client.post(f"/acesso/alunos/{aluno_id}", json={"items": [historico]}, headers=prof.headers).status_code == 403
