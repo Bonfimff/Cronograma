@@ -60,6 +60,8 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
   const [nota, setNota] = useState('');
   const [sessaoId, setSessaoId] = useState('');
   const [aviso, setAviso] = useState('');
+  // aula sendo remarcada: o formulário mostra os dados dela e salvar troca no lugar
+  const [remarcando, setRemarcando] = useState<Agendamento | null>(null);
 
   const agenda = dados.agenda ?? [];
   const porDia = useMemo(() => {
@@ -76,17 +78,24 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
     setAviso('');
     const inicio = `${dia}T${hora}`;
     if (inicio < agoraLocal()) { setAviso('Esse horário já passou.'); return; }
-    const choque = agenda.find((a) => a.inicio < fimDe({ inicio, duracao } as Agendamento) && fimDe(a) > inicio);
+    const choque = agenda.find((a) => a.id !== remarcando?.id && a.inicio < fimDe({ inicio, duracao } as Agendamento) && fimDe(a) > inicio);
     if (choque && !confirm(`Já há uma aula de ${horaDe(choque)} nesse dia. Marcar mesmo assim?`)) return;
-    const novo = novoAgendamento({
-      inicio, duracao, assunto: assunto.trim() || 'Aula', nota: nota.trim() || undefined,
-      sessaoId: sessaoId || undefined, professor,
-    });
-    if (await gravar([registroDoAgendamento(novo)])) {
-      setAviso(`Aula marcada: ${weekdayName(dia)} ${fmtShort(dia)}, ${horaDe(novo)}.`);
-      setAssunto(''); setNota(''); setSessaoId('');
+    const campos = { inicio, duracao, assunto: assunto.trim() || 'Aula', nota: nota.trim() || undefined, sessaoId: sessaoId || undefined, professor };
+    const aula = remarcando ? { ...remarcando, ...campos } : novoAgendamento(campos);
+    if (await gravar([registroDoAgendamento(aula)])) {
+      setAviso(`${remarcando ? 'Aula remarcada para' : 'Aula marcada:'} ${weekdayName(dia)} ${fmtShort(dia)}, ${horaDe(aula)}.`);
+      setAssunto(''); setNota(''); setSessaoId(''); setRemarcando(null);
     }
   };
+
+  const remarcar = (a: Agendamento) => {
+    const d = a.inicio.slice(0, 10);
+    setRemarcando(a);
+    setDia(d); setMes(d.slice(0, 7)); setHora(a.inicio.slice(11)); setDuracao(a.duracao);
+    setAssunto(a.assunto); setNota(a.nota ?? ''); setSessaoId(a.sessaoId ?? ''); setAviso('');
+    document.querySelector('.agenda-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const cancelarRemarcar = () => { setRemarcando(null); setAssunto(''); setNota(''); setSessaoId(''); setAviso(''); };
 
   const desmarcar = (a: Agendamento) => {
     if (confirm(`Desmarcar a aula de ${fmtShort(a.inicio.slice(0, 10))}, ${horaDe(a)}?`)) {
@@ -104,7 +113,10 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
             {proximas.map((a) => (
               <li key={a.id}>
                 <span><b>{weekdayName(a.inicio.slice(0, 10))} {fmtShort(a.inicio.slice(0, 10))}</b>, {horaDe(a)} · {a.assunto}</span>
-                <button type="button" className="ghost small" disabled={gravando} onClick={() => desmarcar(a)}>Desmarcar</button>
+                <span className="prof-botoes">
+                  <button type="button" className="ghost small" disabled={gravando} onClick={() => remarcar(a)}>Remarcar</button>
+                  <button type="button" className="ghost small" disabled={gravando} onClick={() => desmarcar(a)}>Desmarcar</button>
+                </span>
               </li>
             ))}
           </ul>
@@ -141,10 +153,15 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
         <p className="muted small-text"><i className="cal-leg marca" /> aula marcada <i className="cal-leg aula" /> aula no app</p>
       </section>
 
-      <form className="form" onSubmit={marcar}>
-        <h2>{weekdayName(dia)}, {fmtShort(dia)}</h2>
+      <form className="form agenda-form" onSubmit={marcar}>
+        {remarcando && (
+          <p className="ed-ajuda">
+            Remarcando a aula de <b>{fmtShort(remarcando.inicio.slice(0, 10))}, {horaDe(remarcando)}</b>. Escolha o novo dia no calendário e ajuste a hora.
+          </p>
+        )}
+        <h2>{remarcando ? 'Novo horário: ' : ''}{weekdayName(dia)}, {fmtShort(dia)}</h2>
         {doDia.length > 0 && (
-          <ul className="plain">{doDia.map((a) => <li key={a.id}>{horaDe(a)} · {a.assunto}</li>)}</ul>
+          <ul className="plain">{doDia.filter((a) => a.id !== remarcando?.id).map((a) => <li key={a.id}>{horaDe(a)} · {a.assunto}</li>)}</ul>
         )}
         {dia < today() ? <p className="muted">Esse dia já passou.</p> : (
           <>
@@ -167,7 +184,10 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
             )}
             <label>Recado para o aluno<textarea rows={2} value={nota} onChange={(e) => setNota(e.target.value)} placeholder="opcional" /></label>
             {aviso && <p className="ok-line">{aviso}</p>}
-            <div className="actions"><button className="primary" type="submit" disabled={gravando}>{gravando ? 'Gravando…' : 'Marcar aula'}</button></div>
+            <div className="actions">
+              {remarcando && <button type="button" className="ghost" onClick={cancelarRemarcar}>Cancelar</button>}
+              <button className="primary" type="submit" disabled={gravando}>{gravando ? 'Gravando…' : remarcando ? 'Remarcar aula' : 'Marcar aula'}</button>
+            </div>
           </>
         )}
       </form>
