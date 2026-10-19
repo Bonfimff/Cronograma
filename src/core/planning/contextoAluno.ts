@@ -137,7 +137,10 @@ export interface ItemVocabulario {
   degrau: number;
 }
 
-/** Tudo o que está no vocabulário da pessoa: palavras com o estado da memória, e as expressões, padrões e gramática dela. */
+/**
+ * O vocabulário da pessoa: as palavras (com o estado da memória) e as expressões, que são
+ * conjuntos de palavras. Padrões, gramática e as outras folhas da Biblioteca não entram.
+ */
 export function vocabularioCompleto(data: UserData, hoje = new Date().toISOString().slice(0, 10)): ItemVocabulario[] {
   const r = relatorio(data, hoje);
   const mem = new Map(r.memoria.palavras.map((p) => [p.en.toLowerCase(), p]));
@@ -160,7 +163,5 @@ export function vocabularioCompleto(data: UserData, hoje = new Date().toISOStrin
     ({ ref, en, pt, classe, estado: estudados.has(ref) ? 'estudando' : 'nao_praticada', retencao: 0, degrau: 0 });
   const c = data.content ?? {};
   (c.expressions ?? []).forEach((e) => itens.push(outros(`expression:${e.id}`, e.text, e.translation, 'expressão')));
-  (c.patterns ?? []).forEach((p) => itens.push(outros(`pattern:${p.id}`, p.formula, p.name, 'padrão')));
-  (c.grammar ?? []).forEach((g) => itens.push(outros(`grammar:${g.id}`, g.title, '', 'gramática')));
   return itens.sort((a, b) => a.en.localeCompare(b.en));
 }
