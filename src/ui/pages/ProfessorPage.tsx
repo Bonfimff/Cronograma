@@ -105,8 +105,17 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
       <section>
         <h2>Meus alunos</h2>
         {acessos?.alunos.length ? (
-          <ul className="prog-confusoes">
-            {acessos.alunos.map((a) => <li key={a.id}><b>{a.email}</b>: <a href={`#/professor/${a.id}`}>progresso</a> · <a href={`#/professor/${a.id}/aula`}>montar aula</a> · <a href={`#/professor/${a.id}/agenda`}>agenda</a></li>)}
+          <ul className="prof-alunos">
+            {acessos.alunos.map((a) => (
+              <li key={a.id}>
+                <b>{a.email}</b>
+                <span className="prof-alunos-botoes">
+                  <a className="ghost" href={`#/professor/${a.id}`}>Progresso</a>
+                  <a className="primary" href={`#/professor/${a.id}/aula`}>Montar aula</a>
+                  <a className="ghost" href={`#/professor/${a.id}/agenda`}>Agenda</a>
+                </span>
+              </li>
+            ))}
           </ul>
         ) : <Empty>Quando um aluno autorizar o seu e-mail, ele aparece aqui.</Empty>}
       </section>

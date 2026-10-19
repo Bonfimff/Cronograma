@@ -2269,3 +2269,9 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .ed-passos { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 14px; }
 .ed-passos li > * { margin-top: 8px; }
 .prof-botoes { display: flex; gap: 6px; flex-shrink: 0; }
+
+.prof-alunos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.prof-alunos li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2); }
+.prof-alunos li b { overflow-wrap: anywhere; }
+.prof-alunos-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.prof-alunos-botoes a { text-decoration: none; }
