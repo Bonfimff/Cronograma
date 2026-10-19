@@ -2226,7 +2226,7 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .prof-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .prof-lista li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper-2); }
 .prof-hora { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.calendario { max-width: 520px; }
+.agenda-cal { max-width: 520px; }
 .cal-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .cal-topo h2 { margin: 0; text-transform: capitalize; }
 .cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 12px 0 8px; }

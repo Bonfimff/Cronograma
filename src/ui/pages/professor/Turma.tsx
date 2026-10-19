@@ -111,7 +111,7 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
         ) : <p className="muted">Nenhuma aula marcada. Escolha um dia no calendário.</p>}
       </section>
 
-      <section className="calendario">
+      <section className="agenda-cal">
         <div className="cal-topo">
           <button type="button" className="ghost small" aria-label="Mês anterior" onClick={() => setMes(proximoMes(mes, -1))}>‹</button>
           <h2>{MESES[m - 1]} {ano}</h2>
