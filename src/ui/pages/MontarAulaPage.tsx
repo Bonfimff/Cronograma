@@ -19,7 +19,7 @@ export function MontarAulaPage({ id, dia }: { id?: string; dia?: string }) {
     store.update((d) => { r = applyPackage(d, pkg, { replacePlanned: false }); });
     const code = r ? ((r as ApplyResult).created[0] ?? (r as ApplyResult).updated[0]) : '';
     const date = pkg.days[0].date;
-    return { ok: true, erros: [], mensagem: `Aula ${code} ${editando ? 'atualizada' : 'criada'} para ${weekdayName(date)} ${fmtShort(date)}.` };
+    return { ok: true, erros: [], mensagem: `${pkg.days[0].sessions?.[0]?.formato === 'atividade' ? 'Atividade' : 'Aula'} ${code} ${editando ? 'atualizada' : 'criada'} para ${weekdayName(date)} ${fmtShort(date)}.` };
   };
 
   const planejadas = data.sessions.filter((s) => s.date >= today() && s.status === 'planned').sort((a, b) => a.date.localeCompare(b.date));

@@ -1,5 +1,5 @@
 import type {
-  ContentRef, Exercise, ExerciseType, FraseAula, Habilidade, Session, SessionKind, TreinoChat, UserData,
+  ContentRef, Exercise, ExerciseType, FormatoSessao, FraseAula, Habilidade, Session, SessionKind, TreinoChat, UserData,
 } from '../types';
 import { simplificar } from '../content/search';
 import { PACKAGE_FORMAT, type PackageSession, type WeekPackage } from './weekPackage';
@@ -37,6 +37,8 @@ export interface ExercicioRascunho {
 export interface RascunhoAula {
   /** código da aula, quando está editando uma que já existe */
   id?: string;
+  /** aula completa ou só uma atividade de exercícios */
+  formato: FormatoSessao;
   date: string;
   kind: SessionKind;
   title: string;
@@ -64,7 +66,7 @@ export const LIMITES = { novas: 4, copy: 3, quiz: 6 } as const;
 
 export function rascunhoVazio(date: string): RascunhoAula {
   return {
-    date, kind: 'new', title: '', objective: '', whenToUse: '',
+    formato: 'aula', date, kind: 'new', title: '', objective: '', whenToUse: '',
     palavras: { novas: [], revisar: [], apoio: [] }, palavrasNovas: [],
     aquecimento: '', escuta: [], fala: [], missao: { situacao: '', tarefas: [] },
     copy: [], quiz: [], practice: '', intro: '', contexto: '', dicas: [],
@@ -140,6 +142,7 @@ export function pacoteDoRascunho(r: RascunhoAula, aluno: UserData): WeekPackage 
     ...(r.id && { id: r.id }),
     kind: r.kind,
     title: r.title.trim(),
+    ...(r.formato === 'atividade' && { formato: 'atividade' as const }),
     ...(r.objective.trim() && { objective: r.objective.trim() }),
     ...(r.whenToUse.trim() && { whenToUse: r.whenToUse.trim() }),
     refs,
@@ -170,7 +173,7 @@ export function rascunhoDaSessao(s: Session, dados: UserData): RascunhoAula {
   const p = s.palavras ?? {};
   const marcadas = new Set([...(p.novas ?? []), ...(p.revisar ?? []), ...(p.apoio ?? [])]);
   return {
-    id: s.id, date: s.date, kind: s.kind, title: s.title, objective: s.objective ?? '', whenToUse: s.whenToUse ?? '',
+    id: s.id, formato: s.formato ?? 'aula', date: s.date, kind: s.kind, title: s.title, objective: s.objective ?? '', whenToUse: s.whenToUse ?? '',
     // sem papéis (aula antiga ou montada sem eles): os conteúdos entram como "novas"
     palavras: { novas: [...(p.novas ?? []), ...s.refs.filter((r) => !marcadas.has(r))], revisar: p.revisar ?? [], apoio: p.apoio ?? [] },
     palavrasNovas: [],
@@ -181,5 +184,49 @@ export function rascunhoDaSessao(s: Session, dados: UserData): RascunhoAula {
     intro: s.app?.intro ?? '', contexto: s.app?.context ?? '', dicas: s.app?.tips ?? [],
     exercicios, treino: s.treino ?? [],
     resultado: s.expected?.result ?? '', criterios: s.expected?.criteria ?? [],
+  };
+}
+
+/**
+ * Uma aula de exemplo com todos os campos preenchidos: a mesma que aparece como
+ * sugestão dentro de cada campo do editor. Serve para ver o resultado e editar por cima.
+ */
+export function exemploDeAula(date: string, formato: FormatoSessao = 'aula'): RascunhoAula {
+  const exercicios: ExercicioRascunho[] = [
+    { type: 'choice', prompt: 'Como se pede a conta?', answer: 'Can I have the bill?', options: 'Can I have the bill? | Can I have the menu? | Can I have a table?', habilidade: 'reconhecer' },
+    { type: 'fill', prompt: "I'd like to ____ the chicken, please.", answer: 'order', options: '', habilidade: 'lembrar' },
+    { type: 'build', prompt: 'Monte a frase: Pode trazer a conta?', answer: 'Can I have the bill', options: 'Can | I | have | the | bill', habilidade: 'usar' },
+    { type: 'match', prompt: 'Ligue as palavras', answer: '', options: 'order = pedir | bill = conta | menu = cardápio', habilidade: 'reconhecer' },
+    { type: 'translate', prompt: 'Eu queria a sopa, por favor.', answer: "I'd like the soup, please.", options: '', habilidade: 'lembrar' },
+    { type: 'produce', prompt: 'Escreva como você pediria o seu prato favorito.', answer: "I'd like the pasta, please.", options: '', habilidade: 'usar' },
+  ];
+  const base = rascunhoVazio(date);
+  if (formato === 'atividade') {
+    return { ...base, formato, kind: 'practice', title: 'Exercícios: pedindo no restaurante', objective: 'Praticar os pedidos e a conta', exercicios };
+  }
+  return {
+    ...base,
+    title: 'Pedindo comida no restaurante',
+    objective: 'Pedir um prato, uma bebida e a conta com educação',
+    whenToUse: 'Em restaurantes, lanchonetes e cafés',
+    palavrasNovas: [
+      { en: 'order', pt: 'pedir', papel: 'novas', tipo: 'verbo', significado: 'pedir algo num restaurante ou loja', ipa: '/ˈɔːrdər/',
+        exemplos: [{ en: 'Can I order now?', pt: 'Posso pedir agora?' }, { en: 'I want to order a pizza.', pt: 'Quero pedir uma pizza.' }, { en: 'Are you ready to order?', pt: 'Pronto para pedir?' }] },
+      { en: 'bill', pt: 'conta', papel: 'novas', tipo: 'substantivo', significado: 'o papel com o valor a pagar', ipa: '/bɪl/',
+        exemplos: [{ en: 'Can I have the bill?', pt: 'Pode trazer a conta?' }, { en: 'The bill is on the table.', pt: 'A conta está na mesa.' }, { en: 'I will pay the bill.', pt: 'Eu vou pagar a conta.' }] },
+    ],
+    escuta: [{ en: "I'd like the chicken, please.", pt: 'Eu queria o frango, por favor.' }],
+    fala: [{ en: 'Can I have the bill?', pt: 'Pode trazer a conta?' }],
+    missao: { situacao: 'Você chega num restaurante em Nova York', tarefas: [{ en: 'A table for two, please.', pt: 'Uma mesa para dois, por favor.' }, { en: "I'd like the soup.", pt: 'Eu queria a sopa.' }] },
+    copy: ['order = pedir · bill = conta', "I'd like… = Eu queria… (mais educado que I want)"],
+    quiz: ['Como se pede a conta?', 'Como se diz "pedir" em inglês?'],
+    practice: 'Escreva o seu pedido completo num restaurante',
+    intro: 'Hoje você vai aprender a pedir comida e a conta num restaurante.',
+    contexto: 'Num restaurante, falando com o garçom',
+    dicas: ['Use "I\'d like" em vez de "I want": soa mais educado'],
+    exercicios,
+    treino: [{ en: 'What would you like to eat?', pt: 'O que você gostaria de comer?', resposta: "I'd like ____, please." }],
+    resultado: 'pedir uma refeição completa e a conta',
+    criterios: ['Usa "I\'d like" para pedir', 'Pede a conta sem consultar'],
   };
 }

@@ -200,7 +200,8 @@ folhas também aparecem no jogo de ligar palavras.
     "id": "ENG-2026-0001",      // opcional — ver abaixo
     "kind": "new",              // new, practice, review, reinforce, consolidate
     "title": "…",
-    "refs": ["word:how", "expression:how-are-you"],   // pelo menos um
+    "formato": "aula",          // opcional: "atividade" = só os exercícios, sem os cartões da aula
+    "refs": ["word:how", "expression:how-are-you"],   // pelo menos um (a atividade pode vir sem)
     "copyRefs": ["word:how"],
     "topic": "…",
     "whenToUse": "…",           // até ~116 caracteres na folha

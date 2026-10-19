@@ -112,6 +112,23 @@ export function montarAula(data: UserData, s: Session, modo: Modo = 'estudo'): E
 
   const etapas: Etapa[] = [];
 
+  // atividade: só os exercícios escritos para o dia, todos em sequência
+  if (s.formato === 'atividade') {
+    const lista = getExerciseList(s.exerciseIds ?? []);
+    etapas.push({
+      tipo: 'abertura', id: 'abertura', rotulo: 'Atividade',
+      titulo: s.title, situacao: s.app?.context, objetivo: s.expected?.result || s.objective, intro: s.app?.intro,
+      itens: [...palavrasRefs, ...conceitosRefs].map(refLabel),
+      minutos: Math.max(3, Math.round(lista.length * 1.5)),
+    });
+    lista.forEach((ex, n) => etapas.push({ tipo: 'pratica', id: `autoral-${ex.id}`, rotulo: `Exercício ${n + 1} de ${lista.length}`, exercicio: ex }));
+    etapas.push({
+      tipo: 'fechamento', id: 'fechamento', rotulo: 'Fechamento',
+      chaves: [], copia: regraDaFolha(s), atividade: atividadeDaFolha(s), criterios: s.expected?.criteria ?? [], extras: [],
+    });
+    return etapas;
+  }
+
   // 1. abertura
   const itens = [...palavrasAula, ...conceitosAula].map(refLabel);
   etapas.push({

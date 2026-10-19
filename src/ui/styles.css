@@ -2275,3 +2275,10 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .prof-alunos li b { overflow-wrap: anywhere; }
 .prof-alunos-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
 .prof-alunos-botoes a { text-decoration: none; }
+.ed-pergunta { margin: 0 0 8px; }
+.ed-niveis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.ed-niveis button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 14px 16px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2); color: var(--ink); min-height: 0; }
+.ed-niveis button small { color: var(--ink-2); font-size: .8rem; line-height: 1.35; }
+.ed-niveis button.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); background: var(--accent-soft); }
+.ed-niveis button.on b { color: var(--accent); }
+.ed-ajuda .link { font-weight: 600; }

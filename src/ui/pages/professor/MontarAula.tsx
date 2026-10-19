@@ -34,7 +34,7 @@ export function MontarAula({ dados, aluno, gravar, gravando }: {
     const date = pkg.days.length === 1 ? pkg.days[0].date : undefined;
     return {
       ok: true, erros: [],
-      mensagem: `${m.sessaoId && date ? `Aula ${m.sessaoId}` : 'Semana'} gravada${date ? ` para ${weekdayName(date)} ${fmtShort(date)}` : ''}. O aluno recebe na próxima sincronização.`,
+      mensagem: `${m.sessaoId && date ? `${pkg.days[0].sessions?.[0]?.formato === 'atividade' ? 'Atividade' : 'Aula'} ${m.sessaoId}` : 'Semana'} gravada${date ? ` para ${weekdayName(date)} ${fmtShort(date)}` : ''}. O aluno recebe na próxima sincronização.`,
     };
   };
 

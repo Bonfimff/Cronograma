@@ -1,5 +1,5 @@
 import type {
-  AulaDaSessao, ContentBundle, ContentRef, Exercise, ExerciseType, ExpectedResult, Habilidade, PalavrasDaSessao, Session,
+  AulaDaSessao, ContentBundle, FormatoSessao, ContentRef, Exercise, ExerciseType, ExpectedResult, Habilidade, PalavrasDaSessao, Session,
   SessionApp, SessionKind, SessionSheet, SessionStatus, SheetItem, TreinoChat, UserData,
 } from '../types';
 import { addDays, weekStartOf } from '../dates';
@@ -39,6 +39,8 @@ export interface PackageSession {
   status?: SessionStatus;
   kind: SessionKind;
   title: string;
+  /** "atividade": só exercícios, sem os cartões da aula; pode vir sem refs */
+  formato?: FormatoSessao;
   objective?: string;
   topic?: string;
   /** conteúdos da sessão; no @2 pode faltar quando há palavras.novas (vira novas + revisar) */
@@ -332,7 +334,10 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
       const novas = listOf<unknown>(pal?.novas, `${w}: palavras.novas`, err);
       (['novas', 'revisar', 'apoio'] as const).forEach((k) => listOf<unknown>(pal?.[k], `${w}: palavras.${k}`, err).forEach((r) => refOk(`${w}, palavras.${k}`, r)));
       if (novas.length > 4) warn(`${w}: ${novas.length} palavras novas; a aula mostra até 4 em cartões, o resto vai para "Saiba mais".`);
-      if (!refs.length && !novas.length) err(`${w}: precisa de "refs" ou de "palavras.novas" com pelo menos um conteúdo.`);
+      const atividade = s.formato === 'atividade';
+      if (s.formato !== undefined && s.formato !== 'aula' && !atividade) err(`${w}: "formato" deve ser aula ou atividade.`);
+      if (atividade && !listOf<unknown>(s.exercises, `${w}: exercises`, () => {}).length) err(`${w}: uma atividade precisa de pelo menos um exercício.`);
+      if (!atividade && !refs.length && !novas.length) err(`${w}: precisa de "refs" ou de "palavras.novas" com pelo menos um conteúdo.`);
       refs.forEach((r) => refOk(w, r));
       checkAula(w, s.aula, err, refOk);
       if (s.chat !== undefined) {
@@ -461,10 +466,11 @@ function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof 
     if (s.aula?.escuta?.length) habs.add('ouvir');
     if (s.aula?.fala?.length) habs.add('falar');
     if (s.aula?.missao || treinoDe(s).length) habs.add('usar');
-    if (habs.size && habs.size < 3) out.push({ ok: false, texto: `${nome}: só ${[...habs].join(' e ')}; uma aula completa treina pelo menos 3 habilidades (reconhecer, lembrar, ouvir, falar, usar).` });
+    const atividade = s.formato === 'atividade';
+    if (!atividade && habs.size && habs.size < 3) out.push({ ok: false, texto: `${nome}: só ${[...habs].join(' e ')}; uma aula completa treina pelo menos 3 habilidades (reconhecer, lembrar, ouvir, falar, usar).` });
     // profundidade: exercícios suficientes e cartões que não repetem as mesmas frases
     const total = (s.exercises ?? []).length;
-    if (total && total < 8) out.push({ ok: false, texto: `${nome}: ${total} exercícios; uma aula completa tem de 8 a 12, misturando os tipos.` });
+    if (!atividade && total && total < 8) out.push({ ok: false, texto: `${nome}: ${total} exercícios; uma aula completa tem de 8 a 12, misturando os tipos.` });
     const cartoes = [...(s.aula?.escuta ?? []), ...(s.aula?.fala ?? []), ...(s.aula?.missao?.tarefas ?? [])].map((f) => f.en.trim().toLowerCase());
     const repetidas = [...new Set(cartoes.filter((f, i) => cartoes.indexOf(f) !== i))];
     if (repetidas.length) out.push({ ok: false, texto: `${nome}: a mesma frase em mais de um cartão (escuta, fala, missão): ${repetidas.slice(0, 3).join(' · ')}. Use frases diferentes em cada um.` });
@@ -629,6 +635,7 @@ export function applyPackage(draft: UserData, p: WeekPackage, opts: { replacePla
       s.exerciseIds = exIds.length ? exIds : undefined;
       s.palavras = ps.palavras;
       s.aula = ps.aula;
+      s.formato = ps.formato === 'atividade' ? 'atividade' : undefined;
       const treino = treinoDe(ps);
       s.treino = treino.length ? treino : undefined;
     });
@@ -680,6 +687,7 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
           ...(s.expected && { expected: s.expected }),
           ...(s.palavras && { palavras: s.palavras }),
           ...(s.aula && { aula: s.aula }),
+          ...(s.formato && { formato: s.formato }),
           ...(s.treino && { chat: { treino: s.treino } }),
         })),
       };

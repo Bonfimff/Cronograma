@@ -742,10 +742,12 @@ export function AulaPage({ id, modo = 'estudo' }: { id: string; modo?: Modo }) {
           <>
             <h1 className="aula-h1"><T t={etapa.titulo} /></h1>
             {etapa.situacao && <p className="aula-situacao"><IconeKit nome="conversa" width={30} /><T t={etapa.situacao} /></p>}
-            <div className="aula-objetivo">
-              <p className="aula-subtitulo">Ao final, você vai conseguir</p>
-              <p><T t={etapa.objetivo} /></p>
-            </div>
+            {etapa.objetivo && (
+              <div className="aula-objetivo">
+                <p className="aula-subtitulo">Ao final, você vai conseguir</p>
+                <p><T t={etapa.objetivo} /></p>
+              </div>
+            )}
             {etapa.intro && <p className="aula-texto"><T t={etapa.intro} /></p>}
             {etapa.itens.length > 0 && (
               <>

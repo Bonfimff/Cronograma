@@ -3,7 +3,7 @@ import type { ContentRef, ExerciseType, FraseAula, Habilidade, SessionKind, Trei
 import { KIND_LABEL } from '../../core/planning/weeks';
 import { checkPackage, type WeekPackage } from '../../core/planning/weekPackage';
 import {
-  LIMITES, pacoteDoRascunho, type ExercicioRascunho, type Papel, type PalavraNova, type RascunhoAula,
+  exemploDeAula, LIMITES, pacoteDoRascunho, rascunhoVazio, type ExercicioRascunho, type Papel, type PalavraNova, type RascunhoAula,
 } from '../../core/planning/rascunhoAula';
 import { buscarNoAluno } from '../../core/professor/montagem';
 
@@ -60,15 +60,17 @@ function Dica({ children }: { children: ReactNode }) {
 function Linhas({ valor, mudar, rotulo, exemplo, max }: {
   valor: string[]; mudar: (v: string[]) => void; rotulo: string; exemplo: string; max?: number;
 }) {
+  // sem nenhuma linha, mostra uma vazia com o exemplo: digitar nela já cria a primeira
+  const linhas = valor.length ? valor : [''];
   return (
     <div className="ed-lista">
-      {valor.map((v, i) => (
+      {linhas.map((v, i) => (
         <div key={i} className="ed-linha">
-          <input value={v} placeholder={exemplo} aria-label={`${rotulo} ${i + 1}`} onChange={(e) => mudar(valor.map((x, j) => (j === i ? e.target.value : x)))} />
-          <button type="button" className="ghost small" aria-label="Tirar" onClick={() => mudar(valor.filter((_, j) => j !== i))}>×</button>
+          <input value={v} placeholder={exemplo} aria-label={`${rotulo} ${i + 1}`} onChange={(e) => mudar(linhas.map((x, j) => (j === i ? e.target.value : x)))} />
+          {valor.length > 0 && <button type="button" className="ghost small" aria-label="Tirar" onClick={() => mudar(valor.filter((_, j) => j !== i))}>×</button>}
         </div>
       ))}
-      {(!max || valor.length < max) && (
+      {valor.length > 0 && (!max || valor.length < max) && (
         <button type="button" className="ghost small" onClick={() => mudar([...valor, ''])}>+ {rotulo}{max ? ` (${valor.length}/${max})` : ''}</button>
       )}
     </div>
@@ -79,20 +81,31 @@ function Linhas({ valor, mudar, rotulo, exemplo, max }: {
 function Frases({ valor, mudar, rotulo, exemplo }: {
   valor: FraseAula[]; mudar: (v: FraseAula[]) => void; rotulo: string; exemplo: FraseAula;
 }) {
-  const trocar = (i: number, f: Partial<FraseAula>) => mudar(valor.map((x, j) => (j === i ? { ...x, ...f } : x)));
+  const linhas = valor.length ? valor : [{ en: '', pt: '' }];
+  const trocar = (i: number, f: Partial<FraseAula>) => mudar(linhas.map((x, j) => (j === i ? { ...x, ...f } : x)));
   return (
     <div className="ed-lista">
-      {valor.map((f, i) => (
+      {linhas.map((f, i) => (
         <div key={i} className="ed-linha ed-frase">
           <input value={f.en} placeholder={exemplo.en} aria-label={`${rotulo} ${i + 1} em inglês`} onChange={(e) => trocar(i, { en: e.target.value })} />
           <input value={f.pt} placeholder={exemplo.pt} aria-label={`${rotulo} ${i + 1} em português`} onChange={(e) => trocar(i, { pt: e.target.value })} />
-          <button type="button" className="ghost small" aria-label="Tirar" onClick={() => mudar(valor.filter((_, j) => j !== i))}>×</button>
+          {valor.length > 0 && <button type="button" className="ghost small" aria-label="Tirar" onClick={() => mudar(valor.filter((_, j) => j !== i))}>×</button>}
         </div>
       ))}
-      <button type="button" className="ghost small" onClick={() => mudar([...valor, { en: '', pt: '' }])}>+ {rotulo}</button>
+      {valor.length > 0 && <button type="button" className="ghost small" onClick={() => mudar([...valor, { en: '', pt: '' }])}>+ {rotulo}</button>}
     </div>
   );
 }
+
+export type Nivel = 'atividade' | 'rapida' | 'completa';
+const NIVEIS: { n: Nivel; nome: string; dica: string }[] = [
+  { n: 'atividade', nome: 'Só exercícios', dica: 'uma atividade do dia: título e exercícios, sem os cartões da aula' },
+  { n: 'rapida', nome: 'Aula rápida', dica: 'título, palavras e exercícios; o resto o app monta sozinho' },
+  { n: 'completa', nome: 'Aula completa', dica: 'tudo: cartões, folha impressa, conversa e resultado esperado' },
+];
+/** As sugestões de cada tipo de exercício vêm da aula de exemplo. */
+const EXEMPLO_EX = Object.fromEntries(exemploDeAula('2026-01-01').exercicios.map((e) => [e.type, e])) as Record<string, ExercicioRascunho>;
+EXEMPLO_EX.qa = { type: 'qa', prompt: 'What would you like to drink?', answer: "I'd like a coffee, please.", options: '' };
 
 const novaVazia = (en: string, papel: Papel): PalavraNova => ({ en, pt: '', papel, tipo: '', significado: '', ipa: '', exemplos: [] });
 
@@ -174,7 +187,29 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
   /** "você" ou "o aluno": muda o texto das dicas */
   quem: string;
 }) {
-  const [r, setR] = useState(inicial);
+  // aula nova já abre com um exercício para preencher
+  const [r, setR] = useState(() => (inicial.id || inicial.exercicios.length ? inicial
+    : { ...inicial, exercicios: [{ type: 'choice' as const, prompt: '', answer: '', options: '' }] }));
+  const [nivel, setNivel] = useState<Nivel>(inicial.formato === 'atividade' ? 'atividade' : inicial.id ? 'completa' : 'rapida');
+  const ver = (n: Nivel) => nivel === n;
+  const escolher = (n: Nivel) => {
+    setNivel(n);
+    setRes(null);
+    setR((x) => ({
+      ...x,
+      formato: n === 'atividade' ? 'atividade' : 'aula',
+      ...(n === 'atividade' && x.kind === 'new' && { kind: 'practice' as const }),
+      // atividade e aula rápida já abrem com um exercício para preencher
+      ...(n !== 'completa' && !x.exercicios.length && { exercicios: [{ type: 'choice' as const, prompt: '', answer: '', options: '' }] }),
+    }));
+  };
+  const usarExemplo = () => {
+    const tem = r.title.trim() || r.exercicios.some((e) => e.prompt.trim()) || r.palavras.novas.length;
+    if (tem && !confirm('Trocar o que você já escreveu pela aula de exemplo?')) return;
+    setR({ ...exemploDeAula(r.date, nivel === 'atividade' ? 'atividade' : 'aula'), id: r.id });
+    if (nivel === 'rapida') setNivel('completa');
+    setRes(null);
+  };
   const [gravando, setGravando] = useState(false);
   const [res, setRes] = useState<ResultadoSalvar | null>(null);
   const mudar = (m: Partial<RascunhoAula>) => { setR((x) => ({ ...x, ...m })); setRes(null); };
@@ -200,7 +235,7 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
     try {
       const x = await salvar(pkg);
       setRes(x);
-      if (x.ok && !r.id) setR({ ...inicial, date: r.date });
+      if (x.ok && !r.id) setR({ ...rascunhoVazio(r.date), formato: r.formato, kind: r.kind });
     } finally {
       setGravando(false);
     }
@@ -208,9 +243,20 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
 
   return (
     <form className="form editor-aula" onSubmit={enviar}>
-      <p className="muted">
-        Só o <b>dia</b>, o <b>tipo</b> e o <b>título</b> são obrigatórios. O que ficar em branco o app monta sozinho a partir das palavras.
-        Quanto mais você preencher, mais a aula fica do seu jeito.
+      <div>
+        <h3 className="ed-pergunta">O que você quer criar?</h3>
+        <div className="ed-niveis" role="radiogroup" aria-label="O que criar">
+          {NIVEIS.map((x) => (
+            <button key={x.n} type="button" role="radio" aria-checked={ver(x.n)} className={ver(x.n) ? 'on' : ''} onClick={() => escolher(x.n)}>
+              <b>{x.nome}</b><small>{x.dica}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="muted ed-ajuda">
+        Os textos claros dentro dos campos são de uma aula de exemplo: somem quando você digita.
+        Só o que tem * é obrigatório; o que ficar em branco o app monta sozinho.{' '}
+        <button type="button" className="link" onClick={usarExemplo}>Ver o exemplo preenchido</button>
       </p>
 
       <Parte titulo="1. O básico" onde="aparece na lista de aulas, no topo da aula e na folha impressa" aberta>
@@ -223,18 +269,18 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
           </div>
           <Dica>{KIND_LABEL[r.kind]}: {TIPO_DICA[r.kind]}.</Dica>
         </div>
-        <label>Título *<input required maxLength={120} value={r.title} onChange={(e) => mudar({ title: e.target.value })} placeholder="Pedindo comida no restaurante" /></label>
+        <label>Título *<input required maxLength={120} value={r.title} onChange={(e) => mudar({ title: e.target.value })} placeholder={ver('atividade') ? 'Exercícios: pedindo no restaurante' : 'Pedindo comida no restaurante'} /></label>
         <label>Objetivo<textarea rows={2} value={r.objective} onChange={(e) => mudar({ objective: e.target.value })} placeholder="Pedir um prato, uma bebida e a conta com educação" />
           <Dica>Uma frase sobre o que a aula trabalha. Aparece abaixo do título.</Dica></label>
-        <label>Quando usar<input maxLength={140} value={r.whenToUse} onChange={(e) => mudar({ whenToUse: e.target.value })} placeholder="Em restaurantes, lanchonetes e cafés" />
-          <Dica>Resumo curto que sai na folha impressa (cabe cerca de 116 letras).</Dica></label>
+        {ver('completa') && <label>Quando usar<input maxLength={140} value={r.whenToUse} onChange={(e) => mudar({ whenToUse: e.target.value })} placeholder="Em restaurantes, lanchonetes e cafés" />
+          <Dica>Resumo curto que sai na folha impressa (cabe cerca de 116 letras).</Dica></label>}
       </Parte>
 
-      <Parte titulo="2. Palavras da aula" onde="viram os cartões da aula, os exemplos e a base dos exercícios" aberta>
-        {PAPEIS.map((x) => <Palavras key={x.p} dados={dados} papel={x.p} r={r} mudar={setR} nome={nome} />)}
-      </Parte>
+      {!ver('atividade') && <Parte titulo="2. Palavras da aula" onde="viram os cartões da aula, os exemplos e a base dos exercícios" aberta>
+        {PAPEIS.filter((x) => ver('completa') || x.p !== 'apoio').map((x) => <Palavras key={x.p} dados={dados} papel={x.p} r={r} mudar={setR} nome={nome} />)}
+      </Parte>}
 
-      <Parte titulo="3. Cartões da aula" onde="a sequência que o aluno percorre no aplicativo">
+      {ver('completa') && <><Parte titulo="3. Cartões da aula" onde="a sequência que o aluno percorre no aplicativo">
         <label>Aquecimento
           <select value={r.aquecimento} onChange={(e) => mudar({ aquecimento: e.target.value })}>
             <option value="">automático (a primeira de "para revisar")</option>
@@ -266,7 +312,9 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
         <div><h4>Dicas</h4><Linhas valor={r.dicas} mudar={(v) => mudar({ dicas: v })} rotulo="dica" exemplo='Use "I&apos;d like" em vez de "I want": soa mais educado' /></div>
       </Parte>
 
-      <Parte titulo={`6. Exercícios${r.exercicios.length ? ` (${r.exercicios.length})` : ''}`} onde="a parte de praticar da aula; sem nenhum, o app gera a partir das palavras">
+      </>}
+
+      <Parte aberta={!ver('completa')} titulo={`${ver('atividade') ? '2' : ver('rapida') ? '3' : '6'}. Exercícios${r.exercicios.length ? ` (${r.exercicios.length})` : ''}`} onde="a parte de praticar da aula; sem nenhum, o app gera a partir das palavras">
         <Dica>Uma aula completa tem de 8 a 12, misturando os tipos. A habilidade vai para o relatório de progresso.</Dica>
         {r.exercicios.map((e, i) => {
           const t = EXERCICIOS.find((x) => x.tipo === e.type)!;
@@ -284,19 +332,19 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
                 <button type="button" className="ghost small" aria-label="Tirar exercício" onClick={() => mudar({ exercicios: r.exercicios.filter((_, j) => j !== i) })}>×</button>
               </div>
               <Dica>{t.dica}.</Dica>
-              <label>Enunciado<input value={e.prompt} onChange={(ev) => ex(i, { prompt: ev.target.value })} placeholder={e.type === 'fill' ? "I'd ____ the fish, please." : 'Como você pede a conta?'} /></label>
+              <label>Enunciado<input value={e.prompt} onChange={(ev) => ex(i, { prompt: ev.target.value })} placeholder={EXEMPLO_EX[e.type]?.prompt} /></label>
               {e.type !== 'match' && (
-                <label>Resposta{e.type === 'produce' ? ' modelo' : ''}<input value={e.answer} onChange={(ev) => ex(i, { answer: ev.target.value })} placeholder="Can I have the bill? | Check, please." />
+                <label>Resposta{e.type === 'produce' ? ' modelo' : ''}<input value={e.answer} onChange={(ev) => ex(i, { answer: ev.target.value })} placeholder={EXEMPLO_EX[e.type]?.answer} />
                   <Dica>Se mais de uma estiver certa, separe com |</Dica></label>
               )}
-              {t.opcoes && <label>{t.opcoes.split('  ')[0]}<input value={e.options} onChange={(ev) => ex(i, { options: ev.target.value })} placeholder={t.opcoes.split('  ')[1]?.replace(/[()]/g, '').replace('ex.: ', '')} /></label>}
+              {t.opcoes && <label>{t.opcoes.split('  ')[0]}<input value={e.options} onChange={(ev) => ex(i, { options: ev.target.value })} placeholder={EXEMPLO_EX[e.type]?.options} /></label>}
             </div>
           );
         })}
         <button type="button" className="ghost small" onClick={() => mudar({ exercicios: [...r.exercicios, { type: 'choice', prompt: '', answer: '', options: '' }] })}>+ exercício</button>
       </Parte>
 
-      <Parte titulo="7. Treino na conversa" onde="perguntas que o amigo de treino faz no chat, ligadas a esta aula">
+      {ver('completa') && <Parte titulo="7. Treino na conversa" onde="perguntas que o amigo de treino faz no chat, ligadas a esta aula">
         {r.treino.map((t, i) => (
           <div key={i} className="ed-exercicio">
             <div className="ed-linha">
@@ -311,13 +359,13 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
         ))}
         <Dica>Tradução e modelo de resposta (mostrado como dica) são opcionais.</Dica>
         <button type="button" className="ghost small" onClick={() => mudar({ treino: [...r.treino, { en: '' }] })}>+ pergunta</button>
-      </Parte>
+      </Parte>}
 
-      <Parte titulo="8. Resultado esperado" onde="aparece no fim da aula, para o aluno se avaliar">
+      {!ver('atividade') && <Parte aberta={ver('rapida')} titulo={ver('rapida') ? '4. Resultado esperado' : '8. Resultado esperado'} onde="aparece no fim da aula, para o aluno se avaliar">
         <label>Ao final, {quem} consegue…<input value={r.resultado} onChange={(e) => mudar({ resultado: e.target.value })} placeholder="pedir uma refeição completa e a conta" /></label>
-        <div><h4>Critérios</h4><Dica>Como saber que conseguiu.</Dica>
-          <Linhas valor={r.criterios} mudar={(v) => mudar({ criterios: v })} rotulo="critério" exemplo={'Usa "I\'d like" para pedir'} /></div>
-      </Parte>
+        {ver('completa') && <div><h4>Critérios</h4><Dica>Como saber que conseguiu.</Dica>
+          <Linhas valor={r.criterios} mudar={(v) => mudar({ criterios: v })} rotulo="critério" exemplo={'Usa "I\'d like" para pedir'} /></div>}
+      </Parte>}
 
       {conferencia && (conferencia.errors.length > 0 || conferencia.warnings.length > 0 || conferencia.integracao.length > 0) && (
         <section className="ed-conferencia">
@@ -332,7 +380,7 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
       <div className="actions">
         {cancelar && <button type="button" className="ghost" onClick={cancelar}>Cancelar</button>}
         <button className="primary" type="submit" disabled={gravando || !!conferencia?.errors.length}>
-          {gravando ? 'Gravando…' : r.id ? 'Salvar alterações' : 'Gravar aula'}
+          {gravando ? 'Gravando…' : r.id ? 'Salvar alterações' : ver('atividade') ? 'Gravar atividade' : 'Gravar aula'}
         </button>
       </div>
     </form>

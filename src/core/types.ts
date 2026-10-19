@@ -168,8 +168,12 @@ export interface Session {
   aula?: AulaDaSessao;
   /** perguntas do treino de conversa no chat, ligadas a esta aula */
   treino?: TreinoChat[];
+  /** "atividade": só exercícios, sem os cartões da aula (padrão: aula completa) */
+  formato?: FormatoSessao;
   createdAt: string;
 }
+
+export type FormatoSessao = 'aula' | 'atividade';
 
 export interface PalavrasDaSessao {
   /** o que a aula ensina (até 4) */
