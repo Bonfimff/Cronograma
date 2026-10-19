@@ -7,6 +7,8 @@ import {
   agoraLocal, fimDe, novoAgendamento, proximasAulas, registroDoAgendamento,
 } from '../../../core/professor/montagem';
 import type { Agendamento, UserData } from '../../../core/types';
+import { livreEm, periodoDa, PERIODOS } from '../../../core/planning/disponibilidade';
+import { DisponibilidadeDoAluno } from '../../components/Disponibilidade';
 
 /** Grava na conta do aluno e devolve o que o servidor aceitou. */
 export function useGravar(alunoId: number, aoGravar: (itens: SyncRecord[]) => void) {
@@ -49,8 +51,8 @@ const proximoMes = (mes: string, n: number) => {
 export const horaDe = (a: Agendamento) => `${a.inicio.slice(11)} às ${fimDe(a).slice(11)}`;
 
 /** Calendário do mês: tocar num dia abre o horário para marcar a próxima aula. */
-export function AgendaAluno({ dados, professor, gravar, gravando }: {
-  dados: UserData; professor: string; gravar: (itens: SyncRecord[]) => Promise<boolean>; gravando: boolean;
+export function AgendaAluno({ dados, aluno, professor, gravar, gravando }: {
+  dados: UserData; aluno: string; professor: string; gravar: (itens: SyncRecord[]) => Promise<boolean>; gravando: boolean;
 }) {
   const [mes, setMes] = useState(today().slice(0, 7));
   const [dia, setDia] = useState(today());
@@ -104,8 +106,13 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
   };
 
   const [ano, m] = mes.split('-').map(Number);
+  const nomeAluno = aluno.split('@')[0];
+  const livresNoDia = livreEm(dados.disponibilidade, dia);
+  const foraDoLivre = !!dados.disponibilidade && !livresNoDia.includes(periodoDa(hora));
   return (
     <>
+      <DisponibilidadeDoAluno disp={dados.disponibilidade} nome={nomeAluno} />
+
       <section>
         <h2>Próximas aulas marcadas</h2>
         {proximas.length ? (
@@ -137,7 +144,7 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
             return (
               <button
                 key={d} type="button"
-                className={['cal-dia', d.slice(0, 7) !== mes && 'fora', d === today() && 'hoje', d === dia && 'on', d < today() && 'passado'].filter(Boolean).join(' ')}
+                className={['cal-dia', livreEm(dados.disponibilidade, d).length > 0 && d >= today() && 'livre', d.slice(0, 7) !== mes && 'fora', d === today() && 'hoje', d === dia && 'on', d < today() && 'passado'].filter(Boolean).join(' ')}
                 onClick={() => setDia(d)}
                 aria-label={`${weekdayName(d)} ${fmtShort(d)}${marcas ? `, ${marcas} marcada(s)` : ''}`}
               >
@@ -150,7 +157,7 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
             );
           })}
         </div>
-        <p className="muted small-text"><i className="cal-leg marca" /> aula marcada <i className="cal-leg aula" /> aula no app</p>
+        <p className="muted small-text cal-legenda"><i className="cal-leg marca" /> aula marcada <i className="cal-leg aula" /> aula no app{dados.disponibilidade && <><i className="cal-leg livre" /> dia livre do aluno</>}</p>
       </section>
 
       <form className="form agenda-form" onSubmit={marcar}>
@@ -165,6 +172,14 @@ export function AgendaAluno({ dados, professor, gravar, gravando }: {
         )}
         {dia < today() ? <p className="muted">Esse dia já passou.</p> : (
           <>
+            {dados.disponibilidade && (
+              <p className={`small-text ${foraDoLivre ? 'disp-aviso' : 'muted'}`}>
+                {livresNoDia.length
+                  ? `${nomeAluno} está livre neste dia de ${livresNoDia.map((p) => PERIODOS.find((x) => x.p === p)!.nome.toLowerCase()).join(' e ')}.`
+                  : `${nomeAluno} não marcou este dia como livre.`}
+                {foraDoLivre && livresNoDia.length > 0 && ' O horário escolhido está fora disso.'}
+              </p>
+            )}
             <div className="prof-hora">
               <label>Hora<input type="time" required value={hora} onChange={(e) => setHora(e.target.value)} /></label>
               <label>Duração

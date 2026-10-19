@@ -12,7 +12,7 @@
  * este aparelho aplicou.
  */
 
-import type { Agendamento, Atividade, ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
+import type { Agendamento, Atividade, Disponibilidade, ChatTurn, ContentBundle, LibrarySheet, Session, UserData, Week, Worksheet, HistoryEntry } from '../types';
 import type { SyncRecord } from './client';
 import { session } from './session';
 import { emptyData, store } from '../storage/store';
@@ -42,6 +42,7 @@ export function registrosLocais(d: UserData): SyncRecord[] {
   d.history.forEach((h) => saida.push({ kind: 'history', id: h.id, data: h as unknown as Record<string, unknown> }));
   (d.atividades ?? []).forEach((a) => saida.push({ kind: 'activity', id: a.id, data: a as unknown as Record<string, unknown> }));
   (d.agenda ?? []).forEach((a) => saida.push({ kind: 'agenda', id: a.id, data: a as unknown as Record<string, unknown> }));
+  if (d.disponibilidade) saida.push({ kind: 'disponibilidade', id: 'semana', data: d.disponibilidade as unknown as Record<string, unknown> });
 
   return saida;
 }
@@ -88,6 +89,8 @@ function juntar(d: UserData, itens: SyncRecord[]): void {
       } else if (item.kind === 'activity') {
         const atual = (d.atividades ?? []).filter((a) => a.id !== item.id);
         d.atividades = item.deleted ? atual : [...atual, dados as unknown as Atividade].sort((a, b) => a.quando.localeCompare(b.quando));
+      } else if (item.kind === 'disponibilidade') {
+        d.disponibilidade = item.deleted ? undefined : dados as unknown as Disponibilidade;
       } else if (item.kind === 'agenda') {
         const atual = (d.agenda ?? []).filter((a) => a.id !== item.id);
         d.agenda = item.deleted ? atual : [...atual, dados as unknown as Agendamento].sort((a, b) => a.inicio.localeCompare(b.inicio));

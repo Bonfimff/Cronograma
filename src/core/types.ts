@@ -285,6 +285,18 @@ export interface UserData {
   atividades?: Atividade[];
   /** Aulas marcadas com o professor (data e hora), em ordem de tempo. */
   agenda?: Agendamento[];
+  /** Quando o aluno pode ter aula, toda semana (só o aluno marca; o professor vê). */
+  disponibilidade?: Disponibilidade;
+}
+
+export type DiaSemana = 'seg' | 'ter' | 'qua' | 'qui' | 'sex' | 'sab' | 'dom';
+export type Periodo = 'manha' | 'tarde' | 'noite';
+
+export interface Disponibilidade {
+  dias: Partial<Record<DiaSemana, Periodo[]>>;
+  /** ex.: "depois das 19h", "sábado só até as 11h" */
+  nota?: string;
+  atualizadoEm: string;
 }
 
 /** Uma aula marcada no calendário: quem marca é o professor, na conta do aluno. */

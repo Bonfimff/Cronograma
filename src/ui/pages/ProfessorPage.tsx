@@ -8,6 +8,7 @@ import { ProgressPage } from './ProgressPage';
 import { AgendaAluno, useGravar } from './professor/Turma';
 import { MontarAula } from './professor/MontarAula';
 import { VocabularioAluno } from './professor/Vocabulario';
+import { MinhaDisponibilidade } from '../components/Disponibilidade';
 
 const ABAS = [['progresso', 'Progresso'], ['aula', 'Montar aula'], ['vocabulario', 'Vocabulário'], ['agenda', 'Agenda']] as const;
 
@@ -58,7 +59,7 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
         {!dados ? !erro && <p className="muted">Carregando o histórico…</p>
           : aba === 'aula' ? <MontarAula dados={dados} aluno={quem ?? 'aluno'} gravar={gravar} gravando={gravando} />
           : aba === 'vocabulario' ? <VocabularioAluno dados={dados} aluno={quem ?? 'aluno'} gravar={gravar} gravando={gravando} />
-          : aba === 'agenda' ? <AgendaAluno dados={dados} professor={eu} gravar={gravar} gravando={gravando} />
+          : aba === 'agenda' ? <AgendaAluno dados={dados} aluno={quem ?? 'aluno'} professor={eu} gravar={gravar} gravando={gravando} />
           : <ProgressPage dados={dados} aluno={quem ?? 'aluno'} />}
       </>
     );
@@ -115,6 +116,8 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
           </ul>
         ) : <p className="muted">Nenhum professor autorizado.</p>}
       </section>}
+
+      {!souProfessor && <MinhaDisponibilidade />}
 
       <section>
         {!souProfessor && <h2>Meus alunos</h2>}

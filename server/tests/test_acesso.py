@@ -41,3 +41,16 @@ def test_professor_monta_aula_e_agenda(client, conta):
 
     historico = {"kind": "history", "id": "h-1", "data": {}}
     assert client.post(f"/acesso/alunos/{aluno_id}", json={"items": [historico]}, headers=prof.headers).status_code == 403
+
+
+def test_professor_ve_disponibilidade_mas_nao_grava(client, conta):
+    aluno, prof = conta(), conta("prof3@exemplo.com")
+    eu = client.get("/auth/me", headers=prof.headers).json()
+    aluno_id = client.get("/auth/me", headers=aluno.headers).json()["id"]
+    client.post("/acesso", json={"email": eu["email"]}, headers=aluno.headers)
+    aluno.push([{"kind": "disponibilidade", "id": "semana", "data": {"dias": {"seg": ["noite"]}}}])
+
+    itens = client.get(f"/acesso/alunos/{aluno_id}", headers=prof.headers).json()
+    assert any(i["kind"] == "disponibilidade" for i in itens)
+    outra = {"kind": "disponibilidade", "id": "semana", "data": {}}
+    assert client.post(f"/acesso/alunos/{aluno_id}", json={"items": [outra]}, headers=prof.headers).status_code == 403

@@ -21,7 +21,7 @@ from ..schemas import RecordIn, RecordOut
 router = APIRouter(prefix="/acesso", tags=["professor"])
 
 # o que o relatório precisa: nada de configurações nem placares de jogos antigos
-KINDS_DO_RELATORIO = ("week", "session", "worksheet", "history", "content", "chat", "activity", "agenda")
+KINDS_DO_RELATORIO = ("week", "session", "worksheet", "history", "content", "chat", "activity", "agenda", "disponibilidade")
 # o que o professor pode gravar na conta do aluno
 KINDS_DO_PROFESSOR = {"week", "session", "content", "agenda"}
 

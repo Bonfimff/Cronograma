@@ -29,7 +29,7 @@ export interface GlossaryItem {
   id: string;
 }
 
-export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat' | 'activity' | 'agenda';
+export type SyncKind = 'week' | 'session' | 'worksheet' | 'history' | 'sheet' | 'content' | 'game' | 'chat' | 'activity' | 'agenda' | 'disponibilidade';
 
 export interface Pessoa { id: number; email: string }
 export interface Acessos { professores: Pessoa[]; alunos: Pessoa[] }

@@ -2304,3 +2304,22 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
   .voc-lista li { grid-template-columns: 1fr auto; }
   .voc-pt { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* bolinhas da legenda: redondas (o i herdava espaçamento de outro estilo) */
+.cal-leg { padding: 0; height: 7px; width: 7px; flex-shrink: 0; vertical-align: middle; }
+.cal-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.cal-leg.livre { width: 14px; height: 4px; border-radius: 2px; background: var(--ok); opacity: .55; }
+.cal-dia.livre { box-shadow: inset 0 -4px 0 rgba(31, 123, 112, .45); }
+
+/* disponibilidade do aluno */
+.disp-grade { display: grid; grid-template-columns: minmax(70px, auto) repeat(3, 1fr); gap: 6px; align-items: center; }
+.disp-linha { display: contents; }
+.disp-cab { text-align: center; font-weight: 600; font-size: .85rem; display: flex; flex-direction: column; }
+.disp-cab small { font-weight: 400; color: var(--ink-3); font-size: .72rem; }
+.disp-dia { font-size: .9rem; }
+.disp-celula { min-height: 40px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-2); color: var(--accent-ink); font-weight: 700; }
+.disp-celula.on { background: var(--accent); border-color: var(--accent); }
+.disp-resumo { padding: 12px 16px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2); }
+.disp-resumo h3 { margin: 0 0 4px; }
+.disp-resumo p { margin: 4px 0; }
+.disp-aviso { color: var(--k-reinforce); font-weight: 600; }
