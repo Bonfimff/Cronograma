@@ -162,7 +162,7 @@ function doTetris(stats: WordStats, melhores: boolean): PalavraPlacar[] {
   return lista.map((w) => ({ en: w.en, acertos: w.certos, erros: w.errados, taxa: w.taxa, ultima: w.ultima ?? w.estreia ?? '' }));
 }
 
-/** Sem `dados`: o meu progresso. Com `dados`: o de um aluno, na tela do professor (só leitura). */
+/** Sem `dados`: o meu progresso. Com `dados`: o de um aluno, na tela do professor. */
 export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: string } = {}) {
   const meus = useData();
   const data = dados ?? meus;
@@ -202,7 +202,7 @@ export function ProgressPage({ dados, aluno }: { dados?: UserData; aluno?: strin
       <section className="hero">
         <p className="eyebrow">Progresso</p>
         <h1>{aluno ? `Progresso de ${aluno}` : 'Meu progresso'} <CatTeacher className="cut-title" width="74" /></h1>
-        <p className="lead">{aluno ? 'Visão do professor, só leitura: aulas, folhas, jogos, fala e conversa.' : 'Tudo o que você fez: aulas, folhas, jogos, fala e conversa.'}</p>
+        <p className="lead">{aluno ? 'Tudo o que o aluno fez: aulas, folhas, jogos, fala e conversa.' : 'Tudo o que você fez: aulas, folhas, jogos, fala e conversa.'}</p>
       </section>
 
       <section className="prog-cartoes">

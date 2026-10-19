@@ -1,5 +1,5 @@
 import type {
-  ContentRef, Exercise, ExerciseType, FormatoSessao, FraseAula, Habilidade, Session, SessionKind, TreinoChat, UserData,
+  ContentRef, Example, Exercise, ExerciseType, FormatoSessao, FraseAula, Habilidade, Session, SessionKind, TreinoChat, UserData, Word,
 } from '../types';
 import { simplificar } from '../content/search';
 import { PACKAGE_FORMAT, type PackageSession, type WeekPackage } from './weekPackage';
@@ -81,22 +81,30 @@ const limpo = (l: string[]) => l.map((x) => x.trim()).filter(Boolean);
 const frases = (l: FraseAula[]) => l.map((f) => ({ en: f.en.trim(), pt: f.pt.trim() })).filter((f) => f.en);
 const partes = (s: string) => s.split('|').map((x) => x.trim()).filter(Boolean);
 
-/** O rascunho no formato do pacote semanal (um dia, uma aula). */
-export function pacoteDoRascunho(r: RascunhoAula, aluno: UserData): WeekPackage {
-  const jaTem = new Set((aluno.content?.words ?? []).map((w) => w.id));
-  const novas = r.palavrasNovas.filter((n) => idDaPalavra(n.en) && n.pt.trim());
-  const words = novas.filter((n) => !jaTem.has(idDaPalavra(n.en))).map((n) => {
-    const id = idDaPalavra(n.en);
-    return {
+/** Uma palavra escrita à mão, no formato do vocabulário, com os exemplos dela. */
+export function palavraNova(n: Omit<PalavraNova, 'papel'>): { word: Word; examples: Example[] } {
+  const id = idDaPalavra(n.en);
+  const examples = frases(n.exemplos).map((f, i) => ({ id: `${id}-ex${i + 1}`, ...f }));
+  return {
+    word: {
       id, word: n.en.trim(), type: n.tipo?.trim() ?? '',
       translations: [{ text: n.pt.trim() }],
       core_meaning: n.significado?.trim() || n.pt.trim(),
       pronunciation: { ipa: n.ipa?.trim() ?? '' },
-      examples: frases(n.exemplos).map((_, i) => `${id}-ex${i + 1}`),
+      examples: examples.map((e) => e.id),
       uses: [], variations: [], related_words: [],
-    };
-  });
-  const examples = novas.flatMap((n) => frases(n.exemplos).map((f, i) => ({ id: `${idDaPalavra(n.en)}-ex${i + 1}`, ...f })));
+    },
+    examples,
+  };
+}
+
+/** O rascunho no formato do pacote semanal (um dia, uma aula). */
+export function pacoteDoRascunho(r: RascunhoAula, aluno: UserData): WeekPackage {
+  const jaTem = new Set((aluno.content?.words ?? []).map((w) => w.id));
+  const novas = r.palavrasNovas.filter((n) => idDaPalavra(n.en) && n.pt.trim());
+  const criadas = novas.filter((n) => !jaTem.has(idDaPalavra(n.en))).map(palavraNova);
+  const words = criadas.map((c) => c.word);
+  const examples = criadas.flatMap((c) => c.examples);
 
   const papel = (p: Papel) => [...new Set([
     ...r.palavras[p], ...novas.filter((n) => n.papel === p).map((n) => `word:${idDaPalavra(n.en)}` as ContentRef),

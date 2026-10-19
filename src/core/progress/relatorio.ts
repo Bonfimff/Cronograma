@@ -13,7 +13,7 @@
 
 import { addDays, daysBetween, today, weekStartOf } from '../dates';
 import type { Atividade, ContentRef, Habilidade, UserData } from '../types';
-import { content, resolve } from '../content/repository';
+import { palavrasDe, resolve } from '../content/repository';
 import { eventos, memoria, type Memoria, type MemoriaPalavra } from './memoria';
 import { padroesDeFala, type Padrao } from './padroes';
 
@@ -245,14 +245,13 @@ export function relatorio(data: UserData, hoje = today()): Relatorio {
   const emIngles = dela.filter((t) => /^[\x00-\x7F]*$/.test(t.content) && /\b(i|you|my|is|are|the|what|where|how)\b/i.test(t.content)).length;
 
   const textoIngles = dela.filter((t) => /^[\x00-\x7F]*$/.test(t.content)).map((t) => t.content.toLowerCase().match(/[a-z][a-z']*/g) ?? []);
-  const vocab = new Set(content.words.map((w) => w.word.toLowerCase()));
+  const vocabDela = palavrasDe(data);
+  const vocab = new Set(vocabDela.map((w) => w.word.toLowerCase()));
   const proprias = new Set(textoIngles.flat().filter((w) => vocab.has(w) && w.length > 2));
 
   // memória, escada e habilidades (memoria.ts)
-  const refParaEn = (ref: string) => {
-    const item = resolve(ref as ContentRef) as { word?: string } | undefined;
-    return item?.word;
-  };
+  const porRef = new Map(vocabDela.map((w) => [`word:${w.id}`, w.word]));
+  const refParaEn = (ref: string) => porRef.get(ref) ?? (resolve(ref as ContentRef) as { word?: string } | undefined)?.word;
   const mem = memoria(eventos(data, refParaEn, vocab), new Date(`${hoje}T23:59:59`).getTime());
 
   // o mês contra o anterior

@@ -11,7 +11,7 @@
  */
 
 import type { ContentRef, UserData } from '../types';
-import { content } from '../content/repository';
+import { palavrasDe } from '../content/repository';
 import { relatorio } from '../progress/relatorio';
 
 export type EstadoPalavra = 'firme' | 'estudando' | 'quase_esquecida' | 'nao_praticada';
@@ -91,7 +91,7 @@ export function contextoDoAluno(data: UserData, hoje = new Date().toISOString().
   const doAluno = new Set((data.content?.words ?? []).map((w) => w.id));
   const linhas: (LinhaVocabulario & { peso?: number })[] = [];
   const vistas = new Set<string>();
-  for (const w of content.words) {
+  for (const w of palavrasDe(data)) {
     const en = w.word.trim();
     const k = en.toLowerCase();
     const m = mem.get(k);
@@ -122,4 +122,45 @@ export function contextoDoAluno(data: UserData, hoje = new Date().toISOString().
     // o ritmo olha o vocabulário inteiro, não só a parte que coube no arquivo
     ritmo: calcularRitmo(linhas, r.memoria.retencaoMedia),
   };
+}
+
+/** Um item da lista completa do vocabulário, para a tela (sem o limite do arquivo). */
+export interface ItemVocabulario {
+  ref: ContentRef;
+  en: string;
+  pt: string;
+  classe: string;
+  estado: EstadoPalavra;
+  /** chance de lembrar hoje (0..1) */
+  retencao: number;
+  /** degrau da escada (0 vista .. 5 usa no chat) */
+  degrau: number;
+}
+
+/** Tudo o que está no vocabulário da pessoa: palavras com o estado da memória, e as expressões, padrões e gramática dela. */
+export function vocabularioCompleto(data: UserData, hoje = new Date().toISOString().slice(0, 10)): ItemVocabulario[] {
+  const r = relatorio(data, hoje);
+  const mem = new Map(r.memoria.palavras.map((p) => [p.en.toLowerCase(), p]));
+  const doAluno = new Set((data.content?.words ?? []).map((w) => w.id));
+  const estudados = new Set(data.history.map((h) => h.ref));
+  const vistas = new Set<string>();
+  const itens: ItemVocabulario[] = [];
+  for (const w of palavrasDe(data)) {
+    const k = w.word.trim().toLowerCase();
+    const m = mem.get(k);
+    if (!k || vistas.has(k) || (!doAluno.has(w.id) && !m)) continue;
+    vistas.add(k);
+    const ret = m ? Math.round(m.retencao * 100) / 100 : 0;
+    itens.push({
+      ref: `word:${w.id}`, en: w.word.trim(), pt: w.translations.map((t) => t.text).join(', ') || w.core_meaning,
+      classe: w.type || 'palavra', estado: estadoDe(ret, m?.nivel ?? 0, !!m && m.dias > 0), retencao: ret, degrau: m?.nivel ?? 0,
+    });
+  }
+  const outros = (ref: ContentRef, en: string, pt: string, classe: string): ItemVocabulario =>
+    ({ ref, en, pt, classe, estado: estudados.has(ref) ? 'estudando' : 'nao_praticada', retencao: 0, degrau: 0 });
+  const c = data.content ?? {};
+  (c.expressions ?? []).forEach((e) => itens.push(outros(`expression:${e.id}`, e.text, e.translation, 'expressão')));
+  (c.patterns ?? []).forEach((p) => itens.push(outros(`pattern:${p.id}`, p.formula, p.name, 'padrão')));
+  (c.grammar ?? []).forEach((g) => itens.push(outros(`grammar:${g.id}`, g.title, '', 'gramática')));
+  return itens.sort((a, b) => a.en.localeCompare(b.en));
 }

@@ -7,8 +7,9 @@ import { Empty } from '../components/common';
 import { ProgressPage } from './ProgressPage';
 import { AgendaAluno, useGravar } from './professor/Turma';
 import { MontarAula } from './professor/MontarAula';
+import { VocabularioAluno } from './professor/Vocabulario';
 
-const ABAS = [['progresso', 'Progresso'], ['aula', 'Montar aula'], ['agenda', 'Agenda']] as const;
+const ABAS = [['progresso', 'Progresso'], ['aula', 'Montar aula'], ['vocabulario', 'Vocabulário'], ['agenda', 'Agenda']] as const;
 
 /**
  * Professores e alunos.
@@ -56,6 +57,7 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
         {(erro || erroGravar) && <p className="erro">{erro || erroGravar}</p>}
         {!dados ? !erro && <p className="muted">Carregando o histórico…</p>
           : aba === 'aula' ? <MontarAula dados={dados} aluno={quem ?? 'aluno'} gravar={gravar} gravando={gravando} />
+          : aba === 'vocabulario' ? <VocabularioAluno dados={dados} aluno={quem ?? 'aluno'} gravar={gravar} gravando={gravando} />
           : aba === 'agenda' ? <AgendaAluno dados={dados} professor={eu} gravar={gravar} gravando={gravando} />
           : <ProgressPage dados={dados} aluno={quem ?? 'aluno'} />}
       </>
@@ -112,6 +114,7 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
                 <span className="prof-alunos-botoes">
                   <a className="ghost" href={`#/professor/${a.id}`}>Progresso</a>
                   <a className="primary" href={`#/professor/${a.id}/aula`}>Montar aula</a>
+                  <a className="ghost" href={`#/professor/${a.id}/vocabulario`}>Vocabulário</a>
                   <a className="ghost" href={`#/professor/${a.id}/agenda`}>Agenda</a>
                 </span>
               </li>

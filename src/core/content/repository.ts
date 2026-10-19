@@ -1,5 +1,5 @@
 import type {
-  ContentBundle, ContentKind, ContentRef, CopyBlock, Example, Exercise, Expression, Grammar, Pattern, Topic, Word,
+  ContentBundle, ContentKind, UserData, ContentRef, CopyBlock, Example, Exercise, Expression, Grammar, Pattern, Topic, Word,
 } from '../types';
 import { normalizeContent } from './normalize';
 import words from '../../../content/words.json';
@@ -39,6 +39,14 @@ function merge<T extends { id: string }>(base: T[], extra: T[] = []): T[] {
   const m = byId(base);
   extra.forEach((x) => m.set(x.id, x));
   return [...m.values()];
+}
+
+/**
+ * As palavras de uma pessoa: as da base mais as dela (mesmo id: a dela vale). Na tela do
+ * professor, o índice global é o vocabulário do professor; o do aluno sai daqui.
+ */
+export function palavrasDe(data: UserData): Word[] {
+  return merge(baseContent.words, normalizeContent({ words: data.content?.words ?? [] }).words ?? []);
 }
 
 export function setUserContent(raw: Partial<ContentBundle> = {}): void {

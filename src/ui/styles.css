@@ -2286,3 +2286,21 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .ed-mais > summary { cursor: pointer; color: var(--ink-2); font-size: .9rem; }
 .ed-mais[open] > summary { margin-bottom: 8px; }
 .ed-gravada { display: flex; flex-direction: column; gap: 4px; }
+
+/* professor: vocabulário do aluno */
+.voc-busca { width: 100%; margin: 12px 0; }
+.voc-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.voc-lista li { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(120px, 1.4fr) auto; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); background: var(--paper-2); }
+.voc-lista li:first-child { border-top: 0; }
+.voc-en { display: flex; flex-direction: column; overflow-wrap: anywhere; }
+.voc-en small { font-size: .75rem; }
+.voc-pt { color: var(--ink-2); overflow-wrap: anywhere; }
+.voc-estado { font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule); white-space: nowrap; }
+.voc-estado.e-firme { color: var(--k-consolidate); border-color: var(--k-consolidate); }
+.voc-estado.e-estudando { color: var(--k-practice); border-color: var(--k-practice); }
+.voc-estado.e-quase_esquecida { color: var(--k-reinforce); border-color: var(--k-reinforce); }
+.voc-estado.e-nao_praticada { color: var(--ink-3); }
+@media (max-width: 560px) {
+  .voc-lista li { grid-template-columns: 1fr auto; }
+  .voc-pt { grid-column: 1 / -1; grid-row: 2; }
+}
