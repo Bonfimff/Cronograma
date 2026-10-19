@@ -6,6 +6,7 @@ import {
   exemploDeAula, LIMITES, pacoteDoRascunho, rascunhoVazio, type ExercicioRascunho, type Papel, type PalavraNova, type RascunhoAula,
 } from '../../core/planning/rascunhoAula';
 import { buscarNoAluno } from '../../core/professor/montagem';
+import { baixarPacoteDaAula } from '../baixar';
 
 /**
  * Montar uma aula à mão, com tudo o que o pacote semanal permite. Serve ao aluno
@@ -212,6 +213,8 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
   };
   const [gravando, setGravando] = useState(false);
   const [res, setRes] = useState<ResultadoSalvar | null>(null);
+  // a última aula gravada, para baixar o JSON e usar com outro aluno
+  const [gravada, setGravada] = useState<WeekPackage | null>(null);
   const mudar = (m: Partial<RascunhoAula>) => { setR((x) => ({ ...x, ...m })); setRes(null); };
 
   const nome = (ref: ContentRef) => {
@@ -235,6 +238,7 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
     try {
       const x = await salvar(pkg);
       setRes(x);
+      setGravada(x.ok ? pkg : null);
       if (x.ok && !r.id) setR({ ...rascunhoVazio(r.date), formato: r.formato, kind: r.kind });
     } finally {
       setGravando(false);
@@ -376,7 +380,18 @@ export function EditorDeAula({ dados, inicial, salvar, cancelar, quem }: {
         </section>
       )}
       {res && !res.ok && res.erros.length > 0 && <ul className="check-list err">{res.erros.map((m, i) => <li key={i}>{m}</li>)}</ul>}
-      {res?.ok && res.mensagem && <p className="ok-line">{res.mensagem}</p>}
+      {res?.ok && res.mensagem && (
+        <div className="ed-gravada">
+          <p className="ok-line">{res.mensagem}</p>
+          {gravada && (
+            <p className="muted small-text">
+              Quer usar esta aula com outro aluno?{' '}
+              <button type="button" className="ghost small" onClick={() => baixarPacoteDaAula(gravada, dados)}>Baixar JSON desta aula</button>
+              <br />O arquivo leva as palavras, os exemplos e os exercícios. Importe em Semana → Importar arquivo, ou na aba Montar aula → Importar arquivo do outro aluno.
+            </p>
+          )}
+        </div>
+      )}
       <div className="actions">
         {cancelar && <button type="button" className="ghost" onClick={cancelar}>Cancelar</button>}
         <button className="primary" type="submit" disabled={gravando || !!conferencia?.errors.length}>

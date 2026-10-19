@@ -5,8 +5,9 @@ import { KIND_LABEL } from '../../core/planning/weeks';
 import { applyPackage, checkPackage, type ApplyResult, type WeekPackage } from '../../core/planning/weekPackage';
 import { rascunhoDaSessao, rascunhoVazio } from '../../core/planning/rascunhoAula';
 import { EditorDeAula } from '../components/EditorDeAula';
+import { baixarAula } from '../baixar';
 
-/** O aluno monta uma aula do jeito dele, sem IA, ou edita uma que ainda não começou. */
+/** O aluno monta uma aula do jeito dele, ou edita uma que ainda não começou. */
 export function MontarAulaPage({ id, dia }: { id?: string; dia?: string }) {
   const data = useData();
   const editando = id ? data.sessions.find((s) => s.id === id) : undefined;
@@ -29,7 +30,7 @@ export function MontarAulaPage({ id, dia }: { id?: string; dia?: string }) {
       <section className="hero">
         <p className="eyebrow">Montar aula</p>
         <h1>{editando ? `Editar: ${editando.title}` : 'Aula do seu jeito'}</h1>
-        <p className="lead">Monte uma aula à mão, sem IA. Para gerar uma semana inteira com IA, use <a href="#/montar">o pacote semanal</a>.</p>
+        <p className="lead">Monte uma aula ou uma atividade de exercícios do seu jeito. Recebeu o arquivo de uma aula? <a href="#/montar">Importe aqui</a>.</p>
       </section>
 
       {id && !editando && <p className="erro">Aula {id} não encontrada.</p>}
@@ -51,7 +52,10 @@ export function MontarAulaPage({ id, dia }: { id?: string; dia?: string }) {
             {planejadas.map((s) => (
               <li key={s.id}>
                 <span><b>{weekdayName(s.date)} {fmtShort(s.date)}</b> · <span className={`kind k-${s.kind}`}>{KIND_LABEL[s.kind]}</span> {s.title}</span>
-                <a className="ghost small" href={`#/montar-aula/${s.id}`}>Editar</a>
+                <span className="prof-botoes">
+                  <a className="ghost small" href={`#/montar-aula/${s.id}`}>Editar</a>
+                  <button type="button" className="ghost small" title="Baixar o JSON para usar com outro aluno" onClick={() => baixarAula(s, data)}>Baixar</button>
+                </span>
               </li>
             ))}
           </ul>

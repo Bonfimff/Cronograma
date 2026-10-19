@@ -65,20 +65,20 @@ export function WeekPage({ start }: { start?: string }) {
             </span>
           </SignpostLive>
         </div>
-        {/* montar a semana (JSON, pedido à IA) é o caminho principal para planejar: botão à vista */}
+        {/* montar a aula ou a atividade é o caminho principal; o arquivo JSON fica como opção */}
         <div className="actions left semana-acoes">
-          <a className="primary with-icon" href={`#/montar?semana=${ws}`}>
+          <a className="primary with-icon" href="#/montar-aula">
             <IconeKit nome="upload" width={20} />
-            Montar semana
-            <small>com JSON ou IA</small>
+            Montar aula
+            <small>ou só uma atividade de exercícios</small>
+          </a>
+          <a className="ghost with-icon" href={`#/montar?semana=${ws}`}>
+            <IconeKit nome="upload" width={18} />
+            Importar arquivo
           </a>
           <a className="ghost with-icon" href={`#/imprimir?modo=week&semana=${ws}`}>
             <IconeKit nome="salvar" width={18} />
             Imprimir plano
-          </a>
-          <a className="ghost with-icon" href="#/montar-aula">
-            <IconeKit nome="upload" width={18} />
-            Montar aula à mão
           </a>
         </div>
       </section>

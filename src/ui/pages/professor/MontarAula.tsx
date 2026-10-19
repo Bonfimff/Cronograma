@@ -8,17 +8,11 @@ import { rascunhoDaSessao, rascunhoVazio } from '../../../core/planning/rascunho
 import { montarPacote, removerAula } from '../../../core/professor/montagem';
 import type { UserData } from '../../../core/types';
 import { EditorDeAula, type ResultadoSalvar } from '../../components/EditorDeAula';
-
-function baixar(nome: string, dados: unknown) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' }));
-  a.download = nome;
-  a.click();
-}
+import { baixarAula, baixarJson } from '../../baixar';
 
 type Aplicar = (pkg: WeekPackage, replacePlanned?: boolean) => Promise<ResultadoSalvar>;
 
-/** Montar aula para o aluno: à mão (editor completo) ou pela IA (modelo com o progresso dele + JSON). */
+/** Montar aula para o aluno: no editor ou importando o arquivo de uma aula (a baixada de outro aluno, por exemplo). */
 export function MontarAula({ dados, aluno, gravar, gravando }: {
   dados: UserData; aluno: string; gravar: (itens: SyncRecord[]) => Promise<boolean>; gravando: boolean;
 }) {
@@ -45,8 +39,8 @@ export function MontarAula({ dados, aluno, gravar, gravando }: {
   return (
     <>
       <div className="seg" role="group" aria-label="Como montar">
-        <button type="button" className={modo === 'mao' ? 'on' : ''} onClick={() => setModo('mao')}>À mão</button>
-        <button type="button" className={modo === 'ia' ? 'on' : ''} onClick={() => setModo('ia')}>Com IA (JSON)</button>
+        <button type="button" className={modo === 'mao' ? 'on' : ''} onClick={() => setModo('mao')}>Montar</button>
+        <button type="button" className={modo === 'ia' ? 'on' : ''} onClick={() => setModo('ia')}>Importar arquivo</button>
       </div>
 
       {modo === 'mao' ? (
@@ -72,6 +66,7 @@ export function MontarAula({ dados, aluno, gravar, gravando }: {
                 <span><b>{weekdayName(s.date)} {fmtShort(s.date)}</b> · <span className={`kind k-${s.kind}`}>{KIND_LABEL[s.kind]}</span> {s.title} <span className="mono muted">{s.id}</span></span>
                 <span className="prof-botoes">
                   <button type="button" className="ghost small" onClick={() => { setModo('mao'); setEditando(s.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Editar</button>
+                  <button type="button" className="ghost small" title="Baixar o JSON para usar com outro aluno" onClick={() => baixarAula(s, dados)}>Baixar</button>
                   <button type="button" className="ghost small" disabled={gravando} onClick={() => { if (confirm(`Tirar a aula "${s.title}"?`)) void gravar(removerAula(dados, s.id)); }}>Tirar</button>
                 </span>
               </li>
@@ -83,7 +78,7 @@ export function MontarAula({ dados, aluno, gravar, gravando }: {
   );
 }
 
-/** O modelo leva o vocabulário e os avanços do aluno; a IA devolve o JSON da semana. */
+/** Importar o arquivo de uma aula ou semana; o modelo leva o vocabulário e os avanços do aluno. */
 function PelaIA({ dados, aluno, aplicar, gravando }: { dados: UserData; aluno: string; aplicar: Aplicar; gravando: boolean }) {
   const [semana, setSemana] = useState(weekStartOf(addDays(today(), 7)));
   const [texto, setTexto] = useState('');
@@ -96,30 +91,26 @@ function PelaIA({ dados, aluno, aplicar, gravando }: { dados: UserData; aluno: s
 
   return (
     <section className="form">
-      <h2>Com IA</h2>
-      <ol className="ed-passos">
-        <li>
-          Baixe o modelo. Ele leva o vocabulário de {nome}, o que está firme, o que está sendo esquecido e o pedido pronto para colar numa IA.
+      <h2>Importar arquivo</h2>
+      <p className="muted">O arquivo de uma aula baixada de outro aluno (botão Baixar), ou de uma semana. A conferência usa o vocabulário de {nome}.</p>
+      <label className="ghost file">
+        Escolher arquivo .json
+        <input type="file" accept="application/json,.json" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { setTexto(await f.text()); setRes(null); } e.target.value = ''; }} />
+      </label>
+      <textarea className="json-box" rows={6} value={texto} placeholder="…ou cole o conteúdo do arquivo aqui" spellCheck={false} onChange={(e) => { setTexto(e.target.value); setRes(null); }} />
+      <details className="ed-mais">
+        <summary>Preparar um arquivo fora do app</summary>
+        <p className="muted small-text">O modelo traz o formato e o vocabulário de {nome} (o que está firme e o que está sendo esquecido).</p>
           <div className="ed-linha">
             <div className="stepper">
               <button type="button" aria-label="Semana anterior" onClick={() => setSemana(addDays(semana, -7))}>‹</button>
               <span>{fmtShort(semana)} a {fmtShort(addDays(semana, 6))}</span>
               <button type="button" aria-label="Próxima semana" onClick={() => setSemana(addDays(semana, 7))}>›</button>
             </div>
-            <button type="button" className="ghost small" onClick={() => baixar(`modelo-${nome}-${semana}.json`, templatePackage(semana, contextoDoAluno(dados)))}>Baixar modelo</button>
-            <button type="button" className="ghost small" onClick={() => baixar(`semana-${nome}-${semana}.json`, exportPackage(dados, semana))}>Exportar a semana</button>
+            <button type="button" className="ghost small" onClick={() => baixarJson(`modelo-${nome}-${semana}.json`, templatePackage(semana, contextoDoAluno(dados)))}>Baixar modelo</button>
+            <button type="button" className="ghost small" onClick={() => baixarJson(`semana-${nome}-${semana}.json`, exportPackage(dados, semana))}>Exportar a semana</button>
           </div>
-        </li>
-        <li>Cole o modelo na IA e peça a semana (ou só uma aula).</li>
-        <li>
-          Traga de volta o JSON que a IA devolveu. A conferência usa o vocabulário de {nome}.
-          <label className="ghost file">
-            Escolher arquivo .json
-            <input type="file" accept="application/json,.json" onChange={async (e) => { const f = e.target.files?.[0]; if (f) { setTexto(await f.text()); setRes(null); } e.target.value = ''; }} />
-          </label>
-          <textarea className="json-box" rows={8} value={texto} placeholder="…ou cole o JSON aqui" spellCheck={false} onChange={(e) => { setTexto(e.target.value); setRes(null); }} />
-        </li>
-      </ol>
+      </details>
       {typeof lido === 'string' && <p className="error">{lido}</p>}
       {res?.ok && <p className="ok-line">{res.mensagem}</p>}
       {check && (

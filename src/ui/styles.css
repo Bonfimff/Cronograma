@@ -2282,3 +2282,7 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 .ed-niveis button.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); background: var(--accent-soft); }
 .ed-niveis button.on b { color: var(--accent); }
 .ed-ajuda .link { font-weight: 600; }
+.ed-mais { border: 1px dashed var(--rule); border-radius: 12px; padding: 10px 14px; }
+.ed-mais > summary { cursor: pointer; color: var(--ink-2); font-size: .9rem; }
+.ed-mais[open] > summary { margin-bottom: 8px; }
+.ed-gravada { display: flex; flex-direction: column; gap: 4px; }

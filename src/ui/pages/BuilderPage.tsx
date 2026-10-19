@@ -49,21 +49,21 @@ export function BuilderPage({ week: initialWeek }: { week?: string }) {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Montar semana</p>
+        <p className="eyebrow">Importar arquivo</p>
         <h1>Pacote semanal (JSON)</h1>
-        <p className="lead">Uma semana inteira num arquivo.</p>
+        <p className="lead">Uma aula ou uma semana inteira num arquivo, como o que se baixa ao gravar uma aula.</p>
         <div className="acoes-json">
           <button onClick={() => download(`modelo-semana-${week}.json`, templatePackage(week, contextoDoAluno(data)))}>
             <b>Modelo</b>
-            <small>com o seu vocabulário e o pedido pronto para colar numa IA</small>
+            <small>o formato do arquivo, com o seu vocabulário</small>
           </button>
           <button onClick={() => download(`semana-${week}.json`, exportPackage(data, week))}>
             <b>Exportar</b>
             <small>salva a semana de {fmtShort(week)}</small>
           </button>
           <a href="#/montar-aula">
-            <b>Montar à mão</b>
-            <small>uma aula do seu jeito, sem IA</small>
+            <b>Montar aula</b>
+            <small>uma aula ou atividade do seu jeito</small>
           </a>
           <a href="#/semana">
             <b>Planejamento</b>

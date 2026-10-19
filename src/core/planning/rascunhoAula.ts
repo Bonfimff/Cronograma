@@ -230,3 +230,45 @@ export function exemploDeAula(date: string, formato: FormatoSessao = 'aula'): Ra
     criterios: ['Usa "I\'d like" para pedir', 'Pede a conta sem consultar'],
   };
 }
+
+/**
+ * A aula pronta para usar com outro aluno: o mesmo pacote, sem o código desta conta,
+ * levando junto as palavras, expressões, padrões e exemplos do vocabulário que ela cita
+ * (quem importa pode não ter nada disso).
+ */
+export function pacoteParaCompartilhar(pkg: WeekPackage, dados: UserData): WeekPackage {
+  const c = dados.content ?? {};
+  const veio = pkg.content ?? {};
+  const sessoes = pkg.days.flatMap((d) => d.sessions ?? []);
+  const refs = new Set(sessoes.flatMap((s) => [
+    ...(s.refs ?? []), ...(s.palavras?.novas ?? []), ...(s.palavras?.revisar ?? []), ...(s.palavras?.apoio ?? []),
+    ...(s.aula?.aquecimento ? [s.aula.aquecimento] : []),
+  ]));
+  const citado = (tipo: string) => (x: { id: string }) => refs.has(`${tipo}:${x.id}` as ContentRef);
+  const faltam = <T extends { id: string }>(meus: T[] | undefined, ja: T[] | undefined, tipo: string) =>
+    (meus ?? []).filter(citado(tipo)).filter((x) => !(ja ?? []).some((y) => y.id === x.id));
+  const words = [...(veio.words ?? []), ...faltam(c.words, veio.words, 'word')];
+  const expressions = [...(veio.expressions ?? []), ...faltam(c.expressions, veio.expressions, 'expression')];
+  const patterns = [...(veio.patterns ?? []), ...faltam(c.patterns, veio.patterns, 'pattern')];
+  const grammar = [...(veio.grammar ?? []), ...faltam(c.grammar, veio.grammar, 'grammar')];
+  // os exemplos que esses itens citam (também os dos usos de cada palavra)
+  const idsEx = new Set([
+    ...words.flatMap((w) => [...(w.examples ?? []), ...(w.uses ?? []).flatMap((u) => u.examples ?? [])]),
+    ...[...expressions, ...patterns, ...grammar].flatMap((x) => x.examples ?? []),
+  ]);
+  const examples = [...(veio.examples ?? []), ...(c.examples ?? []).filter((e) => idsEx.has(e.id) && !(veio.examples ?? []).some((y) => y.id === e.id))];
+  const content = Object.fromEntries(Object.entries({ words, expressions, patterns, grammar, examples }).filter(([, l]) => l.length));
+  return {
+    ...pkg,
+    ...(Object.keys(content).length && { content: content as WeekPackage['content'] }),
+    // sem o código: na outra conta, vira uma aula nova
+    days: pkg.days.map((d) => ({
+      ...d,
+      sessions: (d.sessions ?? []).map(({ id: _id, status: _st, ...s }) => ({
+        ...s,
+        // os códigos dos exercícios também são desta conta: na outra, ganham códigos novos
+        ...(s.exercises && { exercises: s.exercises.map((x) => (typeof x === 'string' ? x : (({ id: _x, ...resto }) => resto)(x))) }),
+      })),
+    })),
+  };
+}
