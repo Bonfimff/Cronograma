@@ -78,17 +78,29 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
     setAcessos(await session.withToken((t) => api.revogarProfessor(t, id)));
   };
 
+  // quem tem alunos e nenhum professor está aqui como professor: não vê a parte de autorizar
+  const souProfessor = !!acessos?.alunos.length && !acessos.professores.length;
+
   return (
     <>
       <section className="hero">
         <p className="eyebrow">Professor</p>
-        <h1>Professores e alunos</h1>
-        <p className="lead">Dê a um professor acesso ao seu histórico e ao relatório de progresso. Ele também pode montar aulas para você e marcar a próxima no calendário.</p>
+        {souProfessor ? (
+          <>
+            <h1>Meus alunos</h1>
+            <p className="lead">Acompanhe o progresso, monte aulas, cuide do vocabulário e marque a próxima aula de cada aluno.</p>
+          </>
+        ) : (
+          <>
+            <h1>Professores e alunos</h1>
+            <p className="lead">Dê a um professor acesso ao seu histórico e ao relatório de progresso. Ele também pode montar aulas para você e marcar a próxima no calendário.</p>
+          </>
+        )}
       </section>
 
       {erro && <p className="erro">{erro}</p>}
 
-      <section className="paper-card">
+      {!souProfessor && <section className="paper-card">
         <h2>Meus professores</h2>
         <form onSubmit={autorizar} className="linha-form">
           <input type="email" required placeholder="e-mail da conta do professor" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -102,10 +114,10 @@ export function ProfessorPage({ aluno, aba = 'progresso' }: { aluno?: string; ab
             ))}
           </ul>
         ) : <p className="muted">Nenhum professor autorizado.</p>}
-      </section>
+      </section>}
 
       <section>
-        <h2>Meus alunos</h2>
+        {!souProfessor && <h2>Meus alunos</h2>}
         {acessos?.alunos.length ? (
           <ul className="prof-alunos">
             {acessos.alunos.map((a) => (
