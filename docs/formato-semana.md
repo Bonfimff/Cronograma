@@ -114,6 +114,12 @@ aulas diferentes (mesmo com o enunciado trocado), itens de `sheet.quiz` repetido
 palavras novas incompletas (sem `pronunciation.ipa`, sem `uses` ou com menos de 3 exemplos).
 `build` sem `tokens` e `match` com pares em objeto são corrigidos sozinhos na importação.
 
+**Uma semana, não uma aula repetida.** A prévia também olha a semana inteira: conta quantas das
+frases dos cartões voltam em mais de uma aula, aponta os campos que vierem iguais palavra por
+palavra em todas elas (`app.intro`, `app.context`, `app.tips`, `whenToUse`, `sheet.copy`,
+`aula.missao.situacao`), avisa quando nenhuma dica de `app.tips` da semana fala de pronúncia, e
+reconhece os exemplos do modelo devolvidos como se fossem o conteúdo da semana.
+
 Como o JSON não carrega comentário, o modelo diz em `$referencia` qual das suas aulas é a referência
 de profundidade, e cada aula traz um `$nivel` (`REFERÊNCIA` ou `ESBOÇO`). Sem isso, quem lê o modelo
 vê três aulas de tamanhos diferentes e imita a média delas.

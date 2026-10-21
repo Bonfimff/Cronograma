@@ -517,6 +517,68 @@ function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof 
     else quizVistos.set(chave, s.title);
   }));
   if (quizRepetidos.size) out.push({ ok: false, texto: `O mesmo item de "Tente sem consultar" em folhas diferentes: ${[...quizRepetidos].slice(0, 3).join(' · ')}.` });
+
+  // frases de cartão repetidas ENTRE as aulas: cada aula já é conferida por dentro, mas uma
+  // semana em que a mesma frase volta todo dia é uma aula só, repetida com outros exercícios
+  const donas = new Map<string, { frase: string; aulas: Set<string> }>();
+  sessoes.forEach(({ date, s }) => {
+    const aula = `${date}·${s.title ?? ''}`;
+    [...(s.aula?.escuta ?? []), ...(s.aula?.fala ?? []), ...(s.aula?.missao?.tarefas ?? [])].forEach((f) => {
+      const k = normalizarFrase(f.en ?? '');
+      if (!k) return;
+      const reg = donas.get(k) ?? { frase: f.en, aulas: new Set<string>() };
+      reg.aulas.add(aula);
+      donas.set(k, reg);
+    });
+  });
+  const entreAulas = [...donas.values()].filter((r) => r.aulas.size > 1);
+  if (entreAulas.length) {
+    const repetidasNoTotal = entreAulas.reduce((n, r) => n + r.aulas.size, 0);
+    const total = [...donas.values()].reduce((n, r) => n + r.aulas.size, 0);
+    out.push({
+      ok: false,
+      texto: `${repetidasNoTotal} das ${total} frases dos cartões aparecem em mais de uma aula: ${entreAulas.slice(0, 3).map((r) => r.frase).join(' · ')}. Cada aula precisa das suas próprias frases.`,
+    });
+  }
+
+  // a mesma aula escrita três vezes: o que muda de verdade entre os dias?
+  if (sessoes.length > 1) {
+    const campos: [string, (s: PackageSession) => string][] = [
+      ['app.intro', (s) => s.app?.intro ?? ''],
+      ['app.context', (s) => s.app?.context ?? ''],
+      ['app.tips', (s) => (s.app?.tips ?? []).join(' | ')],
+      ['whenToUse', (s) => s.whenToUse ?? ''],
+      ['sheet.copy', (s) => (s.sheet?.copy ?? []).join(' | ')],
+      ['aula.missao.situacao', (s) => s.aula?.missao?.situacao ?? ''],
+    ];
+    const iguais = campos.filter(([, ler]) => {
+      const vals = sessoes.map(({ s }) => normalizarFrase(ler(s))).filter(Boolean);
+      return vals.length > 1 && new Set(vals).size === 1;
+    }).map(([nome]) => nome);
+    if (iguais.length) {
+      out.push({
+        ok: false,
+        texto: `Igual, palavra por palavra, em todas as aulas: ${iguais.join(', ')}. Cada aula explica a sua própria regra e imprime a sua própria folha.`,
+      });
+    }
+  }
+
+  // uma dica de pronúncia na semana: é o que o aluno não descobre sozinho lendo
+  const tipsDaSemana = sessoes.flatMap(({ s }) => s.app?.tips ?? []);
+  if (tipsDaSemana.length && !tipsDaSemana.some((t) => /pronunc|som d|sons |soa |sotaque|s[ií]laba|\/.+\//i.test(String(t)))) {
+    out.push({ ok: false, texto: 'Nenhuma dica de app.tips fala de pronúncia nesta semana. É o que a pessoa não descobre sozinha lendo: o som, a sílaba forte ou o par que confunde.' });
+  }
+
+  // o content do modelo devolvido como se fosse o conteúdo da semana
+  const exemplosDoModelo = new Map((templatePackage('2026-01-05').content?.examples ?? []).map((e) => [e.id, e.en]));
+  const copiados = lists.examples.filter((e) => exemplosDoModelo.get(String(e.id)) === String(e.en));
+  if (copiados.length >= 5) {
+    out.push({
+      ok: false,
+      texto: `${copiados.length} exemplos de content.examples são os do modelo, copiados (${copiados.slice(0, 2).map((e) => e.id).join(', ')}…). O modelo traz dados de exemplo só para mostrar o formato: a semana precisa dos exemplos dela.`,
+    });
+  }
+
   // palavras de verdade novas: as do arquivo que o aluno ainda não tem
   const jaTem = new Set(aluno.vocabulario.map(([en]) => en.toLowerCase()));
   const novasPalavras = lists.words.filter((w) => !jaTem.has(String(w.word ?? '').toLowerCase()));
@@ -809,7 +871,8 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         'COMECE PELO FOCO, não pela novidade: aluno.foco.reforcar traz, em ordem de urgência, o que esta semana precisa resolver — essas palavras vêm em palavras.revisar (de preferência no aquecimento) antes de você escolher qualquer palavra nova.',
         'aluno.foco.subir traz [palavra, próximo degrau]: palavras firmes que pararam num degrau. Faça cada uma avançar com a atividade que aquele degrau pede (entender ouvindo → aula.escuta; pronunciar → aula.fala; usar numa frase sua → aula.missao e chat.treino). Subir uma palavra de degrau vale mais do que acrescentar outra palavra nova.',
         'CONECTE, NÃO EMPILHE: toda palavra nova entra ligada a pelo menos uma palavra "firme" do aluno — cite essa palavra em related_words e escreva pelo menos 1 exemplo que use as duas na mesma frase. Palavra nova solta, sem ponte com o que a pessoa já sabe, é a primeira a ser esquecida.',
-        'Pelo menos uma dica de app.tips da semana ataca um item de aluno.dificuldades.pronuncia (os sons que a pessoa erra na Fala), dizendo o som ou o par mínimo. Se a lista vier vazia, use os erros comuns de quem fala português.',
+        'Pelo menos uma dica de app.tips da semana fala de PRONÚNCIA — o som, a sílaba forte ou o par que confunde — e, quando aluno.dificuldades.pronuncia vier preenchido, ataca um item de lá. Se vier vazio, use os erros comuns de quem fala português. A prévia confere e avisa quando a semana inteira passa sem nenhuma.',
+        'content é o conteúdo DESTA semana: não devolva os exemplos, as expressões, os padrões, a gramática, os temas nem as folhas do modelo. Eles estão aqui só para mostrar o formato, e a prévia avisa quando voltam copiados.',
         'Cada palavra nova deve aparecer em pelo menos 3 sessões diferentes da semana (como nova, revisar ou apoio).',
         'Cada sessão treina pelo menos 3 habilidades: marque habilidade nos exercícios e use aula.escuta (ouvir), aula.fala (falar) e aula.missao ou chat.treino (usar).',
         'Para mudar só um dia ou uma aula, mande só esses dias: os outros ficam como estão. Sem id, a aula de mesmo dia e mesmo título é atualizada.',
@@ -823,8 +886,9 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         'build: sempre com "tokens" (as palavras da resposta, embaralhadas) e "answer". match: "pairs" como lista de pares ["inglês", "português"], nunca objetos. choice: 3 ou 4 options plausíveis.',
         'aula.escuta, aula.fala e aula.missao.tarefas usam frases DIFERENTES entre si (2 a 4 em cada): escuta para reconhecer, fala para repetir, missão para produzir numa situação nova.',
         'VARIEDADE, por aula, contando escuta + fala + missao.tarefas (não é "varie um pouco": são cotas): pelo menos 1 frase negativa (don\'t / isn\'t), pelo menos 1 na terceira pessoa (he/she/my sister + works/is), pelo menos 1 pergunta de volta (And you? / What about you?) e pelo menos 2 com um detalhe concreto (lugar, horário, quantidade, adjetivo). Nenhuma frase dos cartões com menos de 5 palavras: "This is a school." não ensina nada que "This is a school near my house." não ensine melhor.',
-        'Nenhuma frase se repete entre escuta, fala e missao.tarefas da mesma aula, nem entre aulas diferentes da semana. A prévia aponta as repetidas.',
+        'Nenhuma frase se repete entre escuta, fala e missao.tarefas da mesma aula, NEM ENTRE AULAS DIFERENTES da semana: a prévia conta quantas das frases dos cartões aparecem em mais de uma aula e aponta as repetidas. Uma semana em que a mesma frase volta todo dia é uma aula só, repetida com outros exercícios.',
         'Os itens de sheet.quiz não se repetem entre as folhas da semana.',
+        'CADA AULA É UMA AULA, não a mesma três vezes: app.intro, app.context, app.tips, whenToUse, sheet.copy e aula.missao.situacao são escritos de novo em cada aula, sobre o que aquele dia ensina. A prévia aponta todo campo que vier igual, palavra por palavra, em todas as aulas — e a folha impressa de cada dia sai do sheet.copy daquele dia.',
         'app.intro explica a regra com um exemplo; app.tips traz 2 a 4 dicas práticas (erros comuns de quem fala português, pronúncia, quando usar); expected.criteria diz o que a pessoa consegue fazer, de forma verificável.',
         'chat.treino: 3 a 5 perguntas por aula, com resposta modelo usando ____ no lugar do que é pessoal.',
         'Não devolva o bloco aluno nem os campos que começam com $.',
