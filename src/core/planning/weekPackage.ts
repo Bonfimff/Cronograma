@@ -55,6 +55,11 @@ export interface PackageSession {
   /** ids de exercícios existentes ou exercícios completos escritos aqui. */
   exercises?: (string | Omit<Exercise, 'id' | 'refs'> & { id?: string; refs?: ContentRef[] })[];
   expected?: ExpectedResult;
+  /**
+   * Só no modelo baixado: diz se esta aula é a referência a imitar ou um esboço
+   * curto, já que o JSON não carrega comentários. Ignorado na importação.
+   */
+  $nivel?: string;
 }
 
 export interface PackageDay {
@@ -135,6 +140,10 @@ function known(user: Partial<ContentBundle> | undefined, pkg: Partial<ContentBun
 }
 
 const textoDoRef = (id: string) => id.toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** Frase sem acento, sem pontuação e sem caixa, para comparar duas que só mudam de forma. */
+const normalizarFrase = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
 /**
  * Acha o conteúdo de uma referência mesmo quando o id não bate: "word:office" encontra a
@@ -257,12 +266,18 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
   });
   const exampleRefs = (where: string, l: unknown) =>
     listOf<unknown>(l, `${where}: examples`, err).forEach((e) => { if (!ids.examples.has(e)) err(`${where}: exemplo "${e}" não existe.`); });
-  const refOk = (where: string, r: unknown) => {
+  /**
+   * `estrito` é para palavras.novas: o que a aula se propõe a ENSINAR precisa existir,
+   * senão a aula fica sem ficha, sem pronúncia, sem flashcard e sem revisão espaçada.
+   * Nos outros lugares, palavra sem cadastro só sai daquela aula (aviso).
+   */
+  const refOk = (where: string, r: unknown, estrito = false) => {
     if (typeof r !== 'string' || !r.includes(':')) return err(`${where}: referência "${String(r)}" inválida (use "word:how", "expression:...", ...).`);
     const { kind, id } = parseRef(r as ContentRef);
     const key = KIND_KEY[kind];
     if (!key) return err(`${where}: tipo "${kind}" desconhecido em "${r}".`);
     if (ids[key].has(id) || resolver(r as ContentRef)) return;
+    if (estrito) return err(`${where}: "${r}" é ensinado nesta aula mas não existe (cadastre em content.${key}, com pronunciation.ipa, pelo menos 1 uso e 3 exemplos em content.examples).`);
     // palavra ou expressão sem cadastro não bloqueia o arquivo: só fica de fora daquela aula
     if (kind === 'word' || kind === 'expression') warn(`${where}: "${r}" não está no vocabulário nem em content.${key}; fica de fora desta aula.`);
     else err(`${where}: "${r}" não existe (adicione em content.${key}).`);
@@ -332,7 +347,7 @@ export function checkPackage(data: UserData, p: WeekPackage, opts: { replacePlan
       const pal = isObj(s.palavras) ? s.palavras : undefined;
       if (s.palavras !== undefined && !pal) err(`${w}: "palavras" deve ser um objeto ({ novas, revisar, apoio }).`);
       const novas = listOf<unknown>(pal?.novas, `${w}: palavras.novas`, err);
-      (['novas', 'revisar', 'apoio'] as const).forEach((k) => listOf<unknown>(pal?.[k], `${w}: palavras.${k}`, err).forEach((r) => refOk(`${w}, palavras.${k}`, r)));
+      (['novas', 'revisar', 'apoio'] as const).forEach((k) => listOf<unknown>(pal?.[k], `${w}: palavras.${k}`, err).forEach((r) => refOk(`${w}, palavras.${k}`, r, k === 'novas')));
       if (novas.length > 4) warn(`${w}: ${novas.length} palavras novas; a aula mostra até 4 em cartões, o resto vai para "Saiba mais".`);
       const atividade = s.formato === 'atividade';
       if (s.formato !== undefined && s.formato !== 'aula' && !atividade) err(`${w}: "formato" deve ser aula ou atividade.`);
@@ -477,22 +492,51 @@ function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof 
   });
 
   // exercícios iguais (mesmo enunciado e resposta) em aulas diferentes
+  // dois exercícios com a mesma resposta são o mesmo exercício, ainda que o enunciado
+  // mude uma palavra ("Aquilo é uma escola" / "Aquela é uma escola" → That is a school.)
   const vistos = new Map<string, string>();
   const repetidos = new Set<string>();
   sessoes.forEach(({ s }) => (s.exercises ?? []).forEach((x) => {
     if (typeof x === 'string') return;
-    const chave = `${x.prompt}|${JSON.stringify(x.answer ?? '')}`.toLowerCase();
+    const resposta = Array.isArray(x.answer) ? x.answer[0] : x.answer;
+    const chave = `${x.type}|${normalizarFrase(String(resposta ?? '')) || normalizarFrase(String(x.prompt ?? ''))}`;
     const dono = vistos.get(chave);
     if (dono && dono !== s.title) repetidos.add(x.prompt);
     else vistos.set(chave, s.title);
   }));
-  if (repetidos.size) out.push({ ok: false, texto: `Exercícios repetidos em aulas diferentes: ${[...repetidos].slice(0, 3).join(' · ')}.` });
+  if (repetidos.size) out.push({ ok: false, texto: `Exercícios com a mesma resposta em aulas diferentes: ${[...repetidos].slice(0, 3).join(' · ')}.` });
+
+  // "Tente sem consultar": a folha de cada aula pede frases diferentes
+  const quizVistos = new Map<string, string>();
+  const quizRepetidos = new Set<string>();
+  sessoes.forEach(({ s }) => (s.sheet?.quiz ?? []).forEach((q) => {
+    const chave = normalizarFrase(String(q ?? ''));
+    if (!chave) return;
+    const dono = quizVistos.get(chave);
+    if (dono && dono !== s.title) quizRepetidos.add(String(q));
+    else quizVistos.set(chave, s.title);
+  }));
+  if (quizRepetidos.size) out.push({ ok: false, texto: `O mesmo item de "Tente sem consultar" em folhas diferentes: ${[...quizRepetidos].slice(0, 3).join(' · ')}.` });
   // palavras de verdade novas: as do arquivo que o aluno ainda não tem
   const jaTem = new Set(aluno.vocabulario.map(([en]) => en.toLowerCase()));
   const novasPalavras = lists.words.filter((w) => !jaTem.has(String(w.word ?? '').toLowerCase()));
   const novasExpressoes = lists.expressions.filter((e) => !jaTem.has(String(e.text ?? '').replace(/[?!.]+$/, '').toLowerCase()));
-  const pobres = novasPalavras.filter((w) => !Array.isArray(w.examples) || w.examples.length < 3).map((w) => String(w.word ?? w.id));
-  if (pobres.length) out.push({ ok: false, texto: `Palavras novas com menos de 3 exemplos: ${pobres.slice(0, 6).join(', ')}.` });
+  // completude das palavras que as aulas ENSINAM: as de palavras.novas e as que o
+  // aluno ainda não tem. Sem ipa, uso e exemplos, a palavra entra sem ficha, sem
+  // pronúncia e sem nada para os jogos e a revisão espaçada.
+  const refsNovas = new Set(sessoes.flatMap(({ s }) => s.palavras?.novas ?? []));
+  const ensinadas = new Set([
+    ...novasPalavras,
+    ...lists.words.filter((w) => refsNovas.has(`word:${w.id}` as ContentRef)),
+  ]);
+  ensinadas.forEach((w) => {
+    const faltas = [
+      !isObj(w.pronunciation) || !text((w.pronunciation as Record<string, unknown>).ipa) ? 'pronunciation.ipa' : '',
+      !Array.isArray(w.uses) || !w.uses.length ? 'pelo menos 1 uso' : '',
+      !Array.isArray(w.examples) || w.examples.length < 3 ? '3 exemplos' : '',
+    ].filter(Boolean);
+    if (faltas.length) out.push({ ok: false, texto: `Palavra nova "${String(w.word ?? w.id)}" incompleta: falta ${faltas.join(', ')}. Sem isso ela não tem ficha, pronúncia nem revisão espaçada.` });
+  });
 
   // ritmo: quantas novas cabem na semana, decidido pelo app (contextoAluno.ts), não pela IA
   const novas = novasPalavras.length + novasExpressoes.length;
@@ -698,10 +742,19 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
 /** Modelo comentado para começar uma semana nova. */
 export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekPackage & {
   $leia_me: string[];
+  $referencia: string;
   $plataforma: Record<string, string>;
   $como_pedir: { pedido: string; preencha: Record<string, string>; regras: string[] };
 } {
   return {
+    // O JSON não carrega comentário: sem este campo, quem lê o modelo vê três aulas
+    // de tamanhos diferentes e imita a média delas. Cada aula também traz "$nivel".
+    $referencia:
+      'A aula "Where do you work?" (segundo dia) é a ÚNICA referência de profundidade: '
+      + 'é esse o tamanho e a variedade esperados em TODA aula que você escrever. '
+      + 'As outras duas aulas deste modelo ("Perguntas com How" e "Revisão: perguntas") são esboços '
+      + 'curtos, só para mostrar os campos mínimos: NÃO use o tamanho delas como exemplo. '
+      + 'Cada aula traz "$nivel" dizendo qual é qual. Apague os campos com $ na sua resposta.',
     // o que a plataforma faz com cada coisa que vem no arquivo — para quem monta
     // a semana (ou pede a uma IA que monte) saber o que vale a pena preencher
     $plataforma: {
@@ -730,6 +783,7 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
       pedido:
         'Você vai montar uma semana de estudo de inglês para mim no formato deste arquivo JSON. '
         + 'Responda só com o JSON, sem texto em volta, começando em "format" e mantendo exatamente os nomes de campo daqui. '
+        + 'Leia $referencia primeiro: ele diz qual das aulas do modelo é a referência de profundidade a imitar e quais são só esboços. '
         + 'Use os campos $plataforma e $leia_me deste modelo para saber o que cada campo faz, siga as regras de $como_pedir.regras '
         + 'e apague os campos que começam com $ na sua resposta.',
       preencha: {
@@ -755,12 +809,17 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         'Cada sessão treina pelo menos 3 habilidades: marque habilidade nos exercícios e use aula.escuta (ouvir), aula.fala (falar) e aula.missao ou chat.treino (usar).',
         'Para mudar só um dia ou uma aula, mande só esses dias: os outros ficam como estão. Sem id, a aula de mesmo dia e mesmo título é atualizada.',
         'QUANTAS PALAVRAS NOVAS: quem decide é o app, em aluno.ritmo.novas_na_semana (calculado pelo que ainda está em treino). Nunca passe desse total na semana; distribua como fizer sentido, sem obrigação de novidade todo dia. Aulas sem palavra nova aprofundam as que estão em treino (estudando, quase_esquecida): mais exemplos, mais uso, situações novas. Sem bloco aluno, use no máximo 8 novas na semana.',
-        'PROFUNDIDADE (o app confere e avisa na prévia): siga a aula "Where do you work?" deste modelo como referência de tamanho e variedade.',
-        'Cada palavra nova vem completa: pronunciation.ipa, pelo menos 1 uso (uses) e pelo menos 3 exemplos próprios em content.examples, em situações diferentes.',
+        'PROFUNDIDADE (o app confere e avisa na prévia): a aula "Where do you work?" é a única referência de tamanho e variedade — ela tem $nivel "REFERÊNCIA". As outras duas aulas do modelo têm $nivel "ESBOÇO" e existem só para mostrar os campos mínimos: não copie o tamanho delas.',
+        'Exercícios com a MESMA RESPOSTA em aulas diferentes contam como repetidos, mesmo com o enunciado trocado ("Aquilo é uma escola" e "Aquela é uma escola" dão o mesmo "That is a school.").',
+        'app.tips são erros concretos de quem fala português, não a regra repetida: pelo menos 1 dica de pronúncia (com o som ou o par mínimo: this /ɪ/ curto × these /iː/ longo) e 1 de interferência do português (o que a tradução literal faria dar errado).',
+        'TODA ref de palavras.novas precisa ter a palavra cadastrada em content.words NESTE arquivo (a não ser que ela já exista no vocabulário do aluno). Declarar "word:x" em novas sem o content.words correspondente é ERRO e trava a importação: sem cadastro a palavra fica sem ficha na Biblioteca, sem pronúncia, sem flashcard, fora dos jogos e fora da revisão espaçada.',
+        'Cada palavra nova vem completa: pronunciation.ipa, pelo menos 1 uso (uses) e pelo menos 3 exemplos próprios em content.examples, em situações diferentes. A prévia aponta, uma por uma, as que faltarem.',
         'Cada aula tem de 8 a 12 exercícios misturando os tipos: choice, fill, build, match, translate (pt→en e en→pt), qa e pelo menos 1 produce. Não repita o mesmo exercício (mesmo enunciado e resposta) em aulas diferentes.',
         'build: sempre com "tokens" (as palavras da resposta, embaralhadas) e "answer". match: "pairs" como lista de pares ["inglês", "português"], nunca objetos. choice: 3 ou 4 options plausíveis.',
         'aula.escuta, aula.fala e aula.missao.tarefas usam frases DIFERENTES entre si (2 a 4 em cada): escuta para reconhecer, fala para repetir, missão para produzir numa situação nova.',
-        'Varie as frases: respostas com detalhes reais (at a school / in an office / from home), negativas, perguntas de volta (And you?), terceira pessoa, lugares e horários.',
+        'VARIEDADE, por aula, contando escuta + fala + missao.tarefas (não é "varie um pouco": são cotas): pelo menos 1 frase negativa (don\'t / isn\'t), pelo menos 1 na terceira pessoa (he/she/my sister + works/is), pelo menos 1 pergunta de volta (And you? / What about you?) e pelo menos 2 com um detalhe concreto (lugar, horário, quantidade, adjetivo). Nenhuma frase dos cartões com menos de 5 palavras: "This is a school." não ensina nada que "This is a school near my house." não ensine melhor.',
+        'Nenhuma frase se repete entre escuta, fala e missao.tarefas da mesma aula, nem entre aulas diferentes da semana. A prévia aponta as repetidas.',
+        'Os itens de sheet.quiz não se repetem entre as folhas da semana.',
         'app.intro explica a regra com um exemplo; app.tips traz 2 a 4 dicas práticas (erros comuns de quem fala português, pronúncia, quando usar); expected.criteria diz o que a pessoa consegue fazer, de forma verificável.',
         'chat.treino: 3 a 5 perguntas por aula, com resposta modelo usando ____ no lugar do que é pessoal.',
         'Não devolva o bloco aluno nem os campos que começam com $.',
@@ -768,7 +827,7 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
       ],
     },
     $leia_me: [
-      'Pacote semanal do Inglês Híbrido (semana@2). Campos que começam com $ são ignorados.',
+      'Pacote semanal do Inglês Híbrido (semana@2). Campos que começam com $ são ignorados na importação: são instruções para quem escreve o arquivo. Leia $referencia antes de tudo.',
       'Estrutura formal (JSON Schema): https://eita.exksvol.com/formatos/semana@2.schema.json',
       'content: conteúdo NOVO da semana (mesmo formato dos arquivos em /content). Pode referenciar o conteúdo que já existe.',
       'refs: conteúdos estudados na sessão: "word:id", "expression:id", "pattern:id", "grammar:id".',
@@ -899,6 +958,7 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         date: weekStart, theme: 'Perguntas básicas', objective: 'Perguntar como alguém está', minutes: 20,
         sessions: [
           {
+            $nivel: 'ESBOÇO — só os campos mínimos. Não imite este tamanho: veja "Where do you work?".',
             kind: 'new', title: 'Perguntas com How', objective: 'Perguntar e responder como alguém está.',
             refs: ['word:how', 'expression:how-are-you'],
             whenToUse: 'Use how para perguntar como alguém está ou como algo é feito.',
@@ -928,7 +988,9 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         date: addDays(weekStart, 1), theme: 'Trabalho', objective: 'Perguntar onde a pessoa trabalha', minutes: 20,
         sessions: [
           {
-            // AULA MODELO: é este o nível de profundidade esperado em cada aula
+            // AULA MODELO: é este o nível de profundidade esperado em cada aula.
+            // O comentário some no JSON baixado; quem avisa a IA é o $nivel abaixo.
+            $nivel: 'REFERÊNCIA — imite esta aula: este tamanho, esta variedade de frases e estes 10 exercícios.',
             kind: 'new', title: 'Where do you work?',
             objective: 'Perguntar onde alguém trabalha e responder com detalhes sobre o próprio trabalho.',
             refs: ['pattern:pergunta-com-do', 'expression:where-do-you-work'],
@@ -1000,6 +1062,7 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         date: addDays(weekStart, 4), theme: 'Revisão da semana', minutes: 30,
         sessions: [
           {
+            $nivel: 'ESBOÇO — só os campos mínimos. Não imite este tamanho: veja "Where do you work?".',
             kind: 'review', title: 'Revisão: perguntas', refs: ['expression:how-are-you', 'expression:where-do-you-work'],
             palavras: { revisar: ['word:work', 'word:where'], apoio: ['word:how', 'word:do'] },
             aula: { escuta: [{ en: 'How are you?', pt: 'Como você está?' }], fala: [{ en: 'Where do you work?', pt: 'Onde você trabalha?' }] },

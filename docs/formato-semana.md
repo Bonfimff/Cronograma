@@ -91,9 +91,14 @@ aulas sem novidade aprofundam o que está em treino. A prévia avisa quando o ar
 **Profundidade**: o modelo traz uma aula completa ("Where do you work?") como referência de tamanho:
 palavras novas com pronúncia, uso e 3 exemplos; 8 a 12 exercícios de todos os tipos; escuta, fala e
 missão com frases diferentes; dicas com os erros comuns de quem fala português. A prévia avisa sobre
-aulas com poucos exercícios, frases repetidas entre os cartões, exercícios repetidos entre aulas e
-palavras novas com menos de 3 exemplos. `build` sem `tokens` e `match` com pares em objeto são
-corrigidos sozinhos na importação.
+aulas com poucos exercícios, frases repetidas entre os cartões, exercícios com a mesma resposta em
+aulas diferentes (mesmo com o enunciado trocado), itens de `sheet.quiz` repetidos entre as folhas e
+palavras novas incompletas (sem `pronunciation.ipa`, sem `uses` ou com menos de 3 exemplos).
+`build` sem `tokens` e `match` com pares em objeto são corrigidos sozinhos na importação.
+
+Como o JSON não carrega comentário, o modelo diz em `$referencia` qual das suas aulas é a referência
+de profundidade, e cada aula traz um `$nivel` (`REFERÊNCIA` ou `ESBOÇO`). Sem isso, quem lê o modelo
+vê três aulas de tamanhos diferentes e imita a média delas.
 
 ### `palavras`, `aula`, `habilidade` e `chat.treino` na sessão
 
@@ -249,8 +254,12 @@ A semana exportada traz o **código** de cada sessão (`id`, o mesmo do QR da fo
 **Palavras citadas pelo nome.** Uma referência como `"word:office"` vale mesmo que o id da palavra
 seja outro: o app procura a palavra (ou expressão) pelo texto no vocabulário do aluno e no `content`
 do arquivo. Se ela não existir em lugar nenhum, o arquivo é aceito do mesmo jeito: a prévia avisa e
-essa palavra só fica de fora daquela aula. Para ensinar uma palavra nova, ela precisa estar em
-`content.words`.
+essa palavra só fica de fora daquela aula.
+
+**Mas em `palavras.novas` não**: o que a aula se propõe a ensinar precisa existir. Uma ref de
+`palavras.novas` que não está no vocabulário do aluno nem em `content.words` é **erro** e bloqueia a
+importação — sem cadastro a palavra entraria sem ficha na Biblioteca, sem pronúncia, sem flashcard,
+fora dos jogos e fora da revisão espaçada.
 
 Com **"Nos dias do arquivo, tirar as aulas não iniciadas que não estão nele"** marcado, as aulas
 planejadas desses dias que não vieram no arquivo são removidas. Dias fora do arquivo nunca são tocados. A prévia mostra exatamente quantas

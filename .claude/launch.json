@@ -1,6 +1,27 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "app", "runtimeExecutable": "npx", "runtimeArgs": ["vite"], "port": 5173, "autoPort": true }
+    {
+      "name": "app",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite"
+      ],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": ".venv/Scripts/python",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--port",
+        "8010"
+      ],
+      "port": 8010,
+      "cwd": "server"
+    }
   ]
 }
