@@ -55,11 +55,6 @@ export interface PackageSession {
   /** ids de exercícios existentes ou exercícios completos escritos aqui. */
   exercises?: (string | Omit<Exercise, 'id' | 'refs'> & { id?: string; refs?: ContentRef[] })[];
   expected?: ExpectedResult;
-  /**
-   * Só no modelo baixado: diz se esta aula é a referência a imitar ou um esboço
-   * curto, já que o JSON não carrega comentários. Ignorado na importação.
-   */
-  $nivel?: string;
 }
 
 export interface PackageDay {
@@ -572,7 +567,9 @@ function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof 
   }
 
   // o content do modelo devolvido como se fosse o conteúdo da semana
-  const exemplosDoModelo = new Map((templatePackage('2026-01-05').content?.examples ?? []).map((e) => [e.id, e.en]));
+  // os exemplos do modelo moraram em "content" até o dia em que começaram a voltar copiados;
+  // hoje moram em "$exemplo", e é lá que eles precisam ser procurados
+  const exemplosDoModelo = new Map((templatePackage('2026-01-05').$exemplo.content.examples ?? []).map((e) => [e.id, e.en]));
   const copiados = lists.examples.filter((e) => exemplosDoModelo.get(String(e.id)) === String(e.en));
   if (copiados.length >= 5) {
     out.push({
@@ -807,18 +804,38 @@ export function exportPackage(data: UserData, weekStart: string): WeekPackage {
 export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekPackage & {
   $leia_me: string[];
   $referencia: string;
+  $conferencia: string[];
+  $exemplo: { $leia_me: string[]; content: Partial<ContentBundle>; sheets: PackageSheet[]; days: PackageDay[] };
   $plataforma: Record<string, string>;
   $como_pedir: { pedido: string; preencha: Record<string, string>; regras: string[] };
 } {
   return {
-    // O JSON não carrega comentário: sem este campo, quem lê o modelo vê três aulas
-    // de tamanhos diferentes e imita a média delas. Cada aula também traz "$nivel".
+    // O JSON não carrega comentário, então o que orienta quem escreve precisa ser campo.
     $referencia:
-      'A aula "Where do you work?" (segundo dia) é a ÚNICA referência de profundidade: '
-      + 'é esse o tamanho e a variedade esperados em TODA aula que você escrever. '
-      + 'As outras duas aulas deste modelo ("Perguntas com How" e "Revisão: perguntas") são esboços '
-      + 'curtos, só para mostrar os campos mínimos: NÃO use o tamanho delas como exemplo. '
-      + 'Cada aula traz "$nivel" dizendo qual é qual. Apague os campos com $ na sua resposta.',
+      'Leia primeiro. O que você preenche são "content", "sheets" e "days", que estão VAZIOS aqui embaixo. '
+      + 'Em "$exemplo" há uma semana pronta: ela mostra o NÍVEL esperado (tamanho, variedade, profundidade), '
+      + 'e nada dela pode voltar na sua resposta — nem os exemplos, nem as palavras, nem as frases, nem as folhas. '
+      + 'Todo campo que começa com $ é instrução e sai da resposta. '
+      + 'Antes de responder, percorra "$conferencia" item por item: é exatamente o que o aplicativo confere '
+      + 'quando o arquivo é importado, e cada item que falhar vira um alerta na tela de quem vai estudar.',
+    // A lista que o app realmente calcula na prévia (conferirIntegracao), nas mesmas palavras:
+    // quem escreve pode se autoconferir antes de responder, em vez de descobrir no alerta.
+    $conferencia: [
+      'Cada aula tem de 8 a 12 exercícios, misturando choice, fill, build, match, translate (nos dois sentidos), qa e pelo menos 1 produce.',
+      'Cada aula treina pelo menos 3 das 5 habilidades (reconhecer, lembrar, ouvir, falar, usar).',
+      'Pelo menos 95% das palavras em inglês de cada aula são do vocabulário do aluno ou palavras.novas daquela aula.',
+      'Dentro de uma aula, nenhuma frase se repete entre aula.escuta, aula.fala e aula.missao.tarefas.',
+      'Entre aulas diferentes, nenhuma frase de cartão se repete. O app conta quantas se repetem e mostra a conta.',
+      'Nenhum exercício tem a mesma resposta que um exercício de outra aula, mesmo com o enunciado trocado.',
+      'Nenhum item de sheet.quiz se repete entre as folhas da semana.',
+      'app.intro, app.context, app.tips, whenToUse, sheet.copy e aula.missao.situacao são diferentes em cada aula: o app aponta todo campo que vier igual em todas.',
+      'Pelo menos uma dica de app.tips da semana fala de pronúncia: o som, a sílaba forte ou o par que confunde.',
+      'Nenhum exemplo de content.examples é um exemplo do $exemplo deste modelo.',
+      'Toda ref de palavras.novas existe em content.words (ou já no vocabulário do aluno). Sem isso a importação é BLOQUEADA.',
+      'Cada palavra nova tem pronunciation.ipa, pelo menos 1 uso em uses e pelo menos 3 exemplos próprios em content.examples.',
+      'O total de palavras e expressões novas da semana não passa de aluno.ritmo.novas_na_semana (sem bloco aluno: no máximo 8).',
+      'Numa semana inteira (5 dias ou mais): cada palavra nova aparece em pelo menos 3 sessões, e toda palavra "quase_esquecida" do aluno volta em alguma sessão.',
+    ],
     // o que a plataforma faz com cada coisa que vem no arquivo — para quem monta
     // a semana (ou pede a uma IA que monte) saber o que vale a pena preencher
     $plataforma: {
@@ -848,7 +865,7 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
       pedido:
         'Você vai montar uma semana de estudo de inglês para mim no formato deste arquivo JSON. '
         + 'Responda só com o JSON, sem texto em volta, começando em "format" e mantendo exatamente os nomes de campo daqui. '
-        + 'Leia $referencia primeiro: ele diz qual das aulas do modelo é a referência de profundidade a imitar e quais são só esboços. '
+        + 'Leia $referencia primeiro: ele diz o que você preenche e o que é só instrução. '
         + 'Use os campos $plataforma e $leia_me deste modelo para saber o que cada campo faz, siga as regras de $como_pedir.regras '
         + 'e apague os campos que começam com $ na sua resposta.',
       preencha: {
@@ -859,42 +876,27 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
         'como gosto de estudar': 'ex.: muitos exemplos curtos e uma produção escrita por dia',
       },
       regras: [
-        'Escreva tudo em português, menos o inglês que está sendo estudado.',
-        'week: a segunda-feira da semana, no formato AAAA-MM-DD. As datas dos dias ficam dentro dessa semana.',
-        'ids: minúsculos, sem acento e sem espaço (ex.: "where-do-you-work"). Cada id aparece uma vez só.',
-        'refs e exercises só podem citar ids que existem neste arquivo ou já no aplicativo.',
-        'Todo exemplo citado em uses[].examples, words[].examples ou expressions[].examples precisa estar em content.examples.',
-        'kind vai de new no começo da semana para practice, review, reinforce e consolidate no fim.',
-        'sheet.copy: no máximo 3 linhas. sheet.quiz: no máximo 6 itens. São o que cabe na folha impressa.',
-        'exercises.type: translate, fill, choice, match, build, qa ou produce. choice precisa de options; match precisa de pairs.',
-        'Palavras para as cruzadas funcionam melhor com 3 a 9 letras, sem espaço nem hífen.',
-        'Monte as aulas em cima do bloco aluno: nos exemplos, exercícios, escutas, falas, missões e treino, pelo menos 95% das palavras devem ser do vocabulário do aluno; o resto, só as palavras.novas daquela sessão.',
-        'Cada sessão: até 4 palavras.novas; coloque em palavras.revisar as palavras "quase_esquecida" do aluno, espalhadas pela semana; use as "firme" em palavras.apoio.',
-        'COMECE PELO FOCO, não pela novidade: aluno.foco.reforcar traz, em ordem de urgência, o que esta semana precisa resolver — essas palavras vêm em palavras.revisar (de preferência no aquecimento) antes de você escolher qualquer palavra nova.',
-        'aluno.foco.subir traz [palavra, próximo degrau]: palavras firmes que pararam num degrau. Faça cada uma avançar com a atividade que aquele degrau pede (entender ouvindo → aula.escuta; pronunciar → aula.fala; usar numa frase sua → aula.missao e chat.treino). Subir uma palavra de degrau vale mais do que acrescentar outra palavra nova.',
-        'CONECTE, NÃO EMPILHE: toda palavra nova entra ligada a pelo menos uma palavra "firme" do aluno — cite essa palavra em related_words e escreva pelo menos 1 exemplo que use as duas na mesma frase. Palavra nova solta, sem ponte com o que a pessoa já sabe, é a primeira a ser esquecida.',
-        'Pelo menos uma dica de app.tips da semana fala de PRONÚNCIA — o som, a sílaba forte ou o par que confunde — e, quando aluno.dificuldades.pronuncia vier preenchido, ataca um item de lá. Se vier vazio, use os erros comuns de quem fala português. A prévia confere e avisa quando a semana inteira passa sem nenhuma.',
-        'content é o conteúdo DESTA semana: não devolva os exemplos, as expressões, os padrões, a gramática, os temas nem as folhas do modelo. Eles estão aqui só para mostrar o formato, e a prévia avisa quando voltam copiados.',
-        'Cada palavra nova deve aparecer em pelo menos 3 sessões diferentes da semana (como nova, revisar ou apoio).',
-        'Cada sessão treina pelo menos 3 habilidades: marque habilidade nos exercícios e use aula.escuta (ouvir), aula.fala (falar) e aula.missao ou chat.treino (usar).',
-        'Para mudar só um dia ou uma aula, mande só esses dias: os outros ficam como estão. Sem id, a aula de mesmo dia e mesmo título é atualizada.',
-        'QUANTAS PALAVRAS NOVAS: quem decide é o app, em aluno.ritmo.novas_na_semana (calculado pelo que ainda está em treino). Nunca passe desse total na semana; distribua como fizer sentido, sem obrigação de novidade todo dia. Aulas sem palavra nova aprofundam as que estão em treino (estudando, quase_esquecida): mais exemplos, mais uso, situações novas. Sem bloco aluno, use no máximo 8 novas na semana.',
-        'PROFUNDIDADE (o app confere e avisa na prévia): a aula "Where do you work?" é a única referência de tamanho e variedade — ela tem $nivel "REFERÊNCIA". As outras duas aulas do modelo têm $nivel "ESBOÇO" e existem só para mostrar os campos mínimos: não copie o tamanho delas.',
-        'Exercícios com a MESMA RESPOSTA em aulas diferentes contam como repetidos, mesmo com o enunciado trocado ("Aquilo é uma escola" e "Aquela é uma escola" dão o mesmo "That is a school.").',
-        'app.tips são erros concretos de quem fala português, não a regra repetida: pelo menos 1 dica de pronúncia (com o som ou o par mínimo: this /ɪ/ curto × these /iː/ longo) e 1 de interferência do português (o que a tradução literal faria dar errado).',
-        'TODA ref de palavras.novas precisa ter a palavra cadastrada em content.words NESTE arquivo (a não ser que ela já exista no vocabulário do aluno). Declarar "word:x" em novas sem o content.words correspondente é ERRO e trava a importação: sem cadastro a palavra fica sem ficha na Biblioteca, sem pronúncia, sem flashcard, fora dos jogos e fora da revisão espaçada.',
-        'Cada palavra nova vem completa: pronunciation.ipa, pelo menos 1 uso (uses) e pelo menos 3 exemplos próprios em content.examples, em situações diferentes. A prévia aponta, uma por uma, as que faltarem.',
-        'Cada aula tem de 8 a 12 exercícios misturando os tipos: choice, fill, build, match, translate (pt→en e en→pt), qa e pelo menos 1 produce. Não repita o mesmo exercício (mesmo enunciado e resposta) em aulas diferentes.',
-        'build: sempre com "tokens" (as palavras da resposta, embaralhadas) e "answer". match: "pairs" como lista de pares ["inglês", "português"], nunca objetos. choice: 3 ou 4 options plausíveis.',
-        'aula.escuta, aula.fala e aula.missao.tarefas usam frases DIFERENTES entre si (2 a 4 em cada): escuta para reconhecer, fala para repetir, missão para produzir numa situação nova.',
-        'VARIEDADE, por aula, contando escuta + fala + missao.tarefas (não é "varie um pouco": são cotas): pelo menos 1 frase negativa (don\'t / isn\'t), pelo menos 1 na terceira pessoa (he/she/my sister + works/is), pelo menos 1 pergunta de volta (And you? / What about you?) e pelo menos 2 com um detalhe concreto (lugar, horário, quantidade, adjetivo). Nenhuma frase dos cartões com menos de 5 palavras: "This is a school." não ensina nada que "This is a school near my house." não ensine melhor.',
-        'Nenhuma frase se repete entre escuta, fala e missao.tarefas da mesma aula, NEM ENTRE AULAS DIFERENTES da semana: a prévia conta quantas das frases dos cartões aparecem em mais de uma aula e aponta as repetidas. Uma semana em que a mesma frase volta todo dia é uma aula só, repetida com outros exercícios.',
-        'Os itens de sheet.quiz não se repetem entre as folhas da semana.',
-        'CADA AULA É UMA AULA, não a mesma três vezes: app.intro, app.context, app.tips, whenToUse, sheet.copy e aula.missao.situacao são escritos de novo em cada aula, sobre o que aquele dia ensina. A prévia aponta todo campo que vier igual, palavra por palavra, em todas as aulas — e a folha impressa de cada dia sai do sheet.copy daquele dia.',
-        'app.intro explica a regra com um exemplo; app.tips traz 2 a 4 dicas práticas (erros comuns de quem fala português, pronúncia, quando usar); expected.criteria diz o que a pessoa consegue fazer, de forma verificável.',
-        'chat.treino: 3 a 5 perguntas por aula, com resposta modelo usando ____ no lugar do que é pessoal.',
-        'Não devolva o bloco aluno nem os campos que começam com $.',
-        'Não invente campos novos: use só os que aparecem neste modelo.',
+        'FORMATO · Escreva tudo em português, menos o inglês que está sendo estudado.',
+        'FORMATO · week: a segunda-feira da semana (AAAA-MM-DD); as datas dos dias ficam dentro dessa semana. Para mudar só um dia, mande só esse dia: os outros ficam como estão.',
+        'FORMATO · ids minúsculos, sem acento e sem espaço ("where-do-you-work"), cada um aparecendo uma vez só. refs e exercises só citam ids que existem neste arquivo ou já no aplicativo.',
+        'FORMATO · Todo exemplo citado em uses[].examples, words[].examples ou expressions[].examples precisa estar em content.examples.',
+        'FORMATO · exercises.type: translate, fill, choice, match, build, qa ou produce. choice e fill precisam de options (3 ou 4 plausíveis) com a answer entre elas; match precisa de pairs como lista de pares ["inglês", "português"], nunca objetos; build sempre com tokens (as palavras da resposta, embaralhadas) e answer.',
+        'FORMATO · sheet.copy: no máximo 3 linhas. sheet.quiz: no máximo 6 itens. É o que cabe na folha impressa.',
+        'FORMATO · content, sheets e days vêm VAZIOS neste modelo: é você que os escreve. Nada de $exemplo pode voltar na resposta — nem um exemplo, nem uma palavra, nem uma folha.',
+        'FORMATO · Não devolva o bloco aluno nem os campos que começam com $. Não invente campos novos: use só os que aparecem neste modelo.',
+        'O QUE ENSINAR · COMECE PELO FOCO, não pela novidade: aluno.foco.reforcar traz, em ordem de urgência, o que esta semana precisa resolver. Essas palavras vêm em palavras.revisar, de preferência no aquecimento, antes de você escolher qualquer palavra nova.',
+        'O QUE ENSINAR · aluno.foco.subir traz [palavra, próximo degrau]: palavras firmes que pararam num degrau. Faça cada uma avançar com a atividade que aquele degrau pede (entender ouvindo → aula.escuta; pronunciar → aula.fala; usar numa frase sua → aula.missao e chat.treino). Subir uma palavra de degrau vale mais do que acrescentar outra palavra nova.',
+        'O QUE ENSINAR · CONECTE, NÃO EMPILHE: toda palavra nova entra ligada a pelo menos uma palavra "firme" do aluno — cite essa palavra em related_words e escreva pelo menos 1 exemplo que use as duas na mesma frase. Palavra nova solta, sem ponte com o que a pessoa já sabe, é a primeira a ser esquecida.',
+        'O QUE ENSINAR · QUANTAS NOVAS: quem decide é o app, em aluno.ritmo.novas_na_semana. Nunca passe desse total na semana (sem bloco aluno, no máximo 8), e no máximo 4 por sessão. Não precisa haver novidade todo dia: aulas sem palavra nova aprofundam o que está em treino, com mais exemplos, mais uso e situações novas. Em palavras.revisar vão as "quase_esquecida"; em palavras.apoio, as "firme".',
+        'O QUE ENSINAR · kind acompanha a semana: new no começo, depois practice, review, reinforce e consolidate no fim.',
+        'COMO ESCREVER · PROFUNDIDADE: a aula de $exemplo.days é a referência de tamanho e variedade. Toda aula que você escrever tem esse porte — não um resumo dele.',
+        'COMO ESCREVER · CADA AULA É UMA AULA, não a mesma três vezes: app.intro, app.context, app.tips, whenToUse, sheet.copy e aula.missao.situacao são escritos de novo em cada aula, sobre o que aquele dia ensina. A folha impressa de cada dia sai do sheet.copy daquele dia.',
+        'COMO ESCREVER · aula.escuta, aula.fala e aula.missao.tarefas têm papéis diferentes e frases diferentes, 2 a 4 em cada: escuta para reconhecer, fala para repetir, missão para PRODUZIR numa situação nova. A missão nunca repete o que a escuta já disse.',
+        'COMO ESCREVER · VARIEDADE, por aula, contando escuta + fala + missao.tarefas (são cotas, não "varie um pouco"): pelo menos 1 frase negativa, 1 na terceira pessoa (he/she + verbo com -s), 1 pergunta de volta (And you?) e 2 com um detalhe concreto (lugar, horário, quantidade, adjetivo). Nenhuma frase de cartão com menos de 5 palavras, salvo a própria pergunta ou expressão que a aula ensina.',
+        'COMO ESCREVER · app.intro explica a regra do dia com um exemplo. app.tips traz 2 a 4 dicas CONCRETAS de quem fala português — o erro que a tradução literal provoca — e pelo menos uma delas, na semana, fala de pronúncia: o som, a sílaba forte ou o par mínimo que confunde. Repetir a regra em outras palavras não é dica.',
+        'COMO ESCREVER · chat.treino: 3 a 5 perguntas por aula, com resposta modelo usando ____ no lugar do que é pessoal.',
+        'COMO ESCREVER · expected.criteria diz o que a pessoa consegue fazer, de forma verificável. Palavras boas para as cruzadas têm de 3 a 9 letras, sem espaço nem hífen.',
+        'ANTES DE RESPONDER · percorra $conferencia item por item e corrija o que não passar. São as mesmas 14 conferências que o aplicativo faz na importação: cada uma que falhar vira um alerta na tela de quem vai estudar.',
       ],
     },
     $leia_me: [
@@ -927,221 +929,218 @@ export function templatePackage(weekStart: string, aluno?: ContextoAluno): WeekP
     ...(aluno && { aluno }),
     week: weekStart,
     goals: 'Fazer e responder perguntas de apresentação.',
-    content: {
-      examples: [
-        { id: 'ex-where-do-you-work', en: 'Where do you work?', pt: 'Onde você trabalha?', context: 'trabalho' },
-        { id: 'ex-i-work-at-home', en: 'I work at home.', pt: 'Eu trabalho em casa.', context: 'resposta' },
-        { id: 'ex-how-are-you', en: 'How are you?', pt: 'Como você está?', context: 'cumprimento' },
-        { id: 'ex-i-am-fine', en: 'I am fine, thanks.', pt: 'Estou bem, obrigado.', context: 'resposta' },
-        { id: 'ex-i-work-in-an-office', en: 'I work in an office downtown.', pt: 'Eu trabalho num escritório no centro.', context: 'trabalho' },
-        { id: 'ex-office-small', en: 'My office is small but quiet.', pt: 'Meu escritório é pequeno, mas silencioso.', context: 'descrição' },
-        { id: 'ex-office-meeting', en: 'We have a meeting at the office at nine.', pt: 'Temos uma reunião no escritório às nove.', context: 'rotina' },
-        { id: 'ex-i-work-at-a-school', en: 'I work at a school.', pt: 'Eu trabalho numa escola.', context: 'trabalho' },
-        { id: 'ex-school-near', en: 'The school is near my house.', pt: 'A escola fica perto da minha casa.', context: 'lugar' },
-        { id: 'ex-school-teacher', en: 'She is a teacher at a big school.', pt: 'Ela é professora numa escola grande.', context: 'profissão' },
+    // O exemplo trabalhado fica aqui dentro, sob um campo $, por um motivo observado:
+    // quem lê o modelo copia o que vê. Enquanto a semana de exemplo ocupava "content",
+    // "sheets" e "days", ela voltava copiada na resposta, três vezes seguidas. Aqui ela
+    // continua à vista como referência de nível, mas o lugar que precisa ser preenchido
+    // está vazio e visível — e um campo $ é, por contrato, apagado na resposta.
+    $exemplo: {
+      $leia_me: [
+        'Uma semana pronta, para você ver o NÍVEL esperado. Não devolva nada daqui.',
+        'Campos que começam com $ são apagados na sua resposta: este bloco inteiro sai fora.',
+        'Copie o nível (tamanho, variedade, profundidade das palavras). Nunca o conteúdo: os exemplos, as palavras e as frases da SUA semana são outros.',
+        'Repare no que muda de uma aula para a outra numa semana boa: cada dia tem a sua explicação, as suas dicas, a sua folha e as suas frases.',
       ],
-      expressions: [
-        {
-          id: 'how-are-you', text: 'How are you?', words: ['how'],
-          translation: 'Como você está?', context: 'cumprimento', meaning: 'Pergunta como a pessoa está.',
-          examples: ['ex-how-are-you', 'ex-i-am-fine'],
-          copy: { lines: ['How are you? = Como você está?'] },
-        },
-        {
-          id: 'where-do-you-work', text: 'Where do you work?', words: ['where', 'do', 'work'],
-          translation: 'Onde você trabalha?', context: 'conversa de apresentação',
-          meaning: 'Pergunta o lugar de trabalho.', pattern: 'pergunta-com-do',
-          examples: ['ex-where-do-you-work'],
-          copy: { lines: ['Where do you work? = Onde você trabalha?'] },
-        },
+      content: {
+        examples: [
+          { id: 'ex-where-do-you-work', en: 'Where do you work?', pt: 'Onde você trabalha?', context: 'trabalho' },
+          { id: 'ex-i-work-at-home', en: 'I work at home.', pt: 'Eu trabalho em casa.', context: 'resposta' },
+          { id: 'ex-how-are-you', en: 'How are you?', pt: 'Como você está?', context: 'cumprimento' },
+          { id: 'ex-i-am-fine', en: 'I am fine, thanks.', pt: 'Estou bem, obrigado.', context: 'resposta' },
+          { id: 'ex-i-work-in-an-office', en: 'I work in an office downtown.', pt: 'Eu trabalho num escritório no centro.', context: 'trabalho' },
+          { id: 'ex-office-small', en: 'My office is small but quiet.', pt: 'Meu escritório é pequeno, mas silencioso.', context: 'descrição' },
+          { id: 'ex-office-meeting', en: 'We have a meeting at the office at nine.', pt: 'Temos uma reunião no escritório às nove.', context: 'rotina' },
+          { id: 'ex-i-work-at-a-school', en: 'I work at a school.', pt: 'Eu trabalho numa escola.', context: 'trabalho' },
+          { id: 'ex-school-near', en: 'The school is near my house.', pt: 'A escola fica perto da minha casa.', context: 'lugar' },
+          { id: 'ex-school-teacher', en: 'She is a teacher at a big school.', pt: 'Ela é professora numa escola grande.', context: 'profissão' },
+          { id: 'ex-how-much', en: 'How much is this?', pt: 'Quanto custa isto?', context: 'compra' },
+          { id: 'ex-how-do-you-say', en: 'How do you say this in English?', pt: 'Como se diz isto em inglês?', context: 'aula' },
+          { id: 'ex-where-is-the-school', en: 'Where is the school?', pt: 'Onde fica a escola?', context: 'lugar' },
+          { id: 'ex-where-do-they-live', en: 'Where do they live?', pt: 'Onde eles moram?', context: 'apresentação' },
+          { id: 'ex-what-do-you-do', en: 'What do you do?', pt: 'O que você faz?', context: 'trabalho' },
+          { id: 'ex-does-she-work', en: 'Does she work at a school?', pt: 'Ela trabalha numa escola?', context: 'terceira pessoa' },
+        ],
+        expressions: [
+          {
+            id: 'how-are-you', text: 'How are you?', words: ['how'],
+            translation: 'Como você está?', context: 'cumprimento', meaning: 'Pergunta como a pessoa está.',
+            examples: ['ex-how-are-you', 'ex-i-am-fine'],
+            copy: { lines: ['How are you? = Como você está?'] },
+          },
+          {
+            id: 'where-do-you-work', text: 'Where do you work?', words: ['where', 'do', 'work'],
+            translation: 'Onde você trabalha?', context: 'conversa de apresentação',
+            meaning: 'Pergunta o lugar de trabalho.', pattern: 'pergunta-com-do',
+            examples: ['ex-where-do-you-work'],
+            copy: { lines: ['Where do you work? = Onde você trabalha?'] },
+          },
+        ],
+        patterns: [
+          {
+            id: 'pergunta-com-do', name: 'Pergunta com do', formula: 'Wh + do + subject + verb?',
+            slots: [{ name: 'Wh', options: ['where', 'what', 'how'] }, { name: 'subject', options: ['you', 'they'] }],
+            explanation: 'Com a maioria dos verbos, a pergunta usa do/does antes do sujeito.',
+            examples: ['ex-where-do-you-work'],
+          },
+        ],
+        grammar: [
+          {
+            id: 'ordem-da-pergunta', title: 'Ordem das palavras na pergunta',
+            explanation: 'Em inglês a pergunta troca a ordem: o auxiliar vem antes do sujeito.',
+            points: ['Wh + auxiliar + sujeito + verbo', 'O verbo principal fica no infinitivo'],
+            examples: ['ex-where-do-you-work'],
+          },
+        ],
+        topics: [
+          {
+            id: 'trabalho', title: 'Trabalho', description: 'Falar do que se faz.',
+            objective: 'Perguntar e dizer onde trabalha.',
+            refs: ['word:work', 'expression:where-do-you-work'],
+          },
+        ],
+        words: [
+          {
+            id: 'how', word: 'how', type: 'question word', translations: [{ text: 'como' }],
+            core_meaning: 'Pergunta o estado ou a maneira.',
+            uses: [
+              { id: 'estado', label: 'estado', meaning: 'como (alguém está)', explanation: 'Com o verbo be: How are you?', examples: ['ex-how-are-you', 'ex-i-am-fine'] },
+              { id: 'maneira', label: 'maneira', meaning: 'como (se faz)', explanation: 'Com do nas outras perguntas: How do you say this?', examples: ['ex-how-do-you-say', 'ex-how-much'] },
+            ],
+            variations: [{ form: 'how much', meaning: 'quanto (custa)' }],
+            related_words: ['where', 'do'], examples: ['ex-how-are-you', 'ex-how-much', 'ex-how-do-you-say'],
+            pronunciation: { ipa: '/haʊ/', respelling: 'ráu' },
+          },
+          {
+            id: 'where', word: 'where', type: 'question word', translations: [{ text: 'onde' }],
+            core_meaning: 'Pergunta o lugar.',
+            uses: [
+              { id: 'com-do', label: 'com verbo de ação', meaning: 'onde (alguém faz)', explanation: 'Where + do + sujeito + verbo: Where do you work?', examples: ['ex-where-do-you-work', 'ex-where-do-they-live'] },
+              { id: 'com-be', label: 'com o verbo be', meaning: 'onde (algo fica)', explanation: 'Where + is/are: Where is the school?', examples: ['ex-where-is-the-school'] },
+            ],
+            variations: [], related_words: ['how', 'do', 'work'],
+            examples: ['ex-where-do-you-work', 'ex-where-is-the-school', 'ex-where-do-they-live'],
+            pronunciation: { ipa: '/wer/', respelling: 'uér' },
+          },
+          {
+            id: 'do', word: 'do', type: 'auxiliary / verb', translations: [{ text: 'fazer', context: 'verbo' }, { text: '(auxiliar de pergunta)', context: 'auxiliar' }],
+            core_meaning: 'Auxiliar das perguntas com a maioria dos verbos; também "fazer".',
+            uses: [
+              { id: 'auxiliar', label: 'auxiliar da pergunta', meaning: '(não se traduz)', explanation: 'Vem antes do sujeito e some na resposta: Where do you work? → I work at home.', examples: ['ex-where-do-you-work', 'ex-where-do-they-live'] },
+              { id: 'verbo', label: 'verbo', meaning: 'fazer', explanation: 'Em What do you do?, o primeiro do é auxiliar e o segundo é o verbo.', examples: ['ex-what-do-you-do', 'ex-does-she-work'] },
+            ],
+            variations: [{ form: 'does', meaning: 'he/she/it' }],
+            related_words: ['where', 'how', 'work'],
+            examples: ['ex-where-do-you-work', 'ex-what-do-you-do', 'ex-does-she-work'],
+            pronunciation: { ipa: '/duː/', respelling: 'dú' },
+          },
+          {
+            id: 'office', word: 'office', type: 'noun', translations: [{ text: 'escritório' }],
+            core_meaning: 'Lugar onde se trabalha em mesas, computadores e reuniões.',
+            uses: [{ id: 'lugar', label: 'lugar de trabalho', meaning: 'escritório', explanation: 'Com in: I work in an office.', examples: ['ex-i-work-in-an-office', 'ex-office-small'] }],
+            variations: [{ form: 'at the office', meaning: 'no escritório' }], related_words: ['work'],
+            examples: ['ex-i-work-in-an-office', 'ex-office-small', 'ex-office-meeting'], pronunciation: { ipa: '/ˈɒfɪs/', respelling: 'ófis' },
+          },
+          {
+            id: 'school', word: 'school', type: 'noun', translations: [{ text: 'escola' }],
+            core_meaning: 'Lugar onde se estuda ou se ensina.',
+            uses: [{ id: 'lugar', label: 'lugar', meaning: 'escola', explanation: 'Com at: I work at a school.', examples: ['ex-i-work-at-a-school', 'ex-school-near'] }],
+            variations: [], related_words: ['teacher'],
+            examples: ['ex-i-work-at-a-school', 'ex-school-near', 'ex-school-teacher'], pronunciation: { ipa: '/skuːl/', respelling: 'scúl' },
+          },
+          {
+            id: 'work', word: 'work', type: 'verb / noun',
+            translations: [{ text: 'trabalhar', context: 'verbo' }, { text: 'trabalho', context: 'substantivo' }],
+            core_meaning: 'Realizar uma atividade profissional; também o próprio trabalho.',
+            uses: [{ id: 'verb', label: 'verbo', meaning: 'trabalhar', explanation: 'Com do nas perguntas: Where do you work?', examples: ['ex-where-do-you-work', 'ex-i-work-at-home'] }],
+            variations: [{ form: 'at work', meaning: 'no trabalho' }],
+            related_words: ['where', 'do'],
+            examples: ['ex-where-do-you-work', 'ex-i-work-at-home', 'ex-i-work-at-a-school'],
+            pronunciation: { ipa: '/wɜːrk/', respelling: 'uârk' },
+            copy: { lines: ['work = trabalhar / trabalho', 'Where do you work? = Onde você trabalha?'] },
+          },
+        ],
+      },
+      sheets: [
+        { title: 'Trabalho', items: [{ en: 'office', pt: 'escritório' }, { en: 'boss', pt: 'chefe' }] },
       ],
-      patterns: [
+      days: [
         {
-          id: 'pergunta-com-do', name: 'Pergunta com do', formula: 'Wh + do + subject + verb?',
-          slots: [{ name: 'Wh', options: ['where', 'what', 'how'] }, { name: 'subject', options: ['you', 'they'] }],
-          explanation: 'Com a maioria dos verbos, a pergunta usa do/does antes do sujeito.',
-          examples: ['ex-where-do-you-work'],
-        },
-      ],
-      grammar: [
-        {
-          id: 'ordem-da-pergunta', title: 'Ordem das palavras na pergunta',
-          explanation: 'Em inglês a pergunta troca a ordem: o auxiliar vem antes do sujeito.',
-          points: ['Wh + auxiliar + sujeito + verbo', 'O verbo principal fica no infinitivo'],
-          examples: ['ex-where-do-you-work'],
-        },
-      ],
-      topics: [
-        {
-          id: 'trabalho', title: 'Trabalho', description: 'Falar do que se faz.',
-          objective: 'Perguntar e dizer onde trabalha.',
-          refs: ['word:work', 'expression:where-do-you-work'],
-        },
-      ],
-      words: [
-        {
-          id: 'how', word: 'how', type: 'question word', translations: [{ text: 'como' }],
-          core_meaning: 'Pergunta o estado ou a maneira.', uses: [], variations: [{ form: 'how much', meaning: 'quanto (custa)' }],
-          related_words: [], examples: ['ex-how-are-you'], pronunciation: { ipa: '/haʊ/', respelling: 'ráu' },
-        },
-        {
-          id: 'where', word: 'where', type: 'question word', translations: [{ text: 'onde' }],
-          core_meaning: 'Pergunta o lugar.', uses: [], variations: [], related_words: [], examples: ['ex-where-do-you-work'],
-          pronunciation: { ipa: '/wer/', respelling: 'uér' },
-        },
-        {
-          id: 'do', word: 'do', type: 'auxiliary / verb', translations: [{ text: 'fazer', context: 'verbo' }, { text: '(auxiliar de pergunta)', context: 'auxiliar' }],
-          core_meaning: 'Auxiliar das perguntas com a maioria dos verbos; também "fazer".', uses: [], variations: [{ form: 'does', meaning: 'he/she/it' }],
-          related_words: [], examples: ['ex-where-do-you-work'], pronunciation: { ipa: '/duː/', respelling: 'dú' },
-        },
-        {
-          id: 'office', word: 'office', type: 'noun', translations: [{ text: 'escritório' }],
-          core_meaning: 'Lugar onde se trabalha em mesas, computadores e reuniões.',
-          uses: [{ id: 'lugar', label: 'lugar de trabalho', meaning: 'escritório', explanation: 'Com in: I work in an office.', examples: ['ex-i-work-in-an-office', 'ex-office-small'] }],
-          variations: [{ form: 'at the office', meaning: 'no escritório' }], related_words: ['work'],
-          examples: ['ex-i-work-in-an-office', 'ex-office-small', 'ex-office-meeting'], pronunciation: { ipa: '/ˈɒfɪs/', respelling: 'ófis' },
-        },
-        {
-          id: 'school', word: 'school', type: 'noun', translations: [{ text: 'escola' }],
-          core_meaning: 'Lugar onde se estuda ou se ensina.',
-          uses: [{ id: 'lugar', label: 'lugar', meaning: 'escola', explanation: 'Com at: I work at a school.', examples: ['ex-i-work-at-a-school', 'ex-school-near'] }],
-          variations: [], related_words: ['teacher'],
-          examples: ['ex-i-work-at-a-school', 'ex-school-near', 'ex-school-teacher'], pronunciation: { ipa: '/skuːl/', respelling: 'scúl' },
-        },
-        {
-          id: 'work', word: 'work', type: 'verb / noun',
-          translations: [{ text: 'trabalhar', context: 'verbo' }, { text: 'trabalho', context: 'substantivo' }],
-          core_meaning: 'Realizar uma atividade profissional; também o próprio trabalho.',
-          uses: [{ id: 'verb', label: 'verbo', meaning: 'trabalhar', explanation: 'Com do nas perguntas: Where do you work?', examples: ['ex-where-do-you-work', 'ex-i-work-at-home'] }],
-          variations: [{ form: 'at work', meaning: 'no trabalho' }],
-          related_words: ['where', 'do'],
-          examples: ['ex-where-do-you-work', 'ex-i-work-at-home', 'ex-i-work-at-a-school'],
-          pronunciation: { ipa: '/wɜːrk/', respelling: 'uârk' },
-          copy: { lines: ['work = trabalhar / trabalho', 'Where do you work? = Onde você trabalha?'] },
+          date: addDays(weekStart, 1), theme: 'Trabalho', objective: 'Perguntar onde a pessoa trabalha', minutes: 20,
+          sessions: [
+            {
+              // AULA MODELO: é este o nível de profundidade esperado em cada aula.
+              kind: 'new', title: 'Where do you work?',
+              objective: 'Perguntar onde alguém trabalha e responder com detalhes sobre o próprio trabalho.',
+              refs: ['pattern:pergunta-com-do', 'expression:where-do-you-work'],
+              palavras: { novas: ['word:work', 'word:office', 'word:school'], revisar: ['word:where'], apoio: ['word:do', 'word:how'] },
+              copyRefs: ['word:work'],
+              whenToUse: 'Where do you work? abre conversa sobre trabalho; responda com I work at/in + lugar.',
+              sheet: {
+                copy: ['Where do you work? = Onde você trabalha?', 'I work at a school. / I work in an office.', 'at + lugar específico · in + dentro de um lugar'],
+                quiz: ['Onde você trabalha? →', 'Eu trabalho em casa. →', 'Onde ela trabalha? →', 'escritório →', 'Eu não trabalho aos domingos. →', 'Monte: work / you / where / do →'],
+                practice: 'Escreva 4 frases sobre onde você e pessoas da sua família trabalham.',
+              },
+              app: {
+                intro: 'Para perguntar com quase todos os verbos, o inglês usa do antes de quem: Where do you work? Na resposta, o do some: I work at home.',
+                context: 'Primeiro dia num curso: um colega puxa conversa no intervalo.',
+                tips: [
+                  'Erro comum de quem fala português: "Where you work?" sem o do.',
+                  'Com he/she, o do vira does: Where does she work?',
+                  'work tem o som de "uârk": o r é leve, sem vibrar.',
+                  'at a school (o lugar); in an office (dentro do escritório); from home (de casa).',
+                ],
+              },
+              aula: {
+                aquecimento: 'word:where',
+                escuta: [
+                  { en: 'I work at a school near my house.', pt: 'Eu trabalho numa escola perto da minha casa.' },
+                  { en: 'She works in a big office downtown.', pt: 'Ela trabalha num escritório grande no centro.' },
+                  { en: "I don't work on Sundays.", pt: 'Eu não trabalho aos domingos.' },
+                ],
+                fala: [
+                  { en: 'Where do you work?', pt: 'Onde você trabalha?' },
+                  { en: 'I work from home. And you?', pt: 'Eu trabalho de casa. E você?' },
+                ],
+                missao: {
+                  situacao: 'Um colega novo pergunta do seu trabalho no intervalo. Responda com um detalhe e pergunte de volta.',
+                  tarefas: [
+                    { en: 'I work in an office.', pt: 'Eu trabalho num escritório.' },
+                    { en: 'Where does your sister work?', pt: 'Onde a sua irmã trabalha?' },
+                    { en: 'My office is small but quiet.', pt: 'Meu escritório é pequeno, mas silencioso.' },
+                  ],
+                },
+              },
+              exercises: [
+                { type: 'choice', habilidade: 'reconhecer', prompt: 'Where ___ you work?', options: ['do', 'are', 'does', 'is'], answer: 'do' },
+                { type: 'choice', habilidade: 'reconhecer', prompt: 'Where ___ she work?', options: ['does', 'do', 'is', 'are'], answer: 'does' },
+                { type: 'fill', habilidade: 'lembrar', prompt: 'I work ___ a school. (numa escola)', options: ['at', 'on', 'of'], answer: 'at' },
+                { type: 'match', habilidade: 'reconhecer', prompt: 'Ligue cada palavra à tradução.', pairs: [['office', 'escritório'], ['school', 'escola'], ['work', 'trabalhar'], ['where', 'onde']] },
+                { type: 'build', habilidade: 'lembrar', prompt: 'Monte a pergunta: "Onde você trabalha?"', tokens: ['work', 'you', 'Where', 'do'], answer: 'Where do you work?' },
+                { type: 'build', habilidade: 'lembrar', prompt: 'Monte: "Eu não trabalho aos domingos."', tokens: ['on', "don't", 'Sundays', 'I', 'work'], answer: "I don't work on Sundays." },
+                { type: 'translate', habilidade: 'lembrar', prompt: 'Traduza: Ela trabalha num escritório.', answer: ['She works in an office.', 'She works in an office'] },
+                { type: 'translate', habilidade: 'reconhecer', prompt: 'Traduza para o português: My office is small but quiet.', answer: ['Meu escritório é pequeno, mas silencioso.', 'Meu escritório é pequeno mas silencioso'] },
+                { type: 'qa', habilidade: 'usar', prompt: 'Where do you work? (responda com a sua vida)', answer: 'I work' },
+                { type: 'produce', habilidade: 'usar', prompt: 'Escreva 3 frases: onde você trabalha, um detalhe do lugar e uma pergunta de volta.' },
+              ],
+              chat: {
+                treino: [
+                  { en: 'Where do you work?', pt: 'Onde você trabalha?', resposta: 'I work at ____.' },
+                  { en: 'Do you like your office?', pt: 'Você gosta do seu escritório?', resposta: 'Yes, I do. / No, I don\'t.' },
+                  { en: 'Where does your best friend work?', pt: 'Onde o seu melhor amigo trabalha?', resposta: 'He/She works at ____.' },
+                ],
+              },
+              expected: {
+                result: 'Perguntar onde alguém trabalha e responder com pelo menos um detalhe.',
+                criteria: ['Faz a pergunta com do (e does para he/she)', 'Responde com at/in + lugar', 'Usa a negativa I don\'t work…', 'Pergunta de volta (And you?)'],
+              },
+            },
+          ],
         },
       ],
     },
-    sheets: [
-      { title: 'Trabalho', items: [{ en: 'office', pt: 'escritório' }, { en: 'boss', pt: 'chefe' }] },
-    ],
-    days: [
-      {
-        date: weekStart, theme: 'Perguntas básicas', objective: 'Perguntar como alguém está', minutes: 20,
-        sessions: [
-          {
-            $nivel: 'ESBOÇO — só os campos mínimos. Não imite este tamanho: veja "Where do you work?".',
-            kind: 'new', title: 'Perguntas com How', objective: 'Perguntar e responder como alguém está.',
-            refs: ['word:how', 'expression:how-are-you'],
-            whenToUse: 'Use how para perguntar como alguém está ou como algo é feito.',
-            sheet: {
-              copy: ['How = como', 'How + are/is + sujeito?', 'How are you? = Como você está?'],
-              quiz: ['Como você está? →', 'Como eles estão? →', 'Como ela está? →', 'Estou bem, obrigado. →', 'Quanto custa? →', 'Como se diz isso em inglês? →'],
-              practice: 'Escreva 5 perguntas com How para pessoas da sua família.',
-            },
-            app: {
-              intro: 'How é a palavra de pergunta para estado e maneira.',
-              context: 'Você encontra um colega no trabalho e quer saber como ele está.',
-              tips: ['Em inglês, o verbo be vem antes do sujeito na pergunta.'],
-            },
-            exercises: [
-              { type: 'choice', habilidade: 'reconhecer', prompt: 'How ___ they?', options: ['is', 'are', 'am'], answer: 'are' },
-              { type: 'translate', habilidade: 'lembrar', prompt: 'Como você está?', answer: ['How are you?', 'How are you'] },
-              { type: 'produce', habilidade: 'usar', prompt: 'Escreva como você responderia a "How are you?" em 3 situações.' },
-            ],
-            expected: {
-              result: 'Perguntar e responder como alguém está usando How + be + sujeito.',
-              criteria: ['Usa are/is corretamente com o sujeito', 'Responde com I am... / I\'m...', 'Faz a pergunta sem consultar'],
-            },
-          },
-        ],
-      },
-      {
-        date: addDays(weekStart, 1), theme: 'Trabalho', objective: 'Perguntar onde a pessoa trabalha', minutes: 20,
-        sessions: [
-          {
-            // AULA MODELO: é este o nível de profundidade esperado em cada aula.
-            // O comentário some no JSON baixado; quem avisa a IA é o $nivel abaixo.
-            $nivel: 'REFERÊNCIA — imite esta aula: este tamanho, esta variedade de frases e estes 10 exercícios.',
-            kind: 'new', title: 'Where do you work?',
-            objective: 'Perguntar onde alguém trabalha e responder com detalhes sobre o próprio trabalho.',
-            refs: ['pattern:pergunta-com-do', 'expression:where-do-you-work'],
-            palavras: { novas: ['word:work', 'word:office', 'word:school'], revisar: ['word:where'], apoio: ['word:do', 'word:how'] },
-            copyRefs: ['word:work'],
-            whenToUse: 'Where do you work? abre conversa sobre trabalho; responda com I work at/in + lugar.',
-            sheet: {
-              copy: ['Where do you work? = Onde você trabalha?', 'I work at a school. / I work in an office.', 'at + lugar específico · in + dentro de um lugar'],
-              quiz: ['Onde você trabalha? →', 'Eu trabalho em casa. →', 'Onde ela trabalha? →', 'escritório →', 'Eu não trabalho aos domingos. →', 'Monte: work / you / where / do →'],
-              practice: 'Escreva 4 frases sobre onde você e pessoas da sua família trabalham.',
-            },
-            app: {
-              intro: 'Para perguntar com quase todos os verbos, o inglês usa do antes de quem: Where do you work? Na resposta, o do some: I work at home.',
-              context: 'Primeiro dia num curso: um colega puxa conversa no intervalo.',
-              tips: [
-                'Erro comum de quem fala português: "Where you work?" sem o do.',
-                'Com he/she, o do vira does: Where does she work?',
-                'work tem o som de "uârk": o r é leve, sem vibrar.',
-                'at a school (o lugar); in an office (dentro do escritório); from home (de casa).',
-              ],
-            },
-            aula: {
-              aquecimento: 'word:where',
-              escuta: [
-                { en: 'I work at a school near my house.', pt: 'Eu trabalho numa escola perto da minha casa.' },
-                { en: 'She works in a big office downtown.', pt: 'Ela trabalha num escritório grande no centro.' },
-                { en: "I don't work on Sundays.", pt: 'Eu não trabalho aos domingos.' },
-              ],
-              fala: [
-                { en: 'Where do you work?', pt: 'Onde você trabalha?' },
-                { en: 'I work from home. And you?', pt: 'Eu trabalho de casa. E você?' },
-              ],
-              missao: {
-                situacao: 'Um colega novo pergunta do seu trabalho no intervalo. Responda com um detalhe e pergunte de volta.',
-                tarefas: [
-                  { en: 'I work in an office.', pt: 'Eu trabalho num escritório.' },
-                  { en: 'Where does your sister work?', pt: 'Onde a sua irmã trabalha?' },
-                  { en: 'My office is small but quiet.', pt: 'Meu escritório é pequeno, mas silencioso.' },
-                ],
-              },
-            },
-            exercises: [
-              { type: 'choice', habilidade: 'reconhecer', prompt: 'Where ___ you work?', options: ['do', 'are', 'does', 'is'], answer: 'do' },
-              { type: 'choice', habilidade: 'reconhecer', prompt: 'Where ___ she work?', options: ['does', 'do', 'is', 'are'], answer: 'does' },
-              { type: 'fill', habilidade: 'lembrar', prompt: 'I work ___ a school. (numa escola)', options: ['at', 'on', 'of'], answer: 'at' },
-              { type: 'match', habilidade: 'reconhecer', prompt: 'Ligue cada palavra à tradução.', pairs: [['office', 'escritório'], ['school', 'escola'], ['work', 'trabalhar'], ['where', 'onde']] },
-              { type: 'build', habilidade: 'lembrar', prompt: 'Monte a pergunta: "Onde você trabalha?"', tokens: ['work', 'you', 'Where', 'do'], answer: 'Where do you work?' },
-              { type: 'build', habilidade: 'lembrar', prompt: 'Monte: "Eu não trabalho aos domingos."', tokens: ['on', "don't", 'Sundays', 'I', 'work'], answer: "I don't work on Sundays." },
-              { type: 'translate', habilidade: 'lembrar', prompt: 'Traduza: Ela trabalha num escritório.', answer: ['She works in an office.', 'She works in an office'] },
-              { type: 'translate', habilidade: 'reconhecer', prompt: 'Traduza para o português: My office is small but quiet.', answer: ['Meu escritório é pequeno, mas silencioso.', 'Meu escritório é pequeno mas silencioso'] },
-              { type: 'qa', habilidade: 'usar', prompt: 'Where do you work? (responda com a sua vida)', answer: 'I work' },
-              { type: 'produce', habilidade: 'usar', prompt: 'Escreva 3 frases: onde você trabalha, um detalhe do lugar e uma pergunta de volta.' },
-            ],
-            chat: {
-              treino: [
-                { en: 'Where do you work?', pt: 'Onde você trabalha?', resposta: 'I work at ____.' },
-                { en: 'Do you like your office?', pt: 'Você gosta do seu escritório?', resposta: 'Yes, I do. / No, I don\'t.' },
-                { en: 'Where does your best friend work?', pt: 'Onde o seu melhor amigo trabalha?', resposta: 'He/She works at ____.' },
-              ],
-            },
-            expected: {
-              result: 'Perguntar onde alguém trabalha e responder com pelo menos um detalhe.',
-              criteria: ['Faz a pergunta com do (e does para he/she)', 'Responde com at/in + lugar', 'Usa a negativa I don\'t work…', 'Pergunta de volta (And you?)'],
-            },
-          },
-        ],
-      },
-      {
-        date: addDays(weekStart, 4), theme: 'Revisão da semana', minutes: 30,
-        sessions: [
-          {
-            $nivel: 'ESBOÇO — só os campos mínimos. Não imite este tamanho: veja "Where do you work?".',
-            kind: 'review', title: 'Revisão: perguntas', refs: ['expression:how-are-you', 'expression:where-do-you-work'],
-            palavras: { revisar: ['word:work', 'word:where'], apoio: ['word:how', 'word:do'] },
-            aula: { escuta: [{ en: 'How are you?', pt: 'Como você está?' }], fala: [{ en: 'Where do you work?', pt: 'Onde você trabalha?' }] },
-            exercises: [{ type: 'translate', habilidade: 'lembrar', prompt: 'Onde você trabalha?', answer: 'Where do you work?' }],
-            expected: { result: 'Usar as perguntas da semana sem consultar.' },
-          },
-        ],
-      },
-    ],
+    // o que VOCÊ preenche. Vazio de propósito: é este o formato da resposta.
+    content: { examples: [], expressions: [], patterns: [], grammar: [], topics: [], words: [] },
+    sheets: [],
+    days: [],
   };
 }

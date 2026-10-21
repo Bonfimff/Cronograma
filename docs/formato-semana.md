@@ -120,9 +120,25 @@ palavra em todas elas (`app.intro`, `app.context`, `app.tips`, `whenToUse`, `she
 `aula.missao.situacao`), avisa quando nenhuma dica de `app.tips` da semana fala de pronúncia, e
 reconhece os exemplos do modelo devolvidos como se fossem o conteúdo da semana.
 
-Como o JSON não carrega comentário, o modelo diz em `$referencia` qual das suas aulas é a referência
-de profundidade, e cada aula traz um `$nivel` (`REFERÊNCIA` ou `ESBOÇO`). Sem isso, quem lê o modelo
-vê três aulas de tamanhos diferentes e imita a média delas.
+### Como o modelo é montado
+
+Quem lê o modelo copia o que vê — e isso vale tanto para uma pessoa quanto para uma IA. O modelo é
+desenhado em cima disso:
+
+| Campo | Para quê |
+|---|---|
+| `$referencia` | a primeira coisa a ler: o que se preenche, o que é instrução |
+| `$conferencia` | as mesmas 14 conferências que a importação faz, para se autoconferir antes de responder |
+| `$como_pedir.regras` | as regras, em quatro grupos: FORMATO, O QUE ENSINAR, COMO ESCREVER, ANTES DE RESPONDER |
+| `$plataforma` | o que o app faz com cada campo, para saber o que vale a pena preencher |
+| `$exemplo` | uma semana pronta, no nível esperado — só para ver, nunca para devolver |
+| `content`, `sheets`, `days` | **vazios**: é exatamente isto que a resposta preenche |
+
+O exemplo mora sob um campo `$` de propósito. Enquanto ele ocupava `content` e `days`, voltava
+copiado na resposta — a mesma folha "Trabalho", os mesmos dez exemplos. Sob `$`, ele continua à
+vista como referência de nível, mas o contrato diz que todo campo `$` é apagado na resposta, e o
+lugar a preencher está vazio e visível. A aula de `$exemplo` passa nas 14 conferências que ela
+própria manda seguir: um exemplo que viola a regra que prega ensina a violá-la.
 
 ### `palavras`, `aula`, `habilidade` e `chat.treino` na sessão
 
