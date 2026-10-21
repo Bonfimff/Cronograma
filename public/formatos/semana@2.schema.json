@@ -51,6 +51,18 @@
           "type": "object",
           "properties": { "palavras": { "type": "array", "items": { "type": "string" } }, "pronuncia": { "type": "array", "items": { "type": "string" } } }
         },
+        "foco": {
+          "type": "object",
+          "description": "Calculado pelo app: por onde a semana começa, antes de escolher palavra nova.",
+          "properties": {
+            "reforcar": { "type": "array", "description": "Palavras mais perto de serem esquecidas, da mais urgente para a menos.", "items": { "type": "string" } },
+            "subir": {
+              "type": "array",
+              "description": "[palavra, próximo degrau] de quem já está firme e parou num degrau.",
+              "items": { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }] }
+            }
+          }
+        },
         "ja_estudado": { "type": "array", "items": { "$ref": "#/$defs/ref" } },
         "ritmo": {
           "type": "object",

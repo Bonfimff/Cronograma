@@ -23,8 +23,25 @@ export interface ContextoAluno {
   gerado_em: string;
   vocabulario: LinhaVocabulario[];
   dificuldades: { palavras: string[]; pronuncia: string[] };
+  foco: FocoDaSemana;
   ja_estudado: ContentRef[];
   ritmo: Ritmo;
+}
+
+/**
+ * O que esta semana precisa resolver, já decidido pelo app (progress/relatorio.ts).
+ *
+ * O estado de cada palavra está no vocabulário, mas lá ele é uma lista de centenas de linhas:
+ * quem monta a aula teria de descobrir sozinho por onde começar. Aqui vem pronto o que reforçar
+ * agora (as mais perto de serem esquecidas, da mais urgente para a menos) e quem já está firme
+ * o bastante para subir um degrau — de reconhecer para lembrar, de lembrar para ouvir, e assim
+ * por diante. Subir de degrau é o que transforma palavra reconhecida em palavra usada.
+ */
+export interface FocoDaSemana {
+  /** inglês das palavras em risco, da mais urgente para a menos (até 8) */
+  reforcar: string[];
+  /** [inglês, o próximo degrau daquela palavra] (até 6) */
+  subir: [string, string][];
 }
 
 /**
@@ -75,6 +92,10 @@ export const LEIA_ME_ALUNO = [
   'estado "quase_esquecida": coloque em palavras.revisar de alguma sessão da semana (de preferência no aquecimento).',
   'estado "nao_praticada": está na lista do aluno, mas ainda não foi praticada; pode virar palavra nova.',
   'Palavra fora desta lista é desconhecida: só use se ela estiver em palavras.novas daquela sessão.',
+  'foco.reforcar: o que o app já decidiu que esta semana precisa resolver, da palavra mais urgente para a menos. Comece por elas em palavras.revisar e no aquecimento, antes de pensar em novidade.',
+  'foco.subir: [palavra, próximo degrau]. São palavras já firmes que pararam num degrau: a semana deve fazer cada uma AVANÇAR, escolhendo a atividade que o degrau pede (ouvir → aula.escuta; pronunciar → aula.fala; usar → missao e chat.treino). Subir de degrau vale mais que acrescentar palavra nova.',
+  'dificuldades.pronuncia: os sons que a pessoa erra na Fala. Pelo menos uma dica de app.tips da semana deve atacar um deles, com o par mínimo ou o som escrito.',
+  'Conecte, não empilhe: toda palavra nova entra ligada a alguma palavra "firme" desta lista (em related_words e em pelo menos 1 exemplo que use as duas juntas). Palavra nova sozinha, sem ponte com o que já se sabe, é o que mais se esquece.',
   'ritmo.novas_na_semana: quantas palavras ou expressões NOVAS cabem nesta semana inteira, calculado pelo app a partir do que ainda está em treino. Não passe desse número. Distribua as novas pela semana como fizer sentido (não precisa ser todo dia); as outras aulas reforçam e usam o que está em treino. Se for 0, a semana é só de reforço.',
 ];
 
@@ -117,6 +138,10 @@ export function contextoDoAluno(data: UserData, hoje = new Date().toISOString().
     dificuldades: {
       palavras: r.dificeis.slice(0, 10).map((p) => p.en),
       pronuncia: r.fala.padroes.filter((p) => p.padrao !== 'outro').slice(0, 4).map((p) => p.nome),
+    },
+    foco: {
+      reforcar: r.plano.revisar.map((p) => p.en),
+      subir: r.plano.subir.map((s) => [s.en, s.proximo]),
     },
     ja_estudado: [...new Set(data.history.map((h) => h.ref))],
     // o ritmo olha o vocabulário inteiro, não só a parte que coube no arquivo

@@ -61,6 +61,10 @@ Sai preenchido em **Modelo** e **Exportar**. Cada palavra é uma linha curta, pa
     ["work", "trabalho", "firme", 0.94, 4]
   ],
   "dificuldades": { "palavras": ["ship"], "pronuncia": ["Som de \"th\" (think, this)"] },
+  "foco": {
+    "reforcar": ["where", "schedule"],
+    "subir": [["work", "pronunciar (Fala-Rápida)"], ["office", "usar numa frase sua no chat"]]
+  },
   "ja_estudado": ["word:work", "expression:how-are-you"]
 }
 ```
@@ -75,6 +79,20 @@ Sai preenchido em **Modelo** e **Exportar**. Cada palavra é uma linha curta, pa
 Degrau: 0 vista, 1 reconhece, 2 lembra sozinho, 3 entende ouvindo, 4 pronuncia, 5 usa no chat.
 Com mais de 600 palavras, vão as que não estão firmes e as firmes mais praticadas. O bloco é
 ignorado na importação: não precisa voltar na resposta.
+
+**Foco (`aluno.foco`)**: o estado está no vocabulário, mas lá são centenas de linhas — por onde
+começar a semana é decisão do app, não de quem lê a lista. `reforcar` traz as palavras mais perto
+de serem esquecidas, da mais urgente para a menos: são elas que vão em `palavras.revisar` e no
+aquecimento, antes de escolher qualquer palavra nova. `subir` traz `[palavra, próximo degrau]` —
+palavras já firmes que pararam num degrau, com a atividade que faz cada uma avançar (entender
+ouvindo → `aula.escuta`; pronunciar → `aula.fala`; usar numa frase sua → `aula.missao` e
+`chat.treino`). Subir uma palavra de degrau vale mais do que acrescentar outra palavra nova.
+
+**Conectar, não empilhar.** Toda palavra nova entra ligada a pelo menos uma palavra `firme` do
+aluno: citada em `related_words` e usada junto com ela em pelo menos um exemplo. Palavra nova
+solta, sem ponte com o que a pessoa já sabe, é a primeira a ser esquecida. Do mesmo jeito,
+`dificuldades.pronuncia` traz os sons que a pessoa erra na Fala: pelo menos uma dica de `app.tips`
+da semana ataca um deles.
 
 **Ritmo (`aluno.ritmo`)**: quantas palavras novas cabem na semana é decisão do app, não da IA.
 Cada pessoa fixa num ritmo, e o que ainda está em treino precisa de espaço para firmar. A conta é
