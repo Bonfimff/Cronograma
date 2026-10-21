@@ -1,17 +1,19 @@
 /**
- * Tema da interface: escuro (o de sempre) ou claro, num papel envelhecido.
+ * Tema da interface: claro, num papel envelhecido, ou escuro.
  *
- * A escolha fica no aparelho. Sem escolha, segue o sistema do usuário. O valor
- * é escrito em `data-tema` na raiz do documento e o index.html aplica isso antes
- * da primeira pintura, para a tela não piscar na cor errada.
+ * O site abre sempre no claro. O sistema do usuário não decide isso: quem estuda
+ * numa tela escura por acidente lê pior as folhas, que são desenhadas no papel
+ * claro. Quem preferir o escuro troca em Ajustes, e a escolha fica no aparelho.
+ *
+ * O valor é escrito em `data-tema` na raiz do documento, e o index.html aplica
+ * isso antes da primeira pintura, para a tela não piscar na cor errada.
  */
 
 export type Tema = 'escuro' | 'claro';
 export const TEMA_KEY = 'ingles-hibrido:tema';
 
-export function temaDoSistema(): Tema {
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'claro' : 'escuro';
-}
+/** Com o que o site abre, antes de qualquer escolha. O mesmo valor está no index.html. */
+export const TEMA_PADRAO: Tema = 'claro';
 
 export function temaGuardado(): Tema | null {
   try {
@@ -23,7 +25,7 @@ export function temaGuardado(): Tema | null {
 }
 
 export function temaAtual(): Tema {
-  return temaGuardado() ?? temaDoSistema();
+  return temaGuardado() ?? TEMA_PADRAO;
 }
 
 export function aplicarTema(t: Tema): void {

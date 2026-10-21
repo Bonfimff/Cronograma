@@ -1,17 +1,18 @@
 <!doctype html>
-<html lang="pt-BR">
+<!-- data-tema="claro" aqui é o padrão: vale mesmo se o script abaixo não puder rodar -->
+<html lang="pt-BR" data-tema="claro">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0d0d0d" />
+    <meta name="theme-color" content="#ece3d0" />
     <script>
       // aplica o tema antes da primeira pintura, para a tela não piscar na cor errada
       (function () {
         try {
+          // sem escolha guardada, abre no claro (ver src/core/tema.ts: TEMA_PADRAO).
+          // O sistema do usuário não decide: as folhas são desenhadas no papel claro.
           var t = localStorage.getItem('ingles-hibrido:tema');
-          if (t !== 'claro' && t !== 'escuro') {
-            t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'escuro';
-          }
+          if (t !== 'claro' && t !== 'escuro') t = 'claro';
           document.documentElement.dataset.tema = t;
           var m = document.querySelector('meta[name="theme-color"]');
           if (m) m.content = t === 'claro' ? '#ece3d0' : '#0d0d0d';
