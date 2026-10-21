@@ -5,7 +5,7 @@ import type {
 import { addDays, weekStartOf } from '../dates';
 import { baseContent, examplesFor, parseRef } from '../content/repository';
 import { contextoDoAluno, type ContextoAluno } from './contextoAluno';
-import { adicionarTexto, cobertura } from './cobertura';
+import { adicionarTexto, cobertura, ehPortugues } from './cobertura';
 import { normalizeContent } from '../content/normalize';
 import { mergeSheets } from '../library/sheets';
 import { createSession, deleteSession } from '../sessions/sessions';
@@ -469,8 +469,8 @@ function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof 
       ...(s.aula?.missao?.tarefas ?? []).map((f) => f.en),
       ...treinoDe(s).map((t) => t.en),
     ].filter((t): t is string => typeof t === 'string' && /[a-z]/i.test(t))
-      // os enunciados em português dos exercícios ficam de fora: só conta o inglês
-      .filter((t) => !/[ãõçáéíóúâêô]/i.test(t));
+      // os enunciados e as traduções em português ficam de fora: só conta o inglês
+      .filter((t) => !ehPortugues(t));
     const c = cobertura(textos, daAula);
     if (c.total >= 10) {
       const ok = c.taxa >= COBERTURA_MINIMA;

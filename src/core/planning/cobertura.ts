@@ -22,6 +22,37 @@ export const BASICAS = new Set((
   + 'i\'m you\'re he\'s she\'s it\'s we\'re they\'re don\'t doesn\'t didn\'t isn\'t aren\'t can\'t won\'t let\'s'
 ).split(/\s+/));
 
+/**
+ * Marcadores de português que não existem em inglês.
+ *
+ * A cobertura só conta o inglês da aula. O português (os enunciados dos exercícios e as
+ * traduções) tinha de ficar de fora, e para isso bastava procurar acento — só que "Isso me
+ * parece bom" e as respostas que a gente aceita digitadas sem acento ("Estes livros na mesa
+ * sao pesados") passavam por inglês e entravam na conta como palavras desconhecidas, puxando
+ * a cobertura para baixo sem motivo.
+ *
+ * As palavras que existem nas duas línguas (a, e, o, do, no, as, me, so, sou, data, item…)
+ * ficam fora desta lista de propósito: uma só delas não pode condenar uma frase em inglês.
+ */
+const MARCAS_PT = new Set((
+  'de da das dos que nao uma um para com em na nos nas por mais como onde quando voce voces eu '
+  + 'meu minha meus minhas seu sua seus suas teu tua nosso nossa dele dela deles delas '
+  + 'isso isto aquilo aquele aquela aqueles aquelas este esta estes estas esse essa esses essas '
+  + 'sou somos sao estou estamos estao ser esta tem temos muito pouco ja sem ate entao tambem '
+  + 'ele ela eles elas lhe nem mesmo mesma qual quais cada frase frases palavra palavras '
+  + 'monte traduza escreva responda complete ligue relacione significa pergunte diga coloque '
+  + 'ingles portugues'
+).split(/\s+/));
+
+/**
+ * O texto está em português? Um acento, ou uma palavra que só existe em português, basta.
+ * Usado para deixar o português fora da conta da cobertura (ver MARCAS_PT).
+ */
+export function ehPortugues(texto: string): boolean {
+  if (/[ãõçáéíóúâêôàü]/i.test(texto)) return true;
+  return palavrasDe(texto).some((w) => MARCAS_PT.has(w));
+}
+
 /** Formas simples de uma palavra: works, worked, working → work; studies → study. */
 export function formas(palavra: string): string[] {
   const p = palavra.toLowerCase().replace(/'s$/, '');
