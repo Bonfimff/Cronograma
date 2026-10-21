@@ -565,7 +565,9 @@ function conferirIntegracao(data: UserData, p: WeekPackage, lists: Record<keyof 
 
   // uma dica de pronúncia na semana: é o que o aluno não descobre sozinho lendo
   const tipsDaSemana = sessoes.flatMap(({ s }) => s.app?.tips ?? []);
-  if (tipsDaSemana.length && !tipsDaSemana.some((t) => /pronunc|som d|sons |soa |sotaque|s[ií]laba|\/.+\//i.test(String(t)))) {
+  // \b em "soa" e "som" é obrigatório: sem ele, "pessoa" e "assombro" passam por dica de pronúncia
+  const FALA_DE_PRONUNCIA = /\bpron[uú]nc|\bsotaque|\bs[ií]laba|\bsom\b|\bsons\b|\bsoa\b|\bsoam\b|\/[^/\s]{1,14}\//i;
+  if (tipsDaSemana.length && !tipsDaSemana.some((t) => FALA_DE_PRONUNCIA.test(String(t)))) {
     out.push({ ok: false, texto: 'Nenhuma dica de app.tips fala de pronúncia nesta semana. É o que a pessoa não descobre sozinha lendo: o som, a sílaba forte ou o par que confunde.' });
   }
 
