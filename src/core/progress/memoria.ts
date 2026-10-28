@@ -109,13 +109,29 @@ export function nota(e: Evento): number {
 const PALAVRA = /[a-z][a-z']+/g;
 const COMUNS = new Set(['the', 'and', 'you', 'are', 'is', 'am', 'to', 'of', 'in', 'on', 'it', 'my', 'me', 'a', 'an', 'at', 'for', 'do', 'be', 'so', 'no', 'yes', 'ok', 'oi']);
 
+/**
+ * Até esta data, o juiz da fala marcava como erro quem dizia a palavra de um jeito
+ * aproximado: a chave de som separava palavras pela vogal e qualquer nota abaixo do
+ * limite virava erro (ver games/fastSpeech.ts). Esses erros entraram no histórico,
+ * derrubaram a retenção e, por tabela, encolheram quantas palavras novas cabiam na
+ * semana. Eles não contam mais.
+ *
+ * O registro em si não é apagado: o placar da Fala continua mostrando o que houve.
+ * Só a memória deixa de ser punida. E o erro antigo não vira acerto — ele sai da
+ * conta, para a retenção voltar a ser decidida pelas outras respostas.
+ */
+export const FALA_CORRIGIDA_EM = new Date('2026-10-29T00:00:00').getTime();
+
 /** Junta as respostas de todas as fontes, em ordem de tempo. `refParaEn` traduz "word:rest" → "rest". */
 export function eventos(data: UserData, refParaEn: (ref: string) => string | undefined, vocabulario: Set<string>): Evento[] {
   const out: Evento[] = [];
   for (const a of data.atividades ?? []) {
     const inicio = new Date(a.quando).getTime();
     for (const p of a.palavras) {
-      out.push({ en: p.en.toLowerCase(), ms: inicio + (p.t ?? 0) * 1000, ok: p.ok, hab: p.hab ?? (p.ouvido !== undefined ? 'falar' : 'reconhecer'), tempo: p.ms, dica: p.dica });
+      const hab = p.hab ?? (p.ouvido !== undefined ? 'falar' : 'reconhecer');
+      const ms = inicio + (p.t ?? 0) * 1000;
+      if (hab === 'falar' && !p.ok && ms < FALA_CORRIGIDA_EM) continue;
+      out.push({ en: p.en.toLowerCase(), ms, ok: p.ok, hab, tempo: p.ms, dica: p.dica });
     }
   }
   // folhas: o que foi marcado ao fim de cada estudo (só palavras)
