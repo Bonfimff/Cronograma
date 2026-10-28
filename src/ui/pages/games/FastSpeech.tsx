@@ -195,7 +195,11 @@ export function FastSpeech() {
         unclearCount.current++;
         setStage('unclear');
       } else {
-        registro.atual().erro(word.en, j.heard);
+        // Só conta erro quando o reconhecedor ouviu OUTRA palavra. Acabar as chances
+        // sem ser entendido não é errar: registrar isso derrubava a retenção de quem
+        // sabe a palavra, e a retenção é o que decide quantas palavras novas cabem
+        // na semana — o reconhecimento ruim acabava encolhendo o plano de estudo.
+        if (j.verdict === 'bad') registro.atual().erro(word.en, j.heard);
         setStage('bad');
       }
     })();

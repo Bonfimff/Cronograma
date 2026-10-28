@@ -109,12 +109,17 @@ export function soundKey(word: string): string {
     .replace(/c(?=[eiy])/g, 's').replace(/c/g, 'k').replace(/z/g, 's').replace(/y/g, 'i')
     .replace(/w/g, 'u').replace(/^h/, '')
     .replace(/(.)\1+/g, '$1');
-  // vogais soam parecido demais pra separar: guarda só a primeira de cada grupo
-  w = w.replace(/[aeiou]+/g, (m) => m[0]);
-  // d/t, b/p, g/k, v/f trocados são o erro mais comum de pronúncia
-  w = w.replace(/d/g, 't').replace(/b/g, 'p').replace(/g/g, 'k').replace(/v/g, 'f');
-  // terminação vogal solta ("play" → "plei") não pesa
-  return w.replace(/[eiou]$/, '');
+  // Vogais: para o SOM, toda vogal vale a mesma coisa. Guardar a identidade dela
+  // ("boss" → pos, "bus" → pus) separava justamente o que o reconhecedor mais erra
+  // e o que um iniciante menos controla — e aí quem sabia a palavra levava erro.
+  // A grafia continua sendo comparada à parte, então isto só afrouxa o atalho do som.
+  w = w.replace(/[aeiou]+/g, 'a');
+  // d/t, g/k e b/v/p trocados são o erro mais comum. O v precisa virar b ANTES de
+  // b virar p: senão "very" e "berry" caem em símbolos diferentes, que é o oposto
+  // do que se quer de quem fala português.
+  w = w.replace(/d/g, 't').replace(/v/g, 'b').replace(/b/g, 'p').replace(/g/g, 'k');
+  // vogal solta no fim ("play" → "plei", "boss" → "bossi") não pesa
+  return w.replace(/a$/, '');
 }
 
 /** 0 a 1: quanto `heard` se parece com `expected` (escrita ou som, o que der mais). */
@@ -153,6 +158,13 @@ export function thresholdFor(word: string): number {
   return 0.68;
 }
 
+/**
+ * Fração do limite a partir da qual a tentativa é "não entendi" em vez de errada.
+ * Entre isto e o limite fica a faixa em que o reconhecedor duvidou de alguém que
+ * disse a palavra de um jeito aproximado — comum, e esperado, em quem está começando.
+ */
+const QUASE = 0.75;
+
 /** Textos que o Whisper solta quando só ouviu ruído ou silêncio. */
 const NOISE = /^(thank you|thanks|you|bye|okay|ok|um+|uh+|hmm+|mm+|ah+|oh+|hm+)?$/;
 
@@ -185,5 +197,8 @@ export function judgeSpeech(expected: string, hypotheses: string[]): Judgement {
     return { verdict: best.score >= 0.9 ? 'ok' : 'close', heard: best.heard, score: best.score };
   }
   if (NOISE.test(any) && normalizeSpoken(expected) !== any) return { verdict: 'unclear', heard: any, score: best.score };
+  // Perto do limite sem alcançar: o reconhecedor duvidou, não é outra palavra.
+  // Vale nova chance, como o silêncio — e não entra como erro no histórico.
+  if (best.score >= limit * QUASE) return { verdict: 'unclear', heard: best.heard, score: best.score };
   return { verdict: 'bad', heard: any, score: best.score };
 }
