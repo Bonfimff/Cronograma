@@ -264,8 +264,15 @@ export interface ChatTurn {
   role: 'user' | 'assistant';
   /** o texto como veio, com as palavras em inglês entre [[colchetes duplos]] */
   content: string;
+  /** quando ficou pronta: a hora que aparece na fala */
   at: string;
+  /** resposta do amigo: quando a primeira palavra chegou */
+  inicio?: string;
+  /** resposta do amigo: tokens que o modelo leu e escreveu; ausente se não passou por ele */
+  tokens?: { entrada: number; saida: number };
   glossary?: { en: string; pt: string; id: string }[];
+  /** a fala a que esta responde; guarda o texto para continuar legível se a original for apagada */
+  citacao?: { id: string; role: 'user' | 'assistant'; texto: string };
 }
 
 export interface UserData {

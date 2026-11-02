@@ -25,6 +25,7 @@ import json
 import re
 import urllib.request
 from collections.abc import Callable
+from contextvars import ContextVar
 from typing import Any
 
 from .idioma import parece_portugues
@@ -381,6 +382,17 @@ def reply_parcial(bruto: str) -> str:
         return texto.replace('\\"', '"').replace("\\n", " ")
 
 
+# onde somar os tokens da resposta em curso, inclusive das tentativas que foram descartadas
+uso_de_tokens: ContextVar[dict[str, int] | None] = ContextVar("uso_de_tokens", default=None)
+
+
+def _somar_tokens(final: dict) -> None:
+    uso = uso_de_tokens.get()
+    if uso is not None:
+        uso["entrada"] += final.get("prompt_eval_count", 0)
+        uso["saida"] += final.get("eval_count", 0)
+
+
 def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras: list,
             limite: int, temperatura: float, seed: int | None, timeout: int,
             ao_vivo: Callable[[str], None] | None = None, texto_livre: bool = False) -> tuple[str, list[str]]:
@@ -404,7 +416,9 @@ def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         if ao_vivo is None:
-            bruto = json.loads(r.read().decode("utf-8"))["message"]["content"]
+            completa = json.loads(r.read().decode("utf-8"))
+            _somar_tokens(completa)
+            bruto = completa["message"]["content"]
         else:
             # o Ollama manda uma linha JSON por pedaço; a cada um, o texto parcial vai para a tela
             partes: list[str] = []
@@ -419,6 +433,7 @@ def _chamar(url: str, modelo: str, sistema: str, historico: list[dict], palavras
                     mostrado = parcial
                     ao_vivo(parcial)
                 if pedaco.get("done"):
+                    _somar_tokens(pedaco)
                     break
             bruto = "".join(partes)
         if texto_livre:

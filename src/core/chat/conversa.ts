@@ -30,6 +30,20 @@ export function apagarConversa(): void {
   store.update((d) => { d.chat = []; });
 }
 
+/** Apaga uma fala só. Como no histórico inteiro, a ausência é o que a sincronização leva ao servidor. */
+export function apagarFala(id: string): void {
+  store.update((d) => { d.chat = (d.chat ?? []).filter((f) => f.id !== id); });
+}
+
+/** A menção vai numa mensagem própria antes da fala: a última segue sendo só o que a pessoa escreveu. */
+const mencao = ({ role, texto }: NonNullable<ChatTurn['citacao']>): ChatMessage => ({
+  role: 'user',
+  content: `(Minha próxima mensagem responde a esta fala ${role === 'user' ? 'minha' : 'sua'}: "${texto}")`,
+});
+
 /** O pedaço que vai para o modelo, no formato que a API espera. */
 export const paraOModelo = (falas: ChatTurn[]): ChatMessage[] =>
-  falas.slice(-JANELA).map((f) => ({ role: f.role, content: f.content }));
+  falas.slice(-JANELA).flatMap((f) => [
+    ...(f.citacao ? [mencao(f.citacao)] : []),
+    { role: f.role, content: f.content },
+  ]);

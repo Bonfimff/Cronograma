@@ -24,7 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from ..chat_slot import responder
+from ..chat_slot import responder, uso_de_tokens
 from ..config import settings
 from ..conhecimento import contexto_do_app, pergunta_sobre_o_app, pergunta_sobre_vocabulario, resposta_direta
 from .. import db as db_mod
@@ -147,6 +147,8 @@ async def _conversar_slot(
             pronto, resto = (texto[: corte + 1], texto[corte + 1:]) if corte >= 0 else ("", texto)
             marcado, _ = usar_vocabulario(pronto, vocab_completo, marcas=True)
             bruto_ao_vivo(marcado + resto)
+    tokens = {"entrada": 0, "saida": 0}
+    uso_de_tokens.set(tokens)  # to_thread leva o contexto junto: as tentativas de dentro somam aqui
     async with FILA:
         try:
             resposta = await asyncio.to_thread(
@@ -177,12 +179,12 @@ async def _conversar_slot(
             if gravar:
                 gravar(en, pt)
             glossario.append({"en": en, "pt": pt, "id": ""})
-        return ChatOut(reply=resposta["marcado"], glossary=glossario)
+        return ChatOut(reply=resposta["marcado"], glossary=glossario, tokens=tokens)
     # se mesmo depois de pedir de novo veio em inglês, entrega sem marcar (como no modo livre)
     if not parece_portugues(texto):
-        return ChatOut(reply=limpar(texto), glossary=[])
+        return ChatOut(reply=limpar(texto), glossary=[], tokens=tokens)
     marcado, glossario = marcar(texto, vocabulario)
-    return ChatOut(reply=marcado, glossary=glossario)
+    return ChatOut(reply=marcado, glossary=glossario, tokens=tokens)
 
 
 def _glossario(marcado: str, vocabulario: list[Palavra]) -> list[dict]:

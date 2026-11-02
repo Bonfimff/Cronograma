@@ -160,7 +160,7 @@ export class Api {
    */
   async chatAoVivo(
     token: string, messages: ChatMessage[], aoVivo: (texto: string) => void, foco: string[] = [],
-  ): Promise<{ reply: string; glossary: GlossaryItem[] }> {
+  ): Promise<{ reply: string; glossary: GlossaryItem[]; tokens?: { entrada: number; saida: number } | null }> {
     if (!this.configured) throw new ApiError('Este aplicativo foi publicado sem servidor de conta.', 0);
     let res: Response;
     try {
@@ -185,7 +185,7 @@ export class Api {
       resto = linhas.pop() ?? '';
       for (const linha of linhas) {
         if (!linha.trim()) continue;
-        const item = JSON.parse(linha) as { parcial?: string; final?: { reply: string; glossary: GlossaryItem[] }; erro?: string; status?: number };
+        const item = JSON.parse(linha) as { parcial?: string; final?: { reply: string; glossary: GlossaryItem[]; tokens?: { entrada: number; saida: number } | null }; erro?: string; status?: number };
         if (item.parcial !== undefined) aoVivo(item.parcial);
         if (item.final) return item.final;
         if (item.erro) throw new ApiError(item.erro, item.status ?? 500);

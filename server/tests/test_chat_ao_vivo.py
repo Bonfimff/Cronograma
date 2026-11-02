@@ -38,6 +38,22 @@ def test_chamar_ao_vivo_manda_o_texto_parcial(monkeypatch):
     assert vistos[0] == "Que " and vistos[-1] == "Que dia bom!"
 
 
+def test_tokens_somam_o_que_o_ollama_conta_no_fim(monkeypatch):
+    fluxo = _Fluxo(['{"reply": "Oi", "trocar": []}'])
+    fluxo.linhas[-1] = json.dumps({"message": {"content": ""}, "done": True, "prompt_eval_count": 120, "eval_count": 8}).encode() + b"\n"
+    monkeypatch.setattr(chat_slot.urllib.request, "urlopen", lambda req, timeout=None: fluxo)
+    uso = {"entrada": 0, "saida": 0}
+    chat_slot.uso_de_tokens.set(uso)
+    for _ in range(2):  # uma resposta recusada e refeita conta as duas vezes
+        chat_slot._chamar("http://x", "m", "s", [{"role": "user", "content": "oi"}], [], 200, 0.3, None, 5, lambda _t: None)
+    assert uso == {"entrada": 240, "saida": 16}
+
+
+def test_resposta_sem_modelo_nao_tem_tokens():
+    from app.schemas import ChatOut
+    assert ChatOut(reply="Oi").model_dump()["tokens"] is None
+
+
 def test_rota_stream_manda_parciais_e_final(client, conta, monkeypatch):
     def falso(url, modelo, sistema, historico, palavras, limite, temp, seed, timeout, ao_vivo=None, **k):
         for parte in ("Estou ", "Estou cansado ", "Estou cansado hoje."):

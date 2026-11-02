@@ -15,3 +15,15 @@ export function lerFala(texto: string, chave?: string): void {
 }
 
 export const pararLeitura = () => pararFala();
+
+const KEY_AUTOMATICA = 'ingles-hibrido:conversa-leitura-automatica';
+
+/** Ler sozinho cada resposta do amigo. Fica no aparelho, como as vozes. */
+export const leituraAutomatica = {
+  get(): boolean {
+    try { return localStorage.getItem(KEY_AUTOMATICA) === '1'; } catch { return false; }
+  },
+  guardar(ligada: boolean): void {
+    try { localStorage.setItem(KEY_AUTOMATICA, ligada ? '1' : '0'); } catch { /* sem armazenamento */ }
+  },
+};

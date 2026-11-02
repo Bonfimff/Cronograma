@@ -1682,8 +1682,6 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
    A tela toda é a conversa: cabeçalho curto, fluxo rolando e a caixa de
    escrever presa embaixo, como num caderno de recados. */
 .conversa { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.conversa-topo { margin-bottom: 0; }
-.conversa-topo h1 { margin-bottom: 0; }
 
 .conversa-fluxo {
   display: flex; flex-direction: column; gap: 10px;
@@ -1769,14 +1767,36 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 }
 .viva-balao a { font-size: .78rem; opacity: .85; }
 
-.conversa-topo { position: relative; }
+/* Conversa: cabeçalho preso ao topo; à direita sobra lugar para o botão da conta, que é fixo */
+.conversa-barra {
+  position: sticky; top: var(--topo, 0px); z-index: 8;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: -16px -16px 0; padding: calc(10px + env(safe-area-inset-top)) 62px 10px 16px;
+  background: var(--barra); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+.conversa-barra h1 { margin: 0; font-size: 1.2rem; line-height: 1.2; }
+.conversa-menu { position: relative; flex: none; }
+.conversa-menu-bt { font-size: 1.3rem; line-height: 1; }
+.conversa-menu-caixa {
+  position: absolute; top: 48px; right: -50px; width: min(300px, calc(100vw - 24px)); padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2);
+  box-shadow: 0 16px 34px var(--sombra);
+}
+.conversa-menu-caixa .form-linha { margin: 0; }
+.conversa-menu-caixa .check { display: flex; align-items: center; gap: 10px; }
 .conversa-apagar {
-  position: absolute; top: 2px; right: 0;
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
   background: none; border: 0; padding: 4px 2px; cursor: pointer;
   color: var(--ink-2); font: inherit; font-size: .82rem;
   border-bottom: 1px dotted currentColor;
 }
 .conversa-apagar:hover { color: var(--accent); }
+@media (min-width: 760px) {
+  .conversa-barra { margin: -12px 0 0; padding: 8px 0; background: none; border-bottom: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .conversa-menu-caixa { right: 0; }
+}
 
 /* ---------- Desafio Fala-Rápida ---------- */
 .fs-center { text-align: center; display: grid; gap: 14px; justify-items: center; padding: 12px 0; }
@@ -1856,10 +1876,11 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   .conversa-ouvir.tocando img, .conversa-ouvir.tocando::before, .conversa-ouvir.tocando::after { animation: none; }
   .conversa-ouvir.tocando::before { opacity: .6; transform: scale(1.3); }
 }
-/* Conversa: a caixa de escrever fica sempre à vista, presa acima da barra de baixo */
+/* Conversa: a caixa de escrever fica sempre à vista, presa à barra de baixo. Ela entra um pouco
+   por baixo da barra (mais alta que 60px, varia com a fonte) para nunca sobrar fresta entre as duas. */
 .conversa-escrever {
-  position: sticky; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 5;
-  margin: 0 -16px; padding: 10px 16px;
+  position: sticky; bottom: calc(60px + env(safe-area-inset-bottom)); z-index: 5;
+  margin: 0 -16px -28px; padding: 10px 16px 16px; /* -28px: os 12px da barra e os 16px de respiro do .main */
   background: var(--barra); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--rule);
 }
@@ -1869,9 +1890,44 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
   .conversa-escrever { bottom: 0; margin: 0; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); border-top: 0; background: linear-gradient(transparent, var(--paper) 30%); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 @media (max-width: 380px) {
-  .conversa-escrever { gap: 6px; padding: 8px 12px; margin: 0 -16px; }
+  .conversa-escrever { gap: 6px; padding: 8px 12px 14px; margin: 0 -16px -28px; }
   .conversa-escrever .primary { padding: 0 12px; }
 }
+/* Conversa: segurar uma fala abre as opções */
+@media (pointer: coarse) {
+  .conversa-fala { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+}
+.conversa-fala { scroll-margin: 80px; transition: box-shadow .2s ease; }
+.conversa-fala.selecionada, .conversa-fala.destaque { box-shadow: 0 0 0 2px var(--accent); }
+.fala-menu-fundo { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; padding: 16px 16px calc(84px + env(safe-area-inset-bottom)); background: rgba(0, 0, 0, .3); }
+.fala-menu {
+  width: min(320px, 100%); padding: 6px; display: flex; flex-direction: column;
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-2);
+  box-shadow: 0 16px 34px var(--sombra);
+}
+.fala-menu button { min-height: 46px; padding: 10px 14px; text-align: left; font: inherit; color: var(--ink); background: none; border: 0; border-radius: 10px; }
+.fala-menu button:hover { background: var(--paper-3); }
+.fala-menu .fala-menu-apagar { color: var(--bad); font-weight: 600; }
+.fala-citacao, .conversa-respondendo > div { display: flex; flex-direction: column; min-width: 0; padding: 4px 8px; border-left: 3px solid var(--accent); border-radius: 4px; background: rgba(var(--accent-rgb), .08); font-size: .85rem; text-align: left; color: var(--ink-2); }
+.fala-citacao { width: 100%; margin-bottom: 6px; border-top: 0; border-right: 0; border-bottom: 0; font-family: inherit; line-height: 1.35; }
+.fala-citacao strong, .conversa-respondendo strong { color: var(--accent); font-size: .78rem; }
+.fala-citacao span, .conversa-respondendo span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.conversa-escrever { flex-wrap: wrap; }
+.conversa-respondendo { flex: 0 0 100%; display: flex; align-items: flex-start; gap: 8px; }
+.conversa-respondendo > div { flex: 1; }
+.conversa-respondendo button { flex: none; width: 36px; height: 36px; padding: 0; background: none; border: 0; color: var(--ink-2); font-size: 1rem; }
+.fala-rodape { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 5px; }
+.fala-rodape .conversa-ouvir { margin-top: 0; }
+.fala-hora { font-size: .72rem; color: var(--ink-3); }
+.conversa-fala.user .fala-rodape { flex-direction: row-reverse; }
+.fala-detalhes { padding: 14px; gap: 10px; }
+.fala-detalhes h2 { margin: 0; font-size: 1.05rem; }
+.fala-detalhes dl { margin: 0; display: grid; gap: 2px; }
+.fala-detalhes dt { margin-top: 6px; font-size: .78rem; color: var(--ink-3); }
+.fala-detalhes dd { margin: 0; font-size: .95rem; }
+.fala-detalhes > button { text-align: center; }
+.conversa-recado { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); z-index: 35; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: .88rem; }
+
 /* respostas em lista (uma palavra por linha) mantêm as quebras */
 .conversa-fala p { white-space: pre-line; }
 

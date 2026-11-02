@@ -109,4 +109,6 @@ class GlossaryItem(BaseModel):
 class ChatOut(BaseModel):
     # o texto vem com as palavras em inglês entre [[colchetes duplos]]
     reply: str
+    # tokens que o modelo leu e escreveu; ausente quando a resposta não passou por ele
+    tokens: dict[str, int] | None = None
     glossary: list[GlossaryItem] = Field(default_factory=list)
