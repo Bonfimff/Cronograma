@@ -39,7 +39,8 @@ const EXEMPLO_MISTO: { texto: string; lingua: Lingua }[] = [
 function textoDesempenho(m: Medida | undefined): string {
   if (!m?.modo) return 'Velocidade neste aparelho: aparece depois de usar.';
   const num = (x: number) => x.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-  const onde = m.modo === 'placa' ? 'Roda na placa de vídeo (WebGPU).' : `Roda no processador${m.motivo ? ` (${m.motivo})` : ''}.`;
+  const nucleos = (m.nucleos ?? 1) > 1 ? ` com ${m.nucleos} núcleos` : ' com 1 núcleo';
+  const onde = m.modo === 'placa' ? 'Roda na placa de vídeo (WebGPU).' : `Roda no processador${nucleos}${m.motivo ? ` (${m.motivo})` : ''}.`;
   const carga = m.carga ? ` Abre em ${num(m.carga)} s.` : '';
   if (!m.velocidade) return `Neste aparelho: ${onde}${carga}`;
   const ritmo = m.velocidade >= 1

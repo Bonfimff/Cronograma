@@ -38,7 +38,7 @@ export const amostraBilingue = (id: string) => `${import.meta.env.BASE_URL}vozes
 
 type Resposta = {
   type: string; id: number; valor?: number | boolean; amostras?: Float32Array; taxa?: number; gasto?: number; mensagem?: string;
-  modo?: 'placa' | 'processador'; motivo?: string; carga?: number;
+  modo?: 'placa' | 'processador'; motivo?: string; nucleos?: number; carga?: number;
 };
 
 let worker: Worker | undefined;
@@ -102,6 +102,7 @@ export interface Medida {
   velocidade?: number;
   modo?: 'placa' | 'processador';
   motivo?: string;
+  nucleos?: number;
   /** quanto levou para abrir o modelo na memória, em segundos */
   carga?: number;
 }
@@ -115,10 +116,11 @@ function anotar(id: string, r: Resposta, velocidade?: number) {
     const motor = id.split(':')[0] as MotorBilingue;
     const medidas = desempenho();
     const antes = medidas[motor];
-    const mesmaForma = antes?.modo === r.modo;
+    const mesmaForma = antes?.modo === r.modo && antes?.nucleos === r.nucleos;
     medidas[motor] = {
       modo: r.modo,
       motivo: r.motivo,
+      nucleos: r.nucleos,
       carga: r.carga || (mesmaForma ? antes?.carga : undefined),
       velocidade: Math.max(mesmaForma ? antes?.velocidade ?? 0 : 0, velocidade ?? 0) || undefined,
     };
@@ -133,7 +135,9 @@ const KEY_SEM_PLACA = 'ingles-hibrido:vozes-sem-placa-v2';
  * Abrir o modelo é bem mais demorado que gerar uma frase, e no processador uma frase também
  * pode levar minutos sem estar travada: nesse caso o limite maior é só para não esperar para sempre.
  */
-const LIMITE_CARGA_MS = 300_000;
+const LIMITE_CARGA_MS = 120_000;
+const LIMITE_FRASE_PROCESSADOR_MS = 300_000;
+const KEY_UM_NUCLEO = 'ingles-hibrido:vozes-um-nucleo';
 const LIMITE_FRASE_MS = 120_000;
 
 function lerSemPlaca(): boolean {
@@ -142,8 +146,10 @@ function lerSemPlaca(): boolean {
 
 function destravar() {
   try {
-    localStorage.setItem(KEY_SEM_PLACA, '1');
-    localStorage.removeItem(KEY_DESEMPENHO); // as medidas com a placa não valem mais
+    // o que travou? Abrindo o modelo, na primeira vez sem a placa, foram as threads
+    const seguro = lerSemPlaca() ? KEY_UM_NUCLEO : KEY_SEM_PLACA;
+    localStorage.setItem(seguro, '1');
+    localStorage.removeItem(KEY_DESEMPENHO); // as medidas anteriores não valem mais
   } catch { /* sem armazenamento */ }
   worker?.terminate();
   worker = undefined;
@@ -157,7 +163,9 @@ let modoAtual: Resposta['modo'];
 
 function comLimite(msg: Record<string, unknown>, limite: number): Promise<Resposta> {
   const relogio = window.setTimeout(destravar, limite);
-  return pedir({ ...msg, semPlaca: lerSemPlaca() }).finally(() => window.clearTimeout(relogio));
+  let umNucleo = false;
+  try { umNucleo = localStorage.getItem(KEY_UM_NUCLEO) === '1'; } catch { /* sem armazenamento */ }
+  return pedir({ ...msg, semPlaca: lerSemPlaca(), umNucleo }).finally(() => window.clearTimeout(relogio));
 }
 
 /** Abre o modelo na memória antes da primeira fala; pode ser chamada de novo sem custo. */
@@ -178,7 +186,7 @@ export function sintetizarBilingue(
 ): Promise<{ amostras: Float32Array; taxa: number }> {
   const vez = fila.catch(() => undefined).then(async () => {
     await prepararBilingue(id);
-    const r = await comLimite({ type: 'falar', voz: id, partes, velocidade }, modoAtual === 'placa' ? LIMITE_FRASE_MS : LIMITE_CARGA_MS);
+    const r = await comLimite({ type: 'falar', voz: id, partes, velocidade }, modoAtual === 'placa' ? LIMITE_FRASE_MS : LIMITE_FRASE_PROCESSADOR_MS);
     const amostras = r.amostras!;
     const taxa = r.taxa!;
     anotar(id, r, amostras.length / taxa / r.gasto!);

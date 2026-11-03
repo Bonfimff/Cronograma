@@ -11,16 +11,23 @@
  * Só um motor fica na memória: juntos, passariam de 500 MB no celular.
  */
 import * as ort from 'onnxruntime-web/webgpu';
+// pelo caminho do arquivo: o pacote não exporta estes dois
+import ortMjs from '../../../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.mjs?url';
+import ortWasm from '../../../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.asyncify.wasm?url';
 import { abrirCache, buscar } from '../piper/cache';
 import { createPiperPhonemize } from '../piper/phonemize.js';
 
-const ORT_VERSAO = '1.31.0-dev.20260914-8d85527a0';
 const FONEMAS = 'https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize';
 const KOKORO = 'https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/1939ad2a8e416c0acfeecc08a694d14ef25f2231';
 const SUPERTONIC = 'https://huggingface.co/supertone-oss-archive/supertonic-3/resolve/aafc6e32416a594460b32413efc49d7fe4ce6d46';
 
-ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSAO}/dist/`;
-ort.env.wasm.numThreads = 1; // sem isolamento de origem (GitHub Pages), só uma thread
+// do próprio site: as threads do motor são workers, e worker de outro domínio não sobe
+ort.env.wasm.wasmPaths = { mjs: new URL(ortMjs, self.location.href).href, wasm: new URL(ortWasm, self.location.href).href };
+// só com a página isolada (public/isolamento.js) o navegador libera threads; mais de 4 não compensa
+// nos celulares, onde os outros núcleos são os lentos, e deixa o aparelho sem folga
+const NUCLEOS_POSSIVEIS = self.crossOriginIsolated ? Math.min(navigator.hardwareConcurrency || 1, 4) : 1;
+let NUCLEOS = NUCLEOS_POSSIVEIS;
+ort.env.wasm.numThreads = NUCLEOS;
 
 type Lingua = 'pt' | 'en';
 interface Parte { texto: string; lingua: Lingua }
@@ -28,8 +35,8 @@ type Msg =
   | { type: 'baixar'; id: number; voz: string }
   | { type: 'baixada'; id: number; voz: string }
   | { type: 'remover'; id: number; voz: string }
-  | { type: 'preparar'; id: number; voz: string; semPlaca?: boolean }
-  | { type: 'falar'; id: number; voz: string; partes: Parte[]; velocidade: number; semPlaca?: boolean };
+  | { type: 'preparar'; id: number; voz: string; semPlaca?: boolean; umNucleo?: boolean }
+  | { type: 'falar'; id: number; voz: string; partes: Parte[]; velocidade: number; semPlaca?: boolean; umNucleo?: boolean };
 
 const post = (m: unknown, t?: Transferable[]) => (self as unknown as Worker).postMessage(m, t ?? []);
 const separar = (voz: string) => voz.split(':') as ['kokoro' | 'supertonic', string];
@@ -275,8 +282,10 @@ self.onmessage = async (e: MessageEvent<Msg>) => {
       post({ type: 'pronto', id: m.id });
     } else if (m.type === 'preparar') {
       if (m.semPlaca) usarPlaca = false;
+      // antes do primeiro modelo aberto: depois disso o motor não aceita mudar
+      if (m.umNucleo) { NUCLEOS = 1; ort.env.wasm.numThreads = 1; }
       await motorDe(m.voz);
-      post({ type: 'pronto', id: m.id, modo, motivo, carga: carregado?.carga });
+      post({ type: 'pronto', id: m.id, modo, motivo, nucleos: NUCLEOS, carga: carregado?.carga });
     } else {
       if (m.semPlaca) usarPlaca = false;
       let t0 = performance.now();
@@ -294,7 +303,7 @@ self.onmessage = async (e: MessageEvent<Msg>) => {
       }
       const { amostras, taxa } = audio;
       const gasto = (performance.now() - t0) / 1000;
-      post({ type: 'pronto', id: m.id, amostras, taxa, gasto, modo, motivo, carga: carregado?.carga }, [amostras.buffer]);
+      post({ type: 'pronto', id: m.id, amostras, taxa, gasto, modo, motivo, nucleos: NUCLEOS, carga: carregado?.carga }, [amostras.buffer]);
     }
   } catch (err) {
     post({ type: 'erro', id: m.id, mensagem: String((err as Error)?.message ?? err) });
