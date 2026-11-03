@@ -3,6 +3,9 @@ import {
   ajustesVoz, falar, vozesDe, type AjustesVoz, type Lingua,
 } from '../../core/lessons/vozes';
 import {
+  amostraBilingue, baixarBilingue, bilingueBaixada, desempenho, removerMotor, sintetizarBilingue, SOBRE_MOTOR, VOZES_BILINGUES, type MotorBilingue,
+} from '../../core/speech/bilingue';
+import {
   amostraDe, baixarVoz, PREFIXO_NATURAL, VOZES_NATURAIS, vozBaixada,
 } from '../../core/speech/piper';
 import { CatMegaphone } from '../components/Cutouts';
@@ -25,6 +28,21 @@ const EXEMPLO: Record<Lingua, string> = {
 };
 
 const NOME_LINGUA: Record<Lingua, string> = { en: 'Inglês', pt: 'Português' };
+
+const EXEMPLO_MISTO: { texto: string; lingua: Lingua }[] = [
+  { texto: 'Então é ', lingua: 'pt' }, { texto: 'good', lingua: 'en' },
+  { texto: ' praticar um pouco de ', lingua: 'pt' }, { texto: 'English', lingua: 'en' },
+  { texto: ' todo dia.', lingua: 'pt' },
+];
+
+/** O que a medida significa para quem está lendo. */
+function textoDesempenho(x: number | undefined): string {
+  if (!x) return 'Velocidade neste aparelho: aparece depois de usar.';
+  const n = x.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  return x >= 1
+    ? `Neste aparelho: gera ${n}x mais rápido que a fala.`
+    : `Neste aparelho: gera a ${n}x da velocidade da fala, então pode haver esperas.`;
+}
 
 export function SettingsPage() {
   const ajustes = useSyncExternalStore((cb) => ajustesVoz.subscribe(cb), () => ajustesVoz.get());
@@ -51,12 +69,20 @@ export function SettingsPage() {
     return () => { vivo = false; amostra.current?.pause(); };
   }, []);
 
+  useEffect(() => {
+    let vivo = true;
+    Promise.all(VOZES_BILINGUES.map(async (v) => ((await bilingueBaixada(v.id)) ? v.id : ''))).then((ids) => {
+      if (vivo) setBaixadas((b) => new Set([...b, ...ids.filter(Boolean)]));
+    });
+    return () => { vivo = false; };
+  }, []);
+
   const mudar = (p: Partial<AjustesVoz>) => ajustesVoz.guardar({ ...ajustesVoz.get(), ...p });
 
-  const ouvirAmostra = (id: string) => {
+  const ouvirAmostra = (url: string, id: string) => {
     amostra.current?.pause();
     if (tocando === id) { setTocando(''); return; }
-    const a = new Audio(amostraDe(id));
+    const a = new Audio(url);
     a.onended = () => setTocando('');
     amostra.current = a;
     setTocando(id);
@@ -81,6 +107,94 @@ export function SettingsPage() {
     void falar({ texto: EXEMPLO[lingua], lingua });
   };
 
+  const escolherBilingue = async (id: string) => {
+    setErro('');
+    if (!baixadas.has(id)) {
+      setBaixando({ id, fracao: 0 });
+      try {
+        await baixarBilingue(id, (f) => setBaixando({ id, fracao: f }));
+        setBaixadas((b) => new Set(b).add(id));
+      } catch (e) {
+        setErro(`Não consegui baixar a voz: ${(e as Error)?.message ?? e}. Confira a internet e o espaço livre, e tente de novo.`);
+        setBaixando(null);
+        return;
+      }
+      setBaixando(null);
+    }
+    mudar({ bilingue: id });
+    await falar(EXEMPLO_MISTO);
+    await sintetizarBilingue(id, EXEMPLO_MISTO, 1).catch(() => null); // mede com a voz já pronta
+    setVersao((v) => v + 1); // mostra a velocidade que acabou de ser medida
+  };
+
+  const removerBilingue = async (motor: MotorBilingue) => {
+    if (!confirm(`Apagar o modelo ${SOBRE_MOTOR[motor].titulo} deste aparelho? Para usar de novo, será preciso baixar.`)) return;
+    if (ajustes.bilingue.startsWith(`${motor}:`)) mudar({ bilingue: '' });
+    await removerMotor(motor);
+    setBaixadas((b) => new Set([...b].filter((id) => !id.startsWith(`${motor}:`))));
+  };
+
+  const blocoBilingue = () => {
+    const medidas = desempenho();
+    return (
+      <section key={`bilingue-${versao}`}>
+        <h2>Vozes bilíngues</h2>
+        <p className="muted small-text">
+          Vozes masculinas que leem português e inglês sem trocar de voz no meio da frase. Enquanto uma
+          delas estiver em uso, ela substitui as vozes abaixo. Ouça, compare o peso e a velocidade, e escolha.
+        </p>
+        {ajustes.bilingue && (
+          <div className="actions left">
+            <button className="ghost small" onClick={() => mudar({ bilingue: '' })}>Voltar às vozes separadas</button>
+          </div>
+        )}
+        {(['supertonic', 'kokoro'] as const).map((motor) => {
+          const vozes = VOZES_BILINGUES.filter((v) => v.motor === motor);
+          const sobre = SOBRE_MOTOR[motor];
+          // o modelo é o mesmo para as vozes do motor: trocar de voz baixa só um arquivo pequeno
+          const temModelo = vozes.some((v) => baixadas.has(v.id));
+          return (
+            <div key={motor}>
+              <h3>{sobre.titulo} <span className="muted small-text">({sobre.peso})</span></h3>
+              <p className="muted small-text">{sobre.texto} {textoDesempenho(medidas[motor])}</p>
+              <ul className="vozes-lista">
+                {vozes.map((v) => {
+                  const emUso = ajustes.bilingue === v.id;
+                  const carregando = baixando?.id === v.id;
+                  return (
+                    <li key={v.id} className={`voz-item${emUso ? ' em-uso' : ''}`}>
+                      <button
+                        className="ghost small voz-ouvir"
+                        onClick={() => ouvirAmostra(amostraBilingue(v.id), v.id)}
+                        aria-label={tocando === v.id ? `Parar amostra de ${v.nome}` : `Ouvir ${v.nome}`}
+                      >
+                        {tocando === v.id ? '■' : <IconeKit nome="ouvir" width={24} />}
+                      </button>
+                      <span className="voz-nome"><strong>{v.nome}</strong></span>
+                      {emUso ? (
+                        <span className="voz-uso">Em uso</span>
+                      ) : (
+                        <button className="primary small voz-baixar" disabled={!!baixando} onClick={() => escolherBilingue(v.id)}>
+                          {!carregando && !temModelo && <IconeKit nome="baixar" width={20} />}
+                          {carregando ? `${Math.round((baixando?.fracao ?? 0) * 100)}%` : temModelo ? 'Usar' : 'Baixar e usar'}
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {temModelo && (
+                <div className="actions left">
+                  <button className="ghost small" onClick={() => removerBilingue(motor)}>Apagar modelo {sobre.titulo}</button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </section>
+    );
+  };
+
   const bloco = (lingua: Lingua) => {
     const doAparelho = vozesDe(lingua);
     const escolhida = ajustes.voz[lingua];
@@ -101,7 +215,7 @@ export function SettingsPage() {
               <li key={v.id} className={`voz-item${emUso ? ' em-uso' : ''}`}>
                 <button
                   className="ghost small voz-ouvir"
-                  onClick={() => ouvirAmostra(v.id)}
+                  onClick={() => ouvirAmostra(amostraDe(v.id), v.id)}
                   aria-label={tocando === v.id ? `Parar amostra de ${v.nome}` : `Ouvir ${v.nome}`}
                 >
                   {tocando === v.id ? '■' : <IconeKit nome="ouvir" width={24} />}
@@ -160,11 +274,12 @@ export function SettingsPage() {
       </section>
 
       {erro && <p className="aviso">{erro}</p>}
+      {blocoBilingue()}
       {bloco('en')}
       {bloco('pt')}
 
       <section className="actions left">
-        <button className="ghost small" onClick={() => ajustesVoz.guardar({ voz: { en: '', pt: '' }, velocidade: { en: 0.9, pt: 1 } })}>
+        <button className="ghost small" onClick={() => ajustesVoz.guardar({ voz: { en: '', pt: '' }, velocidade: { en: 0.9, pt: 1 }, bilingue: '' })}>
           Voltar ao padrão
         </button>
       </section>

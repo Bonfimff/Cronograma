@@ -25,6 +25,25 @@ export interface Ditado {
   parar: () => void;
 }
 
+const comparavel = (t: string) => t.toLowerCase().replace(/\s+/g, ' ').trim();
+
+/**
+ * Junta os resultados do reconhecedor num texto só. No computador, cada resultado é um trecho
+ * novo. No Chrome do Android, cada um repete o anterior e acrescenta o que veio depois ("yes",
+ * "Yes", "Yes já", "Yes já comecei"): emendar direto escrevia a frase várias vezes.
+ */
+export function juntarResultados(resultados: string[]): string {
+  const trechos: string[] = [];
+  for (const r of resultados) {
+    const atual = comparavel(r);
+    if (!atual) continue;
+    const ultimo = comparavel(trechos[trechos.length - 1] ?? '');
+    if (ultimo && atual.startsWith(ultimo)) trechos[trechos.length - 1] = r;
+    else if (!ultimo || !ultimo.startsWith(atual)) trechos.push(r);
+  }
+  return trechos.map((t) => t.trim()).join(' ');
+}
+
 /**
  * Começa a ouvir. `aoMudar` recebe todo o texto falado até agora (o que já é certo
  * mais o que ainda está sendo reconhecido); `aoTerminar` é chamado quando para,
@@ -40,9 +59,9 @@ export function ditar(lingua: string, aoMudar: (texto: string) => void, aoTermin
   }
 
   r.onresult = (e: any) => {
-    let texto = '';
-    for (let i = 0; i < e.results.length; i++) texto += e.results[i][0].transcript;
-    aoMudar(texto.replace(/\s+/g, ' ').trimStart());
+    const resultados: string[] = [];
+    for (let i = 0; i < e.results.length; i++) resultados.push(e.results[i][0].transcript);
+    aoMudar(juntarResultados(resultados).replace(/\s+/g, ' '));
   };
   let erro: string | undefined;
   r.onerror = (e: any) => {

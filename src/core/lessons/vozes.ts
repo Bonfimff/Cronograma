@@ -8,6 +8,7 @@
  * aparelho, porque uma voz que existe num telefone pode não existir em outro.
  */
 
+import { bilingueBaixada, sintetizarBilingue } from '../speech/bilingue';
 import { baixarVoz, PREFIXO_NATURAL, sintetizar, vozBaixada } from '../speech/piper';
 
 export type Lingua = 'en' | 'pt';
@@ -17,11 +18,14 @@ export interface AjustesVoz {
   voz: Record<Lingua, string>;
   /** 0,5x a 1,5x, por língua. */
   velocidade: Record<Lingua, number>;
+  /** Voz bilíngue ("motor:nome"): quando há uma, lê as duas línguas no lugar das outras. */
+  bilingue: string;
 }
 
 export const AJUSTES_PADRAO: AjustesVoz = {
   voz: { en: '', pt: '' },
   velocidade: { en: 0.9, pt: 1 },
+  bilingue: '',
 };
 
 const KEY = 'ingles-hibrido:vozes';
@@ -38,6 +42,7 @@ function ler(): AjustesVoz {
     return {
       voz: { ...AJUSTES_PADRAO.voz, ...(v.voz ?? {}) },
       velocidade: { ...AJUSTES_PADRAO.velocidade, ...(v.velocidade ?? {}) },
+      bilingue: v.bilingue ?? '',
     };
   } catch {
     return AJUSTES_PADRAO;
@@ -264,6 +269,51 @@ function falarNoAparelho(p: Parte, fator: number, minha: number): Promise<void> 
   });
 }
 
+/** Texto longo ou frase mista vai por frases: a primeira começa logo, as outras já vêm sendo geradas. */
+function emFrases(lista: Parte[]): Parte[][] {
+  const frases: Parte[][] = [[]];
+  for (const p of lista) {
+    p.texto.split(/(?<=[.!?…\n])(?=\s)/).forEach((pedaco, i) => {
+      if (i > 0) frases.push([]);
+      if (pedaco.trim()) frases[frases.length - 1].push({ texto: pedaco, lingua: p.lingua });
+    });
+  }
+  return frases.filter((f) => f.length);
+}
+
+/** A voz bilíngue lê tudo: frases mistas viram um só áudio, sem emendar duas vozes. */
+async function falarBilingue(id: string, lista: Parte[], fator: number, minha: number, aoParte?: (p: Parte | null) => void) {
+  const inteira = lista.length === 1 && lista[0].texto.length <= 200;
+  const blocos = aoParte || inteira ? lista.map((p) => [p]) : emFrases(lista);
+  const gerar = (bloco: Parte[]) => {
+    const sozinha = bloco.length === 1 ? bloco[0] : undefined;
+    const lingua: Lingua = bloco.every((p) => p.lingua === 'en') ? 'en' : 'pt';
+    const vel = Math.max(0.35, Math.min(2, atual.velocidade[lingua] * (sozinha ? fatorReal(sozinha, fator) : fator)));
+    const partes = sozinha ? [{ ...sozinha, texto: textoParaFalar(sozinha.texto, sozinha.lingua, fator) }] : bloco;
+    return sintetizarBilingue(id, partes, vel).catch(() => null);
+  };
+
+  let seguinte = gerar(blocos[0]);
+  for (let i = 0; i < blocos.length; i++) {
+    if (minha !== geracao) return;
+    const bloco = blocos[i];
+    const esta = seguinte;
+    seguinte = i + 1 < blocos.length ? gerar(blocos[i + 1]) : Promise.resolve(null);
+    const audio = await esta;
+    if (minha !== geracao) return;
+    const sozinha = bloco.length === 1 ? bloco[0] : undefined;
+    if (aoParte && sozinha) aoParte(sozinha);
+    const vezes = sozinha ? repeticoes(sozinha, fator) : 1;
+    for (let r = 0; r < vezes && minha === geracao; r++) {
+      if (r) await esperar(550);
+      if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha, inteira || aoParte ? sozinha?.texto : '', sozinha?.lingua === 'en' && fator < LIMITE_LENTO);
+      // se o motor falhar (pouca memória no celular), a leitura segue na voz do aparelho
+      else for (const p of bloco) await falarNoAparelho(p, fator, minha);
+    }
+    if (minha === geracao) { pararRelogios(); marcarPalavra(null); }
+  }
+}
+
 /**
  * Fala uma ou mais partes, na ordem, cada uma na voz da sua língua. Usa a voz natural
  * escolhida quando ela já está baixada; senão, a do aparelho. Termina quando acaba de
@@ -279,13 +329,20 @@ export async function falar(
   const minha = geracao;
   if (!lista.length) return;
   marcarFala(chave ?? null);
-  if (lista.some((p) => vozNatural(p.lingua))) {
+  const bilingue = atual.bilingue;
+  if (bilingue || lista.some((p) => vozNatural(p.lingua))) {
     // criado e acordado aqui, ainda dentro do toque: o iPhone não deixa tocar som de outro jeito
     contexto ??= new AudioContext();
     if (contexto.state === 'suspended') void contexto.resume();
   }
   // falar logo depois de cancelar corta a primeira sílaba no Chrome do Android
   if (ocupado) await esperar(150);
+
+  if (bilingue && (await bilingueBaixada(bilingue))) {
+    await falarBilingue(bilingue, lista, fator, minha, opcoes.aoParte);
+    if (minha === geracao) { marcarFala(null); opcoes.aoParte?.(null); }
+    return;
+  }
 
   const gerar = (p: Parte) => {
     const id = vozNatural(p.lingua);

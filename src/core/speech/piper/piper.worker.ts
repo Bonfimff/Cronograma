@@ -8,12 +8,12 @@
  * modelo a cada frase levaria segundos.
  */
 import * as ort from 'onnxruntime-web';
+import { abrirCache, buscar } from './cache';
 import { createPiperPhonemize } from './phonemize.js';
 
 const ORT_VERSAO = '1.31.0-dev.20260914-8d85527a0';
 const MODELOS = 'https://huggingface.co/rhasspy/piper-voices/resolve/main';
 const FONEMAS = 'https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize';
-const CACHE = 'eita-vozes-v1';
 
 ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSAO}/dist/`;
 ort.env.wasm.numThreads = 1; // sem isolamento de origem (GitHub Pages), só uma thread
@@ -37,28 +37,6 @@ const post = (m: unknown, t?: Transferable[]) => (self as unknown as Worker).pos
 function caminho(voz: string): string {
   const [local, nome, qualidade] = voz.split('-');
   return `${MODELOS}/${local.split('_')[0]}/${local}/${nome}/${qualidade}/${voz}`;
-}
-
-async function buscar(url: string, progresso?: (f: number) => void): Promise<Response> {
-  const cache = await caches.open(CACHE);
-  const guardada = await cache.match(url);
-  if (guardada) return guardada;
-  const r = await fetch(url);
-  if (!r.ok || !r.body) throw new Error(`Falha ao baixar a voz (${r.status}).`);
-  const total = Number(r.headers.get('Content-Length') || 0);
-  const leitor = r.body.getReader();
-  const partes: Uint8Array[] = [];
-  let lido = 0;
-  for (;;) {
-    const { done, value } = await leitor.read();
-    if (done) break;
-    partes.push(value);
-    lido += value.length;
-    if (total && progresso) progresso(lido / total);
-  }
-  const resposta = new Response(new Blob(partes as BlobPart[]), { headers: { 'Content-Type': r.headers.get('Content-Type') ?? '' } });
-  await cache.put(url, resposta.clone());
-  return resposta;
 }
 
 const sessoes = new Map<string, Promise<{ sessao: ort.InferenceSession; config: Config }>>();
@@ -135,10 +113,10 @@ self.onmessage = async (e: MessageEvent<Msg>) => {
       await carregar(m.voz, (f) => post({ type: 'progresso', id: m.id, valor: f }));
       post({ type: 'pronto', id: m.id });
     } else if (m.type === 'baixada') {
-      const cache = await caches.open(CACHE);
+      const cache = await abrirCache();
       post({ type: 'pronto', id: m.id, valor: !!(await cache.match(`${caminho(m.voz)}.onnx`)) });
     } else if (m.type === 'remover') {
-      const cache = await caches.open(CACHE);
+      const cache = await abrirCache();
       await cache.delete(`${caminho(m.voz)}.onnx`);
       await cache.delete(`${caminho(m.voz)}.onnx.json`);
       sessoes.delete(m.voz);
