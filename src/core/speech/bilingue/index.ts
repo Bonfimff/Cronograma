@@ -210,7 +210,8 @@ async function doServidor(id: string, partes: Partes, velocidade: number): Promi
       texto: partes.map((p) => p.texto).join('').trim().slice(0, 600),
       lingua: partes.every((p) => p.lingua === 'en') ? 'en' : 'pt',
       voz: id.split(':')[1],
-      velocidade,
+      // a tartaruga pede menos que isso; o servidor só aceita de 0,5x a 2x
+      velocidade: Math.max(0.5, Math.min(2, velocidade)),
     }, parar.signal));
     const audio = await new OfflineAudioContext(1, 1, 24000).decodeAudioData(mp3);
     const amostras = audio.getChannelData(0);

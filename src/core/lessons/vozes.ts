@@ -281,14 +281,24 @@ function emFrases(lista: Parte[]): Parte[][] {
   return frases.filter((f) => f.length);
 }
 
+/**
+ * Um áudio só tem um ritmo: na frase mista, os dois ajustes de velocidade contam na proporção
+ * do que há de cada língua. Separar as línguas daria o ritmo exato, mas traria de volta a emenda.
+ */
+function velocidadeDaFrase(bloco: Parte[]): number {
+  const letras = (p: Parte) => p.texto.replace(/[^\p{L}]/gu, '').length;
+  const total = bloco.reduce((s, p) => s + letras(p), 0);
+  if (!total) return atual.velocidade[bloco[0].lingua];
+  return bloco.reduce((s, p) => s + atual.velocidade[p.lingua] * letras(p), 0) / total;
+}
+
 /** A voz bilíngue lê tudo: frases mistas viram um só áudio, sem emendar duas vozes. */
 async function falarBilingue(id: string, lista: Parte[], fator: number, minha: number, aoParte?: (p: Parte | null) => void) {
   const inteira = lista.length === 1 && lista[0].texto.length <= 200;
   const blocos = aoParte || inteira ? lista.map((p) => [p]) : emFrases(lista);
   const gerar = (bloco: Parte[]) => {
     const sozinha = bloco.length === 1 ? bloco[0] : undefined;
-    const lingua: Lingua = bloco.every((p) => p.lingua === 'en') ? 'en' : 'pt';
-    const vel = Math.max(0.35, Math.min(2, atual.velocidade[lingua] * (sozinha ? fatorReal(sozinha, fator) : fator)));
+    const vel = Math.max(0.35, Math.min(2, velocidadeDaFrase(bloco) * (sozinha ? fatorReal(sozinha, fator) : fator)));
     const partes = sozinha ? [{ ...sozinha, texto: textoParaFalar(sozinha.texto, sozinha.lingua, fator) }] : bloco;
     return sintetizarBilingue(id, partes, vel).catch(() => null);
   };
