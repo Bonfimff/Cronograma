@@ -40,7 +40,9 @@ function textoDesempenho(m: Medida | undefined): string {
   if (!m?.modo) return 'Velocidade neste aparelho: aparece depois de usar.';
   const num = (x: number) => x.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
   const nucleos = (m.nucleos ?? 1) > 1 ? ` com ${m.nucleos} núcleos` : ' com 1 núcleo';
-  const onde = m.modo === 'placa' ? 'Roda na placa de vídeo (WebGPU).' : `Roda no processador${nucleos}${m.motivo ? ` (${m.motivo})` : ''}.`;
+  const onde = m.modo === 'servidor'
+    ? `Roda no servidor${m.motivo ? ` (${m.motivo})` : ''}.`
+    : m.modo === 'placa' ? 'Roda na placa de vídeo (WebGPU).' : `Roda no processador${nucleos}${m.motivo ? ` (${m.motivo})` : ''}.`;
   const carga = m.carga ? ` Abre em ${num(m.carga)} s.` : '';
   if (!m.velocidade) return `Neste aparelho: ${onde}${carga}`;
   const ritmo = m.velocidade >= 1
@@ -153,11 +155,11 @@ export function SettingsPage() {
             <button className="ghost small" onClick={() => mudar({ bilingue: '' })}>Voltar às vozes separadas</button>
           </div>
         )}
-        {(['supertonic', 'kokoro'] as const).map((motor) => {
+        {(['servidor', 'supertonic', 'kokoro'] as const).map((motor) => {
           const vozes = VOZES_BILINGUES.filter((v) => v.motor === motor);
           const sobre = SOBRE_MOTOR[motor];
           // o modelo é o mesmo para as vozes do motor: trocar de voz baixa só um arquivo pequeno
-          const temModelo = vozes.some((v) => baixadas.has(v.id));
+          const temModelo = motor === 'servidor' || vozes.some((v) => baixadas.has(v.id));
           return (
             <div key={motor}>
               <h3>{sobre.titulo} <span className="muted small-text">({sobre.peso})</span></h3>
@@ -188,7 +190,7 @@ export function SettingsPage() {
                   );
                 })}
               </ul>
-              {temModelo && (
+              {temModelo && motor !== 'servidor' && (
                 <div className="actions left">
                   <button className="ghost small" onClick={() => removerBilingue(motor)}>Apagar modelo {sobre.titulo}</button>
                 </div>

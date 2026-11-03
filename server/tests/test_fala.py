@@ -53,3 +53,37 @@ def test_saude(client, conta, monkeypatch):
 
     monkeypatch.setattr(fala, "_saude", fora)
     assert client.get("/fala/saude", headers=a.headers).json() == {"ok": False}
+
+
+def test_voz_repassa_a_frase_e_devolve_o_audio(client, conta, monkeypatch):
+    a = conta()
+    vistos = []
+
+    def falso(pedido):
+        vistos.append(pedido)
+        return b"mp3"
+
+    monkeypatch.setattr(fala, "_gerar_voz", falso)
+    r = client.post("/fala/voz", json={"texto": "Oi, good!", "voz": "M2", "velocidade": 1.2}, headers=a.headers)
+    assert r.status_code == 200 and r.content == b"mp3" and r.headers["content-type"] == "audio/mpeg"
+    assert vistos[0].texto == "Oi, good!" and vistos[0].voz == "M2"
+
+
+def test_voz_precisa_estar_logado(client):
+    assert client.post("/fala/voz", json={"texto": "Oi"}).status_code == 401
+
+
+def test_voz_recusa_texto_vazio_ou_grande(client, conta):
+    a = conta()
+    assert client.post("/fala/voz", json={"texto": ""}, headers=a.headers).status_code == 422
+    assert client.post("/fala/voz", json={"texto": "a" * 601}, headers=a.headers).status_code == 422
+
+
+def test_voz_fora_do_ar(client, conta, monkeypatch):
+    a = conta()
+
+    def fora(_):
+        raise urllib.error.URLError("sem tunel")
+
+    monkeypatch.setattr(fala, "_gerar_voz", fora)
+    assert client.post("/fala/voz", json={"texto": "Oi"}, headers=a.headers).status_code == 503

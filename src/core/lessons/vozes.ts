@@ -380,6 +380,6 @@ if (typeof window !== 'undefined') {
       if (id) void vozBaixada(id).then((ok) => (ok ? baixarVoz(id) : undefined)).catch(() => undefined);
     }
     const bilingue = atual.bilingue;
-    if (bilingue) void bilingueBaixada(bilingue).then((ok) => (ok ? prepararBilingue(bilingue) : undefined)).catch(() => undefined);
+    if (bilingue && !bilingue.startsWith('servidor:')) void bilingueBaixada(bilingue).then((ok) => (ok ? prepararBilingue(bilingue) : undefined)).catch(() => undefined);
   }, 4000);
 }

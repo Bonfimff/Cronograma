@@ -195,6 +195,24 @@ export class Api {
     throw new ApiError('A resposta foi interrompida.', 0);
   }
 
+  /** Áudio (MP3) de uma frase, gerado no computador de casa. */
+  async voz(token: string, pedido: { texto: string; lingua: 'pt' | 'en'; voz: string; velocidade: number }, sinal?: AbortSignal): Promise<ArrayBuffer> {
+    if (!this.configured) throw new ApiError('Este aplicativo foi publicado sem servidor de conta.', 0);
+    let res: Response;
+    try {
+      res = await this.fetcher(`${this.baseUrl}/fala/voz`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify(pedido),
+        signal: sinal,
+      });
+    } catch {
+      throw new ApiError('Servidor fora do ar ou sem internet.', 0);
+    }
+    if (!res.ok) throw new ApiError(await readError(res), res.status);
+    return res.arrayBuffer();
+  }
+
   /** O modelo está alcançável agora? */
   chatSaude(token: string): Promise<{ ok: boolean }> {
     return this.call('/chat/saude', {}, token);

@@ -12,7 +12,8 @@ import json
 import urllib.error
 import urllib.request
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from pydantic import BaseModel, Field
 
 from ..config import settings
 from ..deps import current_user
@@ -44,6 +45,35 @@ def _repassar(audio: bytes) -> dict:
     )
     with urllib.request.urlopen(pedido, timeout=cfg.whisper_timeout) as r:
         return json.loads(r.read())
+
+
+class PedidoVoz(BaseModel):
+    texto: str = Field(min_length=1, max_length=600)
+    lingua: str = "pt"
+    voz: str = "M1"
+    velocidade: float = Field(default=1, ge=0.5, le=2)
+
+
+def _gerar_voz(pedido: PedidoVoz) -> bytes:
+    cfg = settings()
+    requisicao = urllib.request.Request(
+        cfg.voz_url.rstrip("/") + "/falar",
+        data=pedido.model_dump_json().encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(requisicao, timeout=cfg.voz_timeout) as r:
+        return r.read()
+
+
+@router.post("/voz")
+async def voz(pedido: PedidoVoz, user: User = Depends(current_user)) -> Response:
+    """Áudio de uma frase. Se falhar, o app usa a voz baixada no aparelho ou a do sistema."""
+    try:
+        audio = await asyncio.to_thread(_gerar_voz, pedido)
+    except (urllib.error.URLError, TimeoutError, OSError):
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="A voz do servidor está fora do ar agora.") from None
+    return Response(content=audio, media_type="audio/mpeg")
 
 
 @router.get("/saude")

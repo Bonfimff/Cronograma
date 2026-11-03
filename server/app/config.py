@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # reconhecimento de voz do Fala-Rápida: também no computador de casa, pelo mesmo túnel
     whisper_url: str = "http://127.0.0.1:11435"
     whisper_timeout: int = 20
+    # voz natural (Supertonic): gerada no computador de casa para o celular só tocar
+    voz_url: str = "http://127.0.0.1:11436"
+    voz_timeout: int = 30
 
     @property
     def origins(self) -> list[str]:

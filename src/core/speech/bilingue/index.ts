@@ -3,7 +3,10 @@
  * pessoa: a tela mostra o peso do download e a velocidade medida no aparelho dela.
  */
 
-export type MotorBilingue = 'kokoro' | 'supertonic';
+import { api } from '../../api/client';
+import { session } from '../../api/session';
+
+export type MotorBilingue = 'servidor' | 'kokoro' | 'supertonic';
 
 export interface VozBilingue {
   id: string; // "motor:nome"
@@ -12,6 +15,11 @@ export interface VozBilingue {
 }
 
 export const VOZES_BILINGUES: VozBilingue[] = [
+  { id: 'servidor:M1', nome: 'Voz M1', motor: 'servidor' },
+  { id: 'servidor:M2', nome: 'Voz M2', motor: 'servidor' },
+  { id: 'servidor:M3', nome: 'Voz M3', motor: 'servidor' },
+  { id: 'servidor:M4', nome: 'Voz M4', motor: 'servidor' },
+  { id: 'servidor:M5', nome: 'Voz M5', motor: 'servidor' },
   { id: 'kokoro:pm_alex', nome: 'Alex', motor: 'kokoro' },
   { id: 'kokoro:pm_santa', nome: 'Santa', motor: 'kokoro' },
   { id: 'supertonic:M1', nome: 'Voz M1', motor: 'supertonic' },
@@ -22,6 +30,11 @@ export const VOZES_BILINGUES: VozBilingue[] = [
 ];
 
 export const SOBRE_MOTOR: Record<MotorBilingue, { titulo: string; peso: string; texto: string }> = {
+  servidor: {
+    titulo: 'Servidor',
+    peso: 'sem download',
+    texto: 'A mais fluida: as vozes do Supertonic geradas fora do celular, que só toca o áudio. Precisa de internet e de conta. Se o servidor estiver fora do ar, usa a voz baixada ou a do aparelho.',
+  },
   kokoro: {
     titulo: 'Kokoro',
     peso: 'cerca de 92 MB',
@@ -34,11 +47,12 @@ export const SOBRE_MOTOR: Record<MotorBilingue, { titulo: string; peso: string; 
   },
 };
 
-export const amostraBilingue = (id: string) => `${import.meta.env.BASE_URL}vozes/${id.replace(':', '-')}.mp3`;
+export const amostraBilingue = (id: string) => `${import.meta.env.BASE_URL}vozes/${id.replace('servidor:', 'supertonic:').replace(':', '-')}.mp3`;
+const noServidor = (id: string) => id.startsWith('servidor:');
 
 type Resposta = {
   type: string; id: number; valor?: number | boolean; amostras?: Float32Array; taxa?: number; gasto?: number; mensagem?: string;
-  modo?: 'placa' | 'processador'; motivo?: string; nucleos?: number; carga?: number;
+  modo?: Medida['modo']; motivo?: string; nucleos?: number; carga?: number;
 };
 
 let worker: Worker | undefined;
@@ -71,11 +85,13 @@ function pedir(msg: Record<string, unknown>, progresso?: (f: number) => void): P
 const baixadas = new Set<string>();
 
 export async function baixarBilingue(id: string, progresso?: (f: number) => void): Promise<void> {
+  if (noServidor(id)) return;
   await pedir({ type: 'baixar', voz: id }, progresso);
   baixadas.add(id);
 }
 
 export async function bilingueBaixada(id: string): Promise<boolean> {
+  if (noServidor(id)) return true;
   if (baixadas.has(id)) return true;
   try {
     const r = await pedir({ type: 'baixada', voz: id });
@@ -100,7 +116,7 @@ const KEY_DESEMPENHO = 'ingles-hibrido:vozes-desempenho';
 export interface Medida {
   /** segundos de fala gerados por segundo; fica a melhor, porque a primeira ainda prepara a placa */
   velocidade?: number;
-  modo?: 'placa' | 'processador';
+  modo?: 'placa' | 'processador' | 'servidor';
   motivo?: string;
   nucleos?: number;
   /** quanto levou para abrir o modelo na memória, em segundos */
@@ -170,6 +186,7 @@ function comLimite(msg: Record<string, unknown>, limite: number): Promise<Respos
 
 /** Abre o modelo na memória antes da primeira fala; pode ser chamada de novo sem custo. */
 export function prepararBilingue(id: string): Promise<Resposta> {
+  if (noServidor(id)) return Promise.resolve({ type: 'pronto', id: 0 });
   if (preparada?.id === id) return preparada.pronta;
   const pronta = comLimite({ type: 'preparar', voz: id }, LIMITE_CARGA_MS);
   const atual = { id, pronta };
@@ -181,9 +198,41 @@ export function prepararBilingue(id: string): Promise<Resposta> {
 // uma frase de cada vez: o relógio de cada uma só começa quando chega a vez dela
 let fila: Promise<unknown> = Promise.resolve();
 
+type Partes = { texto: string; lingua: 'pt' | 'en' }[];
+const LIMITE_SERVIDOR_MS = 30_000;
+
+async function doServidor(id: string, partes: Partes, velocidade: number): Promise<{ amostras: Float32Array; taxa: number }> {
+  const parar = new AbortController();
+  const relogio = window.setTimeout(() => parar.abort(), LIMITE_SERVIDOR_MS);
+  const t0 = performance.now();
+  try {
+    const mp3 = await session.withToken((token) => api.voz(token, {
+      texto: partes.map((p) => p.texto).join('').trim().slice(0, 600),
+      lingua: partes.every((p) => p.lingua === 'en') ? 'en' : 'pt',
+      voz: id.split(':')[1],
+      velocidade,
+    }, parar.signal));
+    const audio = await new OfflineAudioContext(1, 1, 24000).decodeAudioData(mp3);
+    const amostras = audio.getChannelData(0);
+    anotar(id, { type: 'pronto', id: 0, modo: 'servidor' }, audio.duration / ((performance.now() - t0) / 1000));
+    return { amostras, taxa: audio.sampleRate };
+  } finally {
+    window.clearTimeout(relogio);
+  }
+}
+
 export function sintetizarBilingue(
-  id: string, partes: { texto: string; lingua: 'pt' | 'en' }[], velocidade: number,
+  id: string, partes: Partes, velocidade: number,
 ): Promise<{ amostras: Float32Array; taxa: number }> {
+  if (noServidor(id)) {
+    return doServidor(id, partes, velocidade).catch(async (e) => {
+      anotar(id, { type: 'pronto', id: 0, modo: 'servidor', motivo: 'fora do ar na última tentativa' });
+      // sem servidor, a mesma voz baixada no aparelho; sem ela, quem chamou usa a do sistema
+      const local = id.replace('servidor:', 'supertonic:');
+      if (await bilingueBaixada(local)) return sintetizarBilingue(local, partes, velocidade);
+      throw e;
+    });
+  }
   const vez = fila.catch(() => undefined).then(async () => {
     await prepararBilingue(id);
     const r = await comLimite({ type: 'falar', voz: id, partes, velocidade }, modoAtual === 'placa' ? LIMITE_FRASE_MS : LIMITE_FRASE_PROCESSADOR_MS);
