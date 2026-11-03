@@ -9,6 +9,7 @@ import { reviewStatus } from '../../core/reviews/reviews';
 import { addSheetItem, createSheet, deleteSheet, removeSheetItem, sheetsOf } from '../../core/library/sheets';
 import { buscar } from '../../core/content/search';
 import { novaExpressao, novaPalavra, saveUserContent, slug } from '../../core/content/novos';
+import { removerPalavra } from '../../core/content/completar';
 import { favoritas } from '../../core/library/favoritas';
 import { nomes } from '../../core/library/nomes';
 import {
@@ -322,13 +323,14 @@ function PageFold({ tabKey, data, tabs, ordem, reverse }: { tabKey: string; data
   );
 }
 
-function Row({ href, main, side, state }: { href: string; main: ReactNode; side: ReactNode; state?: string }) {
+function Row({ href, main, side, state, acao }: { href: string; main: ReactNode; side: ReactNode; state?: string; acao?: ReactNode }) {
   return (
-    <li>
+    <li className={acao ? 'lib-com-acao' : undefined}>
       <a href={href} className="lib-row">
         <span className="lib-main">{state && <span className={`dot s-${state}`} />}{main}</span>
         <span className="lib-side">{side}</span>
       </a>
+      {acao}
     </li>
   );
 }
@@ -352,6 +354,17 @@ function SheetBody({ tabKey, data, onCreated, tabs, onOpen }: CorpoProps) {
               main={<><b className="en">{w.word}</b> <em>{w.type}</em></>}
               // na folha cabem os dois sentidos mais usados; o resto fica no verbete
               side={w.translations.slice(0, 2).map((t) => t.text).join(', ') + (w.translations.length > 2 ? '…' : '')}
+              acao={
+                <button
+                  className="lib-del"
+                  onClick={() => {
+                    if (window.confirm(`Excluir "${w.word}" do vocabulário? Ela some também nos outros aparelhos.`)) {
+                      store.update((d) => removerPalavra(d, w.id));
+                    }
+                  }}
+                  aria-label={`Excluir ${w.word}`}
+                >✕</button>
+              }
             />
           ))}
         </ul>

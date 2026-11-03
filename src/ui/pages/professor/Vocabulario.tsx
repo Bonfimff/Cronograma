@@ -48,6 +48,17 @@ export function VocabularioAluno({ dados, aluno, gravar, gravando }: {
                 <span className={`voc-estado e-${i.estado}`} title={i.ref.startsWith('word:') && i.estado !== 'nao_praticada' ? `${Math.round(i.retencao * 100)}% de chance de lembrar hoje · ${DEGRAUS[i.degrau]}` : undefined}>
                   {NOME_ESTADO[i.estado]}
                 </span>
+                {i.ref.startsWith('word:') && (
+                  <button
+                    type="button"
+                    className="ghost small"
+                    disabled={gravando}
+                    aria-label={`Excluir ${i.en}`}
+                    onClick={() => {
+                      if (confirm(`Excluir "${i.en}" do vocabulário de ${nome}?`)) void gravar([{ kind: 'content', id: `words:${i.ref.slice(5)}`, data: {}, deleted: true }]);
+                    }}
+                  >✕</button>
+                )}
               </li>
             ))}
           </ul>

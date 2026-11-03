@@ -868,6 +868,8 @@ h3 { font-size: .95rem; }
   border-bottom: 1px solid rgba(60, 110, 150, .3);
 }
 a.lib-row:hover .lib-main b { text-decoration: underline; }
+.lib-com-acao { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid rgba(60, 110, 150, .3); }
+.lib-com-acao > .lib-row { flex: 1; min-width: 0; border-bottom: 0; }
 /* uma caixa de linha só: em flex com tamanhos de letra diferentes, o alinhamento
    pela base estica a altura e a escrita sai do compasso da pauta */
 .lib-main { flex: 1; min-width: 0; display: block; }
@@ -2381,7 +2383,7 @@ label.file:has(> img[aria-hidden]), .conversa-apagar { display: inline-flex; ali
 /* professor: vocabulário do aluno */
 .voc-busca { width: 100%; margin: 12px 0; }
 .voc-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
-.voc-lista li { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(120px, 1.4fr) auto; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); background: var(--paper-2); }
+.voc-lista li { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(120px, 1.4fr) auto auto; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--rule); background: var(--paper-2); }
 .voc-lista li:first-child { border-top: 0; }
 .voc-en { display: flex; flex-direction: column; overflow-wrap: anywhere; }
 .voc-en small { font-size: .75rem; }

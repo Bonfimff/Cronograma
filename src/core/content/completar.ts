@@ -45,6 +45,13 @@ export function atualizarItem(draft: UserData, ref: ContentRef, mudanca: Record<
   return true;
 }
 
+/** Tira a palavra do vocabulário e o histórico dela, para a revisão não pedir o que já saiu. */
+export function removerPalavra(draft: UserData, id: string): void {
+  if (!draft.content?.words) return;
+  draft.content = { ...draft.content, words: draft.content.words.filter((w) => w.id !== id) };
+  draft.history = draft.history.filter((h) => h.ref !== `word:${id}`);
+}
+
 /** Acrescenta um uso ("uso: estado", "uso: maneira") a uma palavra. */
 export function adicionarUso(draft: UserData, ref: ContentRef, label: string, meaning: string, explanation: string): boolean {
   const w = resolve(ref) as Word | undefined;

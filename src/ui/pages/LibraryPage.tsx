@@ -3,7 +3,7 @@ import { createContext, useContext, useRef, useState } from 'react';
 import { useData } from '../hooks';
 import { store } from '../../core/storage/store';
 import {
-  adicionarExemplo, adicionarExemploNoUso, adicionarUso, atualizarItem, atualizarUso, removerUso,
+  adicionarExemplo, adicionarExemploNoUso, adicionarUso, atualizarItem, atualizarUso, removerPalavra, removerUso,
 } from '../../core/content/completar';
 import type { ContentRef, Expression, Grammar, Pattern, Word, WordUse } from '../../core/types';
 import { examplesFor, getExamples, KIND_LABEL, parseRef, refLabel, resolve } from '../../core/content/repository';
@@ -26,11 +26,11 @@ const usandoLapis = () => useContext(Edicao);
 function Detail({ r }: { r: ContentRef }) {
   const data = useData();
   const it = resolve(r);
+  const [editando, setEditando] = useState(false);
   if (!it) return <Empty>Conteúdo não encontrado.</Empty>;
   const { kind } = parseRef(r);
   const st = reviewStatus(data, r);
   const hist = entriesFor(data, r);
-  const [editando, setEditando] = useState(false);
 
   return (
     <Edicao.Provider value={editando}>
@@ -63,6 +63,18 @@ function Detail({ r }: { r: ContentRef }) {
         {st && <p className="verbete-estado">{STATE_LABEL[st.state]}</p>}
 
       {kind === 'word' && <WordTree w={it as Word} r={r} />}
+      {kind === 'word' && (
+        <button
+          className="link lib-remove"
+          onClick={() => {
+            const w = it as Word;
+            if (window.confirm(`Excluir "${w.word}" do vocabulário? Ela some também nos outros aparelhos.`)) {
+              store.update((d) => removerPalavra(d, w.id));
+              location.hash = '#/conteudo?folha=word';
+            }
+          }}
+        >excluir esta palavra</button>
+      )}
       {kind === 'expression' && (() => {
         const e = it as Expression;
         return (
