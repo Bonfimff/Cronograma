@@ -36,7 +36,10 @@ export const SOBRE_MOTOR: Record<MotorBilingue, { titulo: string; peso: string; 
 
 export const amostraBilingue = (id: string) => `${import.meta.env.BASE_URL}vozes/${id.replace(':', '-')}.mp3`;
 
-type Resposta = { type: string; id: number; valor?: number | boolean; amostras?: Float32Array; taxa?: number; gasto?: number; mensagem?: string };
+type Resposta = {
+  type: string; id: number; valor?: number | boolean; amostras?: Float32Array; taxa?: number; gasto?: number; mensagem?: string;
+  modo?: 'placa' | 'processador'; motivo?: string; carga?: number;
+};
 
 let worker: Worker | undefined;
 let proximo = 1;
@@ -93,14 +96,45 @@ export async function removerMotor(motor: MotorBilingue): Promise<void> {
 
 const KEY_DESEMPENHO = 'ingles-hibrido:vozes-desempenho';
 
-/** Quantos segundos de fala cada motor gera por segundo neste aparelho (a última medida). */
-export function desempenho(): Partial<Record<MotorBilingue, number>> {
+/** O que foi medido neste aparelho, para a pessoa escolher e para saber por que está lento. */
+export interface Medida {
+  /** segundos de fala gerados por segundo; fica a melhor, porque a primeira ainda prepara a placa */
+  velocidade?: number;
+  modo?: 'placa' | 'processador';
+  motivo?: string;
+  /** quanto levou para abrir o modelo na memória, em segundos */
+  carga?: number;
+}
+
+export function desempenho(): Partial<Record<MotorBilingue, Medida>> {
   try { return JSON.parse(localStorage.getItem(KEY_DESEMPENHO) ?? '{}'); } catch { return {}; }
 }
 
-const KEY_SEM_PLACA = 'ingles-hibrido:vozes-sem-placa';
-/** Sem resposta nesse tempo, a geração travou: a placa de vídeo de alguns aparelhos para sem dar erro. */
-const LIMITE_MS = 120_000;
+function anotar(id: string, r: Resposta, velocidade?: number) {
+  try {
+    const motor = id.split(':')[0] as MotorBilingue;
+    const medidas = desempenho();
+    const antes = medidas[motor];
+    const mesmaForma = antes?.modo === r.modo;
+    medidas[motor] = {
+      modo: r.modo,
+      motivo: r.motivo,
+      carga: r.carga || (mesmaForma ? antes?.carga : undefined),
+      velocidade: Math.max(mesmaForma ? antes?.velocidade ?? 0 : 0, velocidade ?? 0) || undefined,
+    };
+    localStorage.setItem(KEY_DESEMPENHO, JSON.stringify(medidas));
+  } catch { /* sem armazenamento */ }
+}
+
+// v2: a primeira versão contava o tempo de carregar o modelo e desligava a placa à toa
+const KEY_SEM_PLACA = 'ingles-hibrido:vozes-sem-placa-v2';
+/**
+ * Sem resposta nesse tempo, travou: a placa de vídeo de alguns aparelhos para sem dar erro.
+ * Abrir o modelo é bem mais demorado que gerar uma frase, e no processador uma frase também
+ * pode levar minutos sem estar travada: nesse caso o limite maior é só para não esperar para sempre.
+ */
+const LIMITE_CARGA_MS = 300_000;
+const LIMITE_FRASE_MS = 120_000;
 
 function lerSemPlaca(): boolean {
   try { return localStorage.getItem(KEY_SEM_PLACA) === '1'; } catch { return false; }
@@ -113,24 +147,43 @@ function destravar() {
   } catch { /* sem armazenamento */ }
   worker?.terminate();
   worker = undefined;
+  preparada = undefined;
   pendentes.forEach((p) => p.falha(new Error('A geração da voz travou.')));
   pendentes.clear();
 }
 
-export async function sintetizarBilingue(
+let preparada: { id: string; pronta: Promise<Resposta> } | undefined;
+let modoAtual: Resposta['modo'];
+
+function comLimite(msg: Record<string, unknown>, limite: number): Promise<Resposta> {
+  const relogio = window.setTimeout(destravar, limite);
+  return pedir({ ...msg, semPlaca: lerSemPlaca() }).finally(() => window.clearTimeout(relogio));
+}
+
+/** Abre o modelo na memória antes da primeira fala; pode ser chamada de novo sem custo. */
+export function prepararBilingue(id: string): Promise<Resposta> {
+  if (preparada?.id === id) return preparada.pronta;
+  const pronta = comLimite({ type: 'preparar', voz: id }, LIMITE_CARGA_MS);
+  const atual = { id, pronta };
+  preparada = atual;
+  pronta.then((r) => { modoAtual = r.modo; anotar(id, r); }, () => { if (preparada === atual) preparada = undefined; });
+  return pronta;
+}
+
+// uma frase de cada vez: o relógio de cada uma só começa quando chega a vez dela
+let fila: Promise<unknown> = Promise.resolve();
+
+export function sintetizarBilingue(
   id: string, partes: { texto: string; lingua: 'pt' | 'en' }[], velocidade: number,
 ): Promise<{ amostras: Float32Array; taxa: number }> {
-  const relogio = window.setTimeout(destravar, LIMITE_MS);
-  const r = await pedir({ type: 'falar', voz: id, partes, velocidade, semPlaca: lerSemPlaca() })
-    .finally(() => window.clearTimeout(relogio));
-  const amostras = r.amostras!;
-  const taxa = r.taxa!;
-  try {
-    // fica a melhor medida: a primeira fala de cada vez ainda está preparando a placa de vídeo
-    const motor = id.split(':')[0] as MotorBilingue;
-    const medidas = desempenho();
-    medidas[motor] = Math.max(medidas[motor] ?? 0, amostras.length / taxa / r.gasto!);
-    localStorage.setItem(KEY_DESEMPENHO, JSON.stringify(medidas));
-  } catch { /* sem armazenamento */ }
-  return { amostras, taxa };
+  const vez = fila.catch(() => undefined).then(async () => {
+    await prepararBilingue(id);
+    const r = await comLimite({ type: 'falar', voz: id, partes, velocidade }, modoAtual === 'placa' ? LIMITE_FRASE_MS : LIMITE_CARGA_MS);
+    const amostras = r.amostras!;
+    const taxa = r.taxa!;
+    anotar(id, r, amostras.length / taxa / r.gasto!);
+    return { amostras, taxa };
+  });
+  fila = vez;
+  return vez;
 }

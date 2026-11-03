@@ -3,7 +3,7 @@ import {
   ajustesVoz, falar, vozesDe, type AjustesVoz, type Lingua,
 } from '../../core/lessons/vozes';
 import {
-  amostraBilingue, baixarBilingue, bilingueBaixada, desempenho, removerMotor, sintetizarBilingue, SOBRE_MOTOR, VOZES_BILINGUES, type MotorBilingue,
+  amostraBilingue, baixarBilingue, bilingueBaixada, desempenho, removerMotor, sintetizarBilingue, SOBRE_MOTOR, VOZES_BILINGUES, type Medida, type MotorBilingue,
 } from '../../core/speech/bilingue';
 import {
   amostraDe, baixarVoz, PREFIXO_NATURAL, VOZES_NATURAIS, vozBaixada,
@@ -36,12 +36,16 @@ const EXEMPLO_MISTO: { texto: string; lingua: Lingua }[] = [
 ];
 
 /** O que a medida significa para quem está lendo. */
-function textoDesempenho(x: number | undefined): string {
-  if (!x) return 'Velocidade neste aparelho: aparece depois de usar.';
-  const n = x.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-  return x >= 1
-    ? `Neste aparelho: gera ${n}x mais rápido que a fala.`
-    : `Neste aparelho: gera a ${n}x da velocidade da fala, então pode haver esperas.`;
+function textoDesempenho(m: Medida | undefined): string {
+  if (!m?.modo) return 'Velocidade neste aparelho: aparece depois de usar.';
+  const num = (x: number) => x.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const onde = m.modo === 'placa' ? 'Roda na placa de vídeo (WebGPU).' : `Roda no processador${m.motivo ? ` (${m.motivo})` : ''}.`;
+  const carga = m.carga ? ` Abre em ${num(m.carga)} s.` : '';
+  if (!m.velocidade) return `Neste aparelho: ${onde}${carga}`;
+  const ritmo = m.velocidade >= 1
+    ? ` Gera ${num(m.velocidade)}x mais rápido que a fala.`
+    : ` Gera a ${num(m.velocidade)}x da velocidade da fala, então há esperas.`;
+  return `Neste aparelho: ${onde}${carga}${ritmo}`;
 }
 
 export function SettingsPage() {

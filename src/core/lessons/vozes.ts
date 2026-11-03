@@ -8,7 +8,7 @@
  * aparelho, porque uma voz que existe num telefone pode não existir em outro.
  */
 
-import { bilingueBaixada, sintetizarBilingue } from '../speech/bilingue';
+import { bilingueBaixada, prepararBilingue, sintetizarBilingue } from '../speech/bilingue';
 import { baixarVoz, PREFIXO_NATURAL, sintetizar, vozBaixada } from '../speech/piper';
 
 export type Lingua = 'en' | 'pt';
@@ -379,5 +379,7 @@ if (typeof window !== 'undefined') {
       const id = vozNatural(lingua);
       if (id) void vozBaixada(id).then((ok) => (ok ? baixarVoz(id) : undefined)).catch(() => undefined);
     }
+    const bilingue = atual.bilingue;
+    if (bilingue) void bilingueBaixada(bilingue).then((ok) => (ok ? prepararBilingue(bilingue) : undefined)).catch(() => undefined);
   }, 4000);
 }

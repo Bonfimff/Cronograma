@@ -28,6 +28,7 @@ type Msg =
   | { type: 'baixar'; id: number; voz: string }
   | { type: 'baixada'; id: number; voz: string }
   | { type: 'remover'; id: number; voz: string }
+  | { type: 'preparar'; id: number; voz: string; semPlaca?: boolean }
   | { type: 'falar'; id: number; voz: string; partes: Parte[]; velocidade: number; semPlaca?: boolean };
 
 const post = (m: unknown, t?: Transferable[]) => (self as unknown as Worker).postMessage(m, t ?? []);
@@ -71,15 +72,34 @@ async function estaBaixada(voz: string): Promise<boolean> {
 }
 
 let usarPlaca = true;
+let modo: 'placa' | 'processador' = 'processador';
+let motivo = '';
+let adaptador: Promise<boolean> | undefined;
+
+/** Ter `navigator.gpu` não basta: muitos celulares não entregam um adaptador. */
+function temAdaptador(): Promise<boolean> {
+  adaptador ??= 'gpu' in navigator
+    ? (navigator as unknown as { gpu: { requestAdapter: () => Promise<unknown> } }).gpu.requestAdapter().then((a) => !!a).catch(() => false)
+    : Promise.resolve(false);
+  return adaptador;
+}
 
 /** Com a placa de vídeo do aparelho é bem mais rápido; sem ela, cai na thread única do processador. */
 async function criar(url: string): Promise<ort.InferenceSession> {
   const modelo = await (await buscar(url)).arrayBuffer();
-  if (usarPlaca && 'gpu' in navigator) {
+  if (!usarPlaca) motivo = 'desligada depois de uma falha';
+  else if (!(await temAdaptador())) motivo = 'este navegador não oferece WebGPU';
+  else {
     try {
-      return await ort.InferenceSession.create(modelo, { executionProviders: ['webgpu'] });
-    } catch { /* sem adaptador, ou o modelo não roda nela */ }
+      const sessao = await ort.InferenceSession.create(modelo, { executionProviders: ['webgpu'] });
+      modo = 'placa';
+      motivo = '';
+      return sessao;
+    } catch (e) {
+      motivo = `o modelo não abriu na placa: ${String((e as Error)?.message ?? e).slice(0, 80)}`;
+    }
   }
+  modo = 'processador';
   return ort.InferenceSession.create(modelo, { executionProviders: ['wasm'] });
 }
 const json = async <T>(url: string) => (await (await buscar(url)).json()) as T;
@@ -228,13 +248,15 @@ async function supertonic(voz: string): Promise<Motor> {
   };
 }
 
-let carregado: { voz: string; motor: Promise<Motor> } | undefined;
+let carregado: { voz: string; motor: Promise<Motor>; carga: number } | undefined;
 
 function motorDe(voz: string): Promise<Motor> {
   if (carregado?.voz === voz) return carregado.motor;
+  const t0 = performance.now();
   const motor = separar(voz)[0] === 'kokoro' ? kokoro(voz) : supertonic(voz);
-  motor.catch(() => { if (carregado?.voz === voz) carregado = undefined; });
-  carregado = { voz, motor };
+  const atual = { voz, motor, carga: 0 };
+  motor.then(() => { atual.carga = (performance.now() - t0) / 1000; }, () => { if (carregado === atual) carregado = undefined; });
+  carregado = atual;
   return motor;
 }
 
@@ -251,6 +273,10 @@ self.onmessage = async (e: MessageEvent<Msg>) => {
       if (carregado?.voz.split(':')[0] === m.voz.split(':')[0]) carregado = undefined;
       for (const a of arquivos(m.voz)) await cache.delete(a.url);
       post({ type: 'pronto', id: m.id });
+    } else if (m.type === 'preparar') {
+      if (m.semPlaca) usarPlaca = false;
+      await motorDe(m.voz);
+      post({ type: 'pronto', id: m.id, modo, motivo, carga: carregado?.carga });
     } else {
       if (m.semPlaca) usarPlaca = false;
       let t0 = performance.now();
@@ -268,7 +294,7 @@ self.onmessage = async (e: MessageEvent<Msg>) => {
       }
       const { amostras, taxa } = audio;
       const gasto = (performance.now() - t0) / 1000;
-      post({ type: 'pronto', id: m.id, amostras, taxa, gasto }, [amostras.buffer]);
+      post({ type: 'pronto', id: m.id, amostras, taxa, gasto, modo, motivo, carga: carregado?.carga }, [amostras.buffer]);
     }
   } catch (err) {
     post({ type: 'erro', id: m.id, mensagem: String((err as Error)?.message ?? err) });
