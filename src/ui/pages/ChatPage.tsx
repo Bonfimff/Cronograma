@@ -6,9 +6,10 @@ import { acrescentar, apagarConversa, apagarFala, lerConversa, paraOModelo } fro
 import { recortar, semMarcas } from '../../core/chat/marcas';
 import { leituraAutomatica, lerFala, pararLeitura } from '../../core/chat/leitura';
 import { go, useData, useRoute } from '../hooks';
-import { ajustesVoz, falaAtual, falar as falarVoz, type Lingua } from '../../core/lessons/vozes';
+import { acordarAudio, ajustesVoz, falaAtual, falar as falarVoz, type Lingua } from '../../core/lessons/vozes';
 import { ditadoDisponivel, ditar, type Ditado } from '../../core/speech/ditado';
 import { IconeKit } from '../components/Doodles';
+import { ModoVoz } from '../components/ModoVoz';
 import { vibrar } from '../../core/vibrar';
 import type { ChatTurn } from '../../core/types';
 
@@ -326,6 +327,7 @@ export function ChatPage() {
   const [respondendo, setRespondendo] = useState<ChatTurn | null>(null);
   const [detalhes, setDetalhes] = useState<ChatTurn | null>(null);
   const [recado, setRecado] = useState('');
+  const [emVoz, setEmVoz] = useState(false);
   const caixaTexto = useRef<HTMLTextAreaElement>(null);
   const ditado = useRef<Ditado | null>(null);
   const [ouvindo, setOuvindo] = useState(false);
@@ -376,9 +378,9 @@ export function ChatPage() {
   useEffect(() => { seguindo.current = true; descer('smooth'); }, [falas.length, pensando]);
   useEffect(() => { if (parcial && seguindo.current) descer('auto'); }, [parcial]);
 
-  const enviar = async (conteudo: string) => {
+  const enviar = async (conteudo: string, { semLeitura = false } = {}): Promise<ChatTurn | null> => {
     const limpo = conteudo.trim();
-    if (!limpo || pensando) return;
+    if (!limpo || pensando) return null;
     pararDitado();
     if (leituraAutomatica.get()) pararLeitura();
     acrescentar({
@@ -405,9 +407,11 @@ export function ChatPage() {
         inicio: primeiraPalavra ?? pedido,
         ...(r.tokens && { tokens: r.tokens }),
       });
-      if (leituraAutomatica.get()) lerFala(resposta.content, resposta.id);
+      if (!semLeitura && leituraAutomatica.get()) lerFala(resposta.content, resposta.id);
+      return resposta;
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : 'Não foi possível falar com o amigo de treino.');
+      return null;
     } finally {
       setPensando(false);
       setParcial('');
@@ -486,6 +490,13 @@ export function ChatPage() {
       )}
       {detalhes && <DetalhesFala turno={detalhes} aoFechar={() => setDetalhes(null)} />}
       {recado && <p className="conversa-recado" role="status">{recado}</p>}
+      {emVoz && (
+        <ModoVoz
+          aoFechar={() => setEmVoz(false)}
+          aoFalar={(falado) => enviar(falado, { semLeitura: true })}
+          escrevendo={parcial}
+        />
+      )}
 
       <form className="conversa-escrever" onSubmit={(e) => { e.preventDefault(); enviar(texto); }}>
         {respondendo && (
@@ -518,7 +529,21 @@ export function ChatPage() {
             <IconeKit nome="microfone" width={28} />
           </button>
         )}
-        <button className="primary conversa-enviar" type="submit" aria-label="Enviar" title="Enviar" disabled={pensando || !texto.trim()}><IconeKit nome="enviar" width={26} /></button>
+        {ditadoDisponivel && !texto.trim() ? (
+          <button
+            type="button"
+            className="conversa-voz"
+            aria-label="Conversar por voz"
+            title="Conversar por voz"
+            onClick={() => { acordarAudio(); pararDitado(); setEmVoz(true); }}
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <path d="M4 10v4M9 6v12M14 9v6M19 7v10" />
+            </svg>
+          </button>
+        ) : (
+          <button className="primary conversa-enviar" type="submit" aria-label="Enviar" title="Enviar" disabled={pensando || !texto.trim()}><IconeKit nome="enviar" width={26} /></button>
+        )}
       </form>
 
     </div>

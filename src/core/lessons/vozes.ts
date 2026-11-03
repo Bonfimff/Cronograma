@@ -181,6 +181,12 @@ let contexto: AudioContext | undefined;
 
 const esperar = (ms: number) => new Promise<void>((ok) => window.setTimeout(ok, ms));
 
+/** Chamada dentro de um toque: depois, o áudio pode começar sem novo toque, mesmo no celular. */
+export function acordarAudio(): void {
+  contexto ??= new AudioContext();
+  if (contexto.state === 'suspended') void contexto.resume();
+}
+
 /** A voz natural escolhida para a língua, se houver. */
 export function vozNatural(lingua: Lingua): string | undefined {
   const v = atual.voz[lingua];

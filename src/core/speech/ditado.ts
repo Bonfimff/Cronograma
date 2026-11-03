@@ -23,6 +23,8 @@ if (Reconhecedor?.available) {
 
 export interface Ditado {
   parar: () => void;
+  /** Encerra sem entregar o que foi ouvido. */
+  cancelar?: () => void;
 }
 
 const comparavel = (t: string) => t.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -71,4 +73,39 @@ export function ditar(lingua: string, aoMudar: (texto: string) => void, aoTermin
   r.onend = () => aoTerminar(erro);
   r.start();
   return { parar: () => { try { r.stop(); } catch { /* já parou */ } } };
+}
+
+/**
+ * Ouve uma frase e para sozinho quando a pessoa fica em silêncio, para a conversa por voz.
+ * `aoTerminar` recebe o que foi dito; vazio quando ninguém falou.
+ */
+export function ouvirFrase(
+  lingua: string, aoMudar: (texto: string) => void, aoTerminar: (texto: string, erro?: string) => void,
+): Ditado & { cancelar: () => void } {
+  const r = new Reconhecedor();
+  r.lang = lingua;
+  r.continuous = false;
+  r.interimResults = true;
+  if (noAparelho) {
+    try { r.processLocally = true; } catch { /* o navegador decide */ }
+  }
+  let texto = '';
+  let erro: string | undefined;
+  let cancelado = false;
+  r.onresult = (e: any) => {
+    const resultados: string[] = [];
+    for (let i = 0; i < e.results.length; i++) resultados.push(e.results[i][0].transcript);
+    texto = juntarResultados(resultados).replace(/\s+/g, ' ');
+    aoMudar(texto);
+  };
+  r.onerror = (e: any) => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') erro = 'O microfone foi bloqueado. Permita o acesso nas configurações do navegador.';
+    else if (e.error !== 'no-speech' && e.error !== 'aborted') erro = 'Não consegui ouvir. Toque na esfera para tentar de novo.';
+  };
+  r.onend = () => { if (!cancelado) aoTerminar(texto, erro); };
+  r.start();
+  return {
+    parar: () => { try { r.stop(); } catch { /* já parou */ } },
+    cancelar: () => { cancelado = true; try { r.abort(); } catch { /* já parou */ } },
+  };
 }

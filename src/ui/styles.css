@@ -1928,6 +1928,41 @@ button.back { background: none; border: 0; padding: 0; font: inherit; cursor: po
 .fala-detalhes > button { text-align: center; }
 .conversa-recado { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); z-index: 35; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: .88rem; }
 
+/* Conversa por voz: tela cheia, com a esfera ao centro */
+.conversa-voz { flex: none; width: 48px; min-height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--ink); color: var(--paper); cursor: pointer; }
+.modo-voz { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: #000; color: #f5f0ea; padding: env(safe-area-inset-top) 20px calc(28px + env(safe-area-inset-bottom)); }
+.modo-voz-centro { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center; }
+.modo-voz-esfera {
+  position: relative; width: min(58vw, 260px); aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; overflow: hidden; cursor: pointer;
+  background: linear-gradient(180deg, #f98a72 0%, #fba08a 34%, #fff1ee 56%, #ffd9cf 100%);
+  animation: esfera-respira 3.4s ease-in-out infinite;
+}
+.modo-voz-nuvem {
+  position: absolute; left: -35%; right: -35%; top: 28%; height: 34%; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, .92), rgba(255, 255, 255, 0) 70%);
+  filter: blur(5px); animation: esfera-nuvem 7s ease-in-out infinite alternate;
+}
+.modo-voz-nuvem.segunda { top: 44%; opacity: .75; animation-duration: 4.6s; animation-direction: alternate-reverse; }
+.modo-voz-esfera.ouvindo { animation-duration: 2.2s; }
+.modo-voz-esfera.pensando { animation: esfera-pensa 1.3s ease-in-out infinite; }
+.modo-voz-esfera.falando { animation: esfera-fala .62s ease-in-out infinite alternate; }
+.modo-voz-esfera.falando .modo-voz-nuvem { animation-duration: 2.2s; }
+.modo-voz-esfera.mudo, .modo-voz-esfera.pausado { animation: none; filter: saturate(.45) brightness(.75); }
+.modo-voz-esfera.mudo .modo-voz-nuvem, .modo-voz-esfera.pausado .modo-voz-nuvem { animation-play-state: paused; }
+@keyframes esfera-respira { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes esfera-pensa { 0%, 100% { transform: scale(.9); opacity: .78; } 50% { transform: scale(.97); opacity: 1; } }
+@keyframes esfera-fala { from { transform: scale(1); } to { transform: scale(1.09); } }
+@keyframes esfera-nuvem { from { transform: translate(-13%, -9%) rotate(-5deg); } to { transform: translate(13%, 12%) rotate(6deg); } }
+.modo-voz-rotulo { margin: 0; min-height: 1.4em; font-size: .95rem; color: rgba(245, 240, 234, .72); }
+.modo-voz-legenda { margin: 0; width: min(100%, 560px); max-height: 26vh; overflow-y: auto; font-size: 1.05rem; line-height: 1.45; white-space: pre-line; }
+.modo-voz-botoes { display: flex; justify-content: center; gap: 22px; }
+.modo-voz-bt { width: 62px; height: 62px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: #2c2c2c; color: #f5f0ea; cursor: pointer; }
+.modo-voz-bt.desligado { background: #f5f0ea; color: #111; }
+.modo-voz-bt.fechar { background: #fff; color: #111; }
+@media (prefers-reduced-motion: reduce) {
+  .modo-voz-esfera, .modo-voz-esfera.ouvindo, .modo-voz-esfera.pensando, .modo-voz-esfera.falando, .modo-voz-nuvem { animation: none; }
+}
+
 /* respostas em lista (uma palavra por linha) mantêm as quebras */
 .conversa-fala p { white-space: pre-line; }
 

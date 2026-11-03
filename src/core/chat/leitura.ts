@@ -14,6 +14,11 @@ export function lerFala(texto: string, chave?: string): void {
   void falar(recortar(texto).map((p) => ({ texto: p.texto, lingua: p.palavra ? 'en' : 'pt' })), 1, chave);
 }
 
+/** Como `lerFala`, mas avisa quando acabou de falar: a conversa por voz volta a ouvir só então. */
+export function lerFalaAteOFim(texto: string, chave?: string): Promise<void> {
+  return falar(recortar(texto).map((p) => ({ texto: p.texto, lingua: p.palavra ? 'en' : 'pt' })), 1, chave);
+}
+
 export const pararLeitura = () => pararFala();
 
 const KEY_AUTOMATICA = 'ingles-hibrido:conversa-leitura-automatica';
