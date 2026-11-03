@@ -14,6 +14,11 @@ Aqui a troca é por regras, sem depender do modelo:
 3. traduções ambíguas demais ("é", "a", "de") não trocam: quebrariam a frase;
 4. duas palavras de conteúdo não ficam coladas ("um name work"); palavras de função
    juntas, sim ("to you", "how are you").
+
+Na conversa vale o modo `moderado`, pedido de quem usa o app em 02/11/2026 depois de ler
+respostas como "You are do uma apresentação de you mesmo": no máximo uma palavra por frase e
+duas por resposta, nunca you, are, to, do e afins soltos no meio do português, e nunca verbo
+conjugado ("vai help"). Expressões inteiras ("thank you") continuam valendo.
 """
 
 import re
@@ -70,8 +75,26 @@ def _com_caixa(original: str, en: str) -> str:
     return en[:1].upper() + en[1:] if original[:1].isupper() else en
 
 
+MAX_POR_RESPOSTA = 2
+# adjetivo antes do substantivo vira "uma good apresentação": só troca no fim da frase ("isso é bom!")
+ANTES_DO_NOME = re.compile(r"(?:bom|boa|bons|boas|legal|ótimo|ótima)\s+[A-Za-zÀ-ÿ]", re.IGNORECASE)
+
+
+def _com_moderacao(trocas: list[tuple[int, int, str]], texto: str) -> list[tuple[int, int, str]]:
+    """Da esquerda para a direita, para o texto ao vivo não mudar quando a resposta termina."""
+    ficam: list[tuple[int, int, str]] = []
+    frases: set[int] = set()
+    for t in trocas:
+        frase = len(re.findall(r"[.!?…\n]\s", texto[: t[0]]))
+        if len(ficam) >= MAX_POR_RESPOSTA or frase in frases or ANTES_DO_NOME.match(texto, t[0]):
+            continue
+        frases.add(frase)
+        ficam.append(t)
+    return ficam
+
+
 def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = False,
-                     novas: list[tuple[str, str]] | None = None) -> tuple[str, list[str]]:
+                     novas: list[tuple[str, str]] | None = None, moderado: bool = False) -> tuple[str, list[str]]:
     """
     Troca no texto (português) todas as palavras do vocabulário que couberem. Devolve o texto
     e as palavras em inglês usadas. Com `marcas`, cada palavra do vocabulário trocada vem entre
@@ -94,7 +117,7 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
 
     # 1. frases inteiras
     for pt, en, exige in FRASES:
-        if not exige <= tem:
+        if not exige <= tem or (moderado and len(en.split()) < 3):
             continue
         for m in _padrao(pt).finditer(texto):
             if not any(tomado[m.start():m.end()]):
@@ -121,13 +144,15 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
     # 2. palavras soltas, das traduções mais longas para as mais curtas ("fim de semana" antes de "fim")
     candidatas: list[tuple[str, str]] = []
     for p in vocabulario:
+        if moderado and p.en.lower() in FUNCAO:
+            continue
         for alt in _alternativas(p.pt):
-            candidatas += [(forma, p.en) for forma in _formas(alt)]
+            candidatas += [(forma, p.en) for forma in ([alt] if moderado else _formas(alt))]
     # 2b. depois, os sinônimos: "emprego" vira work quando a pessoa tem work = trabalho
     # (induz a frase às palavras que ela já tem; ver sinonimos.py)
     diretas = {c[0] for c in candidatas}
     induzidas: list[tuple[str, str]] = []
-    for p in vocabulario:
+    for p in [] if moderado else vocabulario:
         for alt in _alternativas(p.pt):
             for s in sinonimos_de(alt):
                 induzidas += [(forma, p.en) for forma in _formas(s) if forma not in diretas]
@@ -151,6 +176,9 @@ def usar_vocabulario(texto: str, vocabulario: list[Palavra], marcas: bool = Fals
             if not entre.strip() and conteudo(ant[2]) and conteudo(t[2]):
                 continue
         finais.append(t)
+
+    if moderado:
+        finais = _com_moderacao(finais, texto)
 
     saida, fim_anterior, usadas = [], 0, []
     for inicio, fim, en in finais:

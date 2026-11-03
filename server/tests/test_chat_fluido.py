@@ -45,10 +45,10 @@ def test_texto_livre_sem_esquema_e_ao_vivo(monkeypatch):
 
 
 def test_regras_dao_espaco_para_profundidade():
-    assert "two to four sentences" in chat_slot.REGRAS
-    assert "real substance" in chat_slot.REGRAS
+    assert "one to three short sentences" in chat_slot.REGRAS
+    assert "voice recognition" in chat_slot.REGRAS  # palavra estranha é erro do microfone, não assunto
     instr = chat_slot.instrucao([Palavra("words:w", "work", "trabalho", 1)], texto_livre=True)
-    assert "TODAY'S WORDS" in instr and "trocar" not in instr
+    assert "most replies need none" in instr and "trocar" not in instr
 
 
 def test_responder_usa_texto_livre_com_o_vocabulario(monkeypatch):

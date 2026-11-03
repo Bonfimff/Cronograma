@@ -30,6 +30,13 @@ export function apagarConversa(): void {
   store.update((d) => { d.chat = []; });
 }
 
+/** Durante o treino a resposta é em inglês: em português, o reconhecedor ouve "Boys" por "boss". */
+export function linguaDaEscuta(): 'pt-BR' | 'en-US' {
+  const falas = lerConversa();
+  const ultima = falas[falas.length - 1];
+  return ultima?.role === 'assistant' && /🎯 Treino \d/.test(ultima.content) ? 'en-US' : 'pt-BR';
+}
+
 /** Apaga uma fala só. Como no histórico inteiro, a ausência é o que a sincronização leva ao servidor. */
 export function apagarFala(id: string): void {
   store.update((d) => { d.chat = (d.chat ?? []).filter((f) => f.id !== id); });

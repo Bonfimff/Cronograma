@@ -117,8 +117,8 @@ def test_o_guia_diz_quem_e_o_app_quem_o_fez_e_o_que_o_chat_nao_faz():
 
 def test_as_regras_proibem_prometer_memoria_e_repetir_a_pessoa():
     texto = " ".join(instrucao(VOCAB).split())  # a instrução quebra linha no meio das frases
-    assert "Never repeat the person's sentence back" in texto
-    assert "you cannot save or learn anything permanently" in texto and "look anything up" in texto
+    assert "never repeat the person's sentence back" in texto
+    assert "You cannot save or learn anything permanently" in texto and "look anything up" in texto
 
 
 def test_as_notas_do_app_vao_antes_das_palavras_do_dia():

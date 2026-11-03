@@ -44,3 +44,22 @@ def test_a_rota_entrega_a_resposta_com_o_vocabulario(client, conta, monkeypatch)
     corpo = r.json()
     assert corpo["reply"] == "[[Hello]]! [[How]] [[are]] [[you]] hoje?"
     assert {g["en"] for g in corpo["glossary"]} == {"hello", "how", "are", "you"}
+
+
+def test_moderado_nao_forca_ingles():
+    v = [Palavra("w:you", "you", "você", 1), Palavra("w:are", "are", "está / são", 1), Palavra("w:do", "do", "fazer", 1),
+         Palavra("w:help", "help", "ajudar", 1), Palavra("w:work", "work", "trabalho", 1), Palavra("w:free", "free", "livre", 1),
+         Palavra("w:boss", "boss", "chefe", 1)]
+    texto, _ = usar_vocabulario("Você está fazendo o trabalho do seu chefe no tempo livre.", v, marcas=True, moderado=True)
+    assert texto.count("[[") == 1 and "[[work]]" in texto and "ocê" in texto
+    texto, usadas = usar_vocabulario("O trabalho é bom. Seu chefe ajuda. Tempo livre é raro.", v, marcas=True, moderado=True)
+    assert usadas == ["work", "boss"]
+    texto, usadas = usar_vocabulario("Isso vai ajudar. Eu ajudo.", v, marcas=True, moderado=True)
+    assert usadas == ["help"] and "ajudo" in texto
+
+
+def test_moderado_nao_troca_adjetivo_antes_do_nome():
+    v = [Palavra("w:good", "good", "bom / boa", 1)]
+    assert usar_vocabulario("Foi uma boa apresentação.", v, marcas=True, moderado=True)[1] == []
+    assert usar_vocabulario("Isso é bom!", v, marcas=True, moderado=True)[1] == ["good"]
+

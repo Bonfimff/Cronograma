@@ -107,3 +107,10 @@ def test_troca_nao_cola_duas_palavras_em_ingles():
     vocab = [Palavra("words:name", "name", "nome", 9.0), Palavra("words:work", "work", "trabalho", 8.0)]
     texto, feitas = varrer_vocabulario("Felipe é um nome trabalho, legal!", [], vocab, 3)
     assert feitas == ["nome"] and texto == "Felipe é um name trabalho, legal!"
+
+
+def test_correcao_fora_do_treino_nao_troca_palavra_certa():
+    from app.treino import corrigir
+    assert corrigir("Yes I like", {"live"}, aproximar=False) == "Yes I like"
+    assert corrigir("may name", {"live"}, aproximar=False) == "My name"
+

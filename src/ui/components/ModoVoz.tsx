@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { linguaDaEscuta } from '../../core/chat/conversa';
 import { faltaFalar, pararLeitura, partesDe, proximoTrecho, trechosDe } from '../../core/chat/leitura';
 import { semMarcas } from '../../core/chat/marcas';
 import { leituraAoVivo, type LeituraAoVivo } from '../../core/lessons/vozes';
@@ -62,7 +63,7 @@ export function ModoVoz({ aoFechar, aoFalar, escrevendo }: {
     setEstado('ouvindo');
     setLegenda('');
     setRecado('');
-    escuta.current = ouvirFrase('pt-BR', setLegenda, (texto, erro) => {
+    escuta.current = ouvirFrase(linguaDaEscuta(), setLegenda, (texto, erro) => {
       escuta.current = null;
       if (!aberto.current || mudo.current) return;
       if (erro) {

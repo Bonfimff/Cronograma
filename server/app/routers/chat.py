@@ -145,7 +145,7 @@ async def _conversar_slot(
             # só as palavras já completas: "trabalh" ainda pode virar "trabalho" ou "trabalhar"
             corte = max(texto.rfind(c) for c in " .,!?;:\n")
             pronto, resto = (texto[: corte + 1], texto[corte + 1:]) if corte >= 0 else ("", texto)
-            marcado, _ = usar_vocabulario(pronto, vocab_completo, marcas=True)
+            marcado, _ = usar_vocabulario(pronto, vocab_completo, marcas=True, moderado=True)
             bruto_ao_vivo(marcado + resto)
     tokens = {"entrada": 0, "saida": 0}
     uso_de_tokens.set(tokens)  # to_thread leva o contexto junto: as tentativas de dentro somam aqui
@@ -317,7 +317,7 @@ async def _conversar(entrada: ChatIn, user: User, db: Session, ao_vivo=None) -> 
         if consulta:
             if consulta.endswith("(Wikipédia)") and "Neste dia" not in consulta:
                 return ChatOut(reply=consulta, glossary=[])  # texto de enciclopédia: sem troca de palavras
-            marcado, usadas = usar_vocabulario(consulta, carregar(db, user, 100000, todas=True), marcas=True)
+            marcado, usadas = usar_vocabulario(consulta, carregar(db, user, 100000, todas=True), marcas=True, moderado=True)
             return ChatOut(reply=marcado, glossary=_glossario(marcado, carregar(db, user, 100000, todas=True)))
         # perguntas sobre o app, a conta e os dados da pessoa têm resposta pronta: sem modelo, sem erro
         direta = resposta_direta(db, user, conversa)

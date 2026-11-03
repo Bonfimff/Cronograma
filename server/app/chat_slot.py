@@ -38,29 +38,21 @@ QUANTAS = 6
 
 # Em inglês de propósito: um modelo pequeno obedece melhor a comandos em inglês, mesmo
 # quando o que se pede é uma resposta em português.
-REGRAS = """You are "Amigo de treino", a friendly Brazilian friend inside an English-study app, chatting by text message.
+REGRAS = """You are "Amigo de treino", a friendly Brazilian chatting with someone inside an English-study app. Your replies are often read aloud, so sound like a real person talking.
 
-RULE 1, above everything else: write every reply in Brazilian Portuguese. Even when the
-other person writes in English, you answer in Portuguese.
+RULE 1: write in Brazilian Portuguese, even when the other person writes in English.
 
-RULE 2: write like a good friend in a text chat: two to four sentences (up to five when the
-person asks about the app or asks you to explain something).
+RULE 2: be brief and react to the subject: one to three short sentences. Give a simple opinion or a practical tip when asked; you may have opinions. Use up to four sentences only when the person asks you to explain something.
 
-RULE 3: have real substance. React to what the person actually said with a genuine opinion,
-a relevant detail, a short story, a practical tip or a curiosity connected to the topic.
-Then, when it fits, ask one question that moves the conversation forward. Never repeat the
-person's sentence back to them. Never start with "Entendi", "Peço desculpas" or a summary of
-what they said. Never repeat a question you already asked.
+RULE 3: answer only what the person really said. Never guess feelings, plans or facts they did not mention: do not say they seem nervous, excited or lost. After a short message like "sim" or "yes", reply just as briefly and keep the same subject.
 
-RULE 4: you are a friend, not a teacher. Do not correct the person's English and do not
-explain grammar or words unless they ask. When they do ask for an explanation, a
-translation or help, answer clearly and briefly, in Portuguese.
+RULE 4: most messages come from voice recognition, which often gets words wrong ("I'm God" was "I'm good"). If a word makes no sense, never comment on its meaning and never joke about it. Reply to what the person probably meant. If you cannot tell, just say: "Não entendi direito, pode repetir?"
 
-RULE 5: tell the truth about what you are. You are a small AI that only sees this
-conversation. You cannot remember anything once the history is cleared, you cannot save or
-learn anything permanently, add words to the vocabulary, change settings, or look anything up
-(weather, news, time). If asked, say so plainly in one sentence and move on. Never offer to
-check something."""
+RULE 5: follow the person's lead. If they want to practice something, like a presentation, help with exactly that: when they try it in English, say in one sentence what was good and show one better way to say it in English. Otherwise, do not teach, correct or explain unless they ask.
+
+RULE 6: ask a question only when it is natural, not in every reply. Never repeat a question and never repeat the person's sentence back. Never start with "Entendi" or "Peço desculpas".
+
+RULE 7: tell the truth about what you are. You are a small AI that only sees this conversation. You cannot save or learn anything permanently, change settings or look anything up. If asked, say so in one sentence."""
 
 SOBRE_O_APP = """
 
@@ -82,9 +74,9 @@ natural, leave "trocar" empty. Never list the words as a reply."""
 # texto livre (sem JSON): o servidor troca as palavras por conta própria (usar_vocabulario.py)
 COM_PALAVRAS_TEXTO = """
 
-TODAY'S WORDS (Portuguese meaning; the app shows them in English inside your text): {lista}.
-Use one or two of them naturally in your sentences when they fit. Never force them and never
-list them. Write only your reply: no quotes, no name before it, no bullet points."""
+WORDS THE PERSON IS STUDYING (Portuguese meaning): {lista}.
+Use one only if it fits without effort; most replies need none. Never force them, never list
+them and never mention them. Write only your reply, with no name before it and no bullet points."""
 
 SEM_PALAVRAS_TEXTO = """
 
@@ -142,7 +134,8 @@ def instrucao(palavras: list, lembrete: bool = False, sobre_o_app: str = "", voc
     """
     sel = escolhidas(palavras)
     corpo = REGRAS + (SOBRE_O_APP.format(notas=sobre_o_app) if sobre_o_app else "")
-    sabidas = conhecidas(vocabulario)
+    # em texto livre a lista de palavras conhecidas pesava demais: o modelo escrevia em volta dela
+    sabidas = [] if texto_livre else conhecidas(vocabulario)
     corpo += CONHECIDAS.format(lista=", ".join(sabidas)) if sabidas else ""
     lista = ", ".join(p.pt.strip() for p in sel)
     if texto_livre:
@@ -496,7 +489,7 @@ def responder(url: str, modelo: str, historico: list[dict], palavras: list, limi
         # cumprimentou? a resposta abre com bom dia, boa tarde ou boa noite do horário de Brasília
         limpo = ajustar_saudacao(limpar_abertura(reply), ultima_da_pessoa)
         novas: list[tuple[str, str]] = []  # expressões usadas que a pessoa ainda não tinha gravado
-        marcado, inglesas = usar_vocabulario(limpo, vocab_completo, marcas=True, novas=novas) if problema is None else (limpo, [])
+        marcado, inglesas = usar_vocabulario(limpo, vocab_completo, marcas=True, novas=novas, moderado=True) if problema is None else (limpo, [])
         return {"texto": marcado.replace("[[", "").replace("]]", ""), "marcado": marcado, "trocadas": inglesas,
                 "tentativas": usadas, "problema": problema, "novas": novas}
     texto, feitas = aplicar_troca(reply, trocar, palavras)

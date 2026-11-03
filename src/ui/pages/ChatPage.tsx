@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { focoDeEstudo, palavrasDoFoco } from '../../core/estudo/foco';
 import { ApiError, api, type GlossaryItem } from '../../core/api/client';
 import { session } from '../../core/api/session';
-import { acrescentar, apagarConversa, apagarFala, lerConversa, paraOModelo } from '../../core/chat/conversa';
+import { acrescentar, apagarConversa, apagarFala, lerConversa, linguaDaEscuta, paraOModelo } from '../../core/chat/conversa';
 import { recortar, semMarcas } from '../../core/chat/marcas';
 import { leituraAutomatica, lerFala, pararLeitura } from '../../core/chat/leitura';
 import { go, useData, useRoute } from '../hooks';
@@ -343,7 +343,7 @@ export function ChatPage() {
     const antes = texto.trim() ? texto.trimEnd() + ' ' : '';
     try {
       ditado.current = ditar(
-        'pt-BR',
+        linguaDaEscuta(),
         (falado) => setTexto(antes + falado),
         (problema) => { ditado.current = null; setOuvindo(false); if (problema) setErro(problema); },
       );

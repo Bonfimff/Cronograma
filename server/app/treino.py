@@ -163,8 +163,12 @@ def _distancia(a: str, b: str) -> int:
     return ant[-1]
 
 
-def corrigir(texto: str, vocabulario: set[str]) -> str:
-    """Corrige o que dá para corrigir com segurança; o resto fica como a pessoa escreveu."""
+def corrigir(texto: str, vocabulario: set[str], aproximar: bool = True) -> str:
+    """
+    Corrige o que dá para corrigir com segurança; o resto fica como a pessoa escreveu.
+    `aproximar` troca pela palavra do vocabulário a uma letra de distância: só serve quando já se
+    sabe o que era esperado, porque "like" está a uma letra de "live" e é uma palavra certa.
+    """
     conhecidas = COMUNS | vocabulario
 
     def troca(m: re.Match) -> str:
@@ -172,7 +176,7 @@ def corrigir(texto: str, vocabulario: set[str]) -> str:
         baixa = w.lower()
         if baixa in TROCAS:
             novo = TROCAS[baixa]
-        elif len(baixa) >= 4 and baixa not in conhecidas:
+        elif aproximar and len(baixa) >= 4 and baixa not in conhecidas:
             perto = [v for v in vocabulario if len(v) >= 4 and _distancia(baixa, v) == 1]
             novo = perto[0] if len(perto) == 1 else w
         else:
@@ -250,6 +254,6 @@ def correcao_fora_do_treino(db: Session, user: User, conversa: list[dict]) -> st
     if not fala or not parece_ingles(fala):
         return ""
     vocab = {p.en.lower() for p in carregar(db, user, 100000, todas=True)}
-    corrigida = corrigir(fala, vocab)
+    corrigida = corrigir(fala, vocab, aproximar=False)
     limpa = lambda s: re.sub(r"[^a-z' ]", "", s.lower()).strip()  # noqa: E731
     return f"✎ Em inglês, fica assim: {corrigida}\n\n" if limpa(corrigida) != limpa(fala) else ""
