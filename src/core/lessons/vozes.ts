@@ -330,6 +330,52 @@ async function falarBilingue(id: string, lista: Parte[], fator: number, minha: n
   }
 }
 
+export interface LeituraAoVivo {
+  /** Começa a gerar este trecho já, e ele toca quando chegar a vez dele. */
+  adicionar: (partes: Parte[]) => void;
+  /** Termina quando tudo o que foi adicionado acabou de tocar, ou quando outra fala começou. */
+  terminar: () => Promise<void>;
+}
+
+/** Fala os trechos conforme vão chegando, para começar antes de a resposta inteira ficar pronta. */
+export function leituraAoVivo(): LeituraAoVivo {
+  pararFala();
+  const minha = geracao;
+  let fila = Promise.resolve();
+
+  const gerar = async (partes: Parte[]) => {
+    const id = atual.bilingue;
+    if (!id || !(await bilingueBaixada(id))) return null;
+    return sintetizarBilingue(id, partes, Math.max(0.35, Math.min(2, velocidadeDaFrase(partes)))).catch(() => null);
+  };
+
+  // sem voz bilíngue, cada parte na voz da sua língua: natural se houver, senão a do aparelho
+  const falarSolta = async (p: Parte) => {
+    const id = vozNatural(p.lingua);
+    const audio = id && (await vozBaixada(id).catch(() => false))
+      ? await sintetizar(id, p.texto.trim(), atual.velocidade[p.lingua]).catch(() => null)
+      : null;
+    if (minha !== geracao) return;
+    if (audio) await tocarAmostras(audio.amostras, audio.taxa, minha);
+    else await falarNoAparelho(p, 1, minha);
+  };
+
+  return {
+    adicionar(partes) {
+      const validas = partes.filter((p) => p.texto.trim());
+      if (!validas.length || minha !== geracao) return;
+      const audio = gerar(validas);
+      fila = fila.then(async () => {
+        const pronto = await audio;
+        if (minha !== geracao) return;
+        if (pronto) await tocarAmostras(pronto.amostras, pronto.taxa, minha);
+        else for (const p of validas) if (minha === geracao) await falarSolta(p);
+      });
+    },
+    terminar: () => fila,
+  };
+}
+
 /**
  * Fala uma ou mais partes, na ordem, cada uma na voz da sua língua. Usa a voz natural
  * escolhida quando ela já está baixada; senão, a do aparelho. Termina quando acaba de

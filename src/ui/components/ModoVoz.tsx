@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { lerFalaAteOFim, pararLeitura } from '../../core/chat/leitura';
+import { faltaFalar, pararLeitura, partesDe, proximoTrecho, trechosDe } from '../../core/chat/leitura';
 import { semMarcas } from '../../core/chat/marcas';
+import { leituraAoVivo, type LeituraAoVivo } from '../../core/lessons/vozes';
 import { ouvirFrase, type Ditado } from '../../core/speech/ditado';
 import type { ChatTurn } from '../../core/types';
 
@@ -20,6 +21,7 @@ const ESCUTAS_VAZIAS = 3;
 /**
  * Conversa contínua por voz: escuta, percebe que a pessoa parou de falar (o próprio
  * reconhecedor encerra no silêncio), responde em voz alta e volta a escutar.
+ * A voz começa no primeiro trecho pronto, sem esperar o modelo terminar de escrever.
  * O microfone fica fechado enquanto a voz fala, para ela não se ouvir.
  */
 export function ModoVoz({ aoFechar, aoFalar, escrevendo }: {
@@ -36,6 +38,24 @@ export function ModoVoz({ aoFechar, aoFalar, escrevendo }: {
   const mudo = useRef(false);
   const escuta = useRef<Ditado | null>(null);
   const vazias = useRef(0);
+  const leitura = useRef<LeituraAoVivo | null>(null);
+  const consumido = useRef(0);
+  const falados = useRef<string[]>([]);
+  const interrompida = useRef(false);
+
+  // cada trecho completo da resposta vai para a voz assim que chega
+  useEffect(() => {
+    if (!leitura.current || interrompida.current || !escrevendo) return;
+    let fim = proximoTrecho(escrevendo, consumido.current);
+    while (fim >= 0) {
+      const trecho = escrevendo.slice(consumido.current, fim);
+      consumido.current = fim;
+      falados.current.push(trecho);
+      leitura.current.adicionar(partesDe(trecho));
+      setEstado('falando');
+      fim = proximoTrecho(escrevendo, consumido.current);
+    }
+  }, [escrevendo]);
 
   const ouvir = () => {
     if (!aberto.current || mudo.current) return;
@@ -63,16 +83,25 @@ export function ModoVoz({ aoFechar, aoFalar, escrevendo }: {
 
   const responder = async (texto: string) => {
     setEstado('pensando');
+    consumido.current = 0;
+    falados.current = [];
+    interrompida.current = false;
+    const leitor = leituraAoVivo();
+    leitura.current = leitor;
     const resposta = await aoFalar(texto);
+    leitura.current = null;
     if (!aberto.current) return;
     if (!resposta) {
       setEstado('pausado');
       setRecado('Não foi possível falar com o amigo de treino.');
       return;
     }
-    setEstado('falando');
     setLegenda(semMarcas(resposta.content));
-    await lerFalaAteOFim(resposta.content, resposta.id);
+    if (!interrompida.current) {
+      setEstado('falando');
+      trechosDe(faltaFalar(resposta.content, falados.current)).forEach((t) => leitor.adicionar(partesDe(t)));
+      await leitor.terminar();
+    }
     if (aberto.current && !mudo.current) ouvir();
     else if (aberto.current) setEstado('mudo');
   };
@@ -94,7 +123,12 @@ export function ModoVoz({ aoFechar, aoFalar, escrevendo }: {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tocarEsfera = () => {
-    if (estado === 'falando') pararLeitura(); // a leitura termina e o ciclo volta a escutar
+    if (estado === 'falando') {
+      // a leitura termina e o ciclo volta a escutar, assim que o modelo acabar de escrever
+      interrompida.current = true;
+      pararLeitura();
+      if (leitura.current) setEstado('pensando');
+    }
     else if (estado === 'ouvindo') escuta.current?.parar(); // já terminei: pode responder
     else if (estado === 'pausado') { vazias.current = 0; ouvir(); }
   };
@@ -112,7 +146,7 @@ export function ModoVoz({ aoFechar, aoFalar, escrevendo }: {
     }
   };
 
-  const texto = estado === 'pensando' ? semMarcas(escrevendo) : legenda;
+  const texto = leitura.current && escrevendo ? semMarcas(escrevendo) : legenda;
 
   return (
     <div className="modo-voz" role="dialog" aria-label="Conversa por voz">
